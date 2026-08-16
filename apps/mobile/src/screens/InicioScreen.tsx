@@ -14,10 +14,10 @@ import { Button, Card, Field, FormError, colors } from '../components/ui';
 /**
  * Inicio con sesión abierta.
  *
- * La Fase 1 entrega cuenta y sesión; el horario, las faltas y la agenda llegan en las
- * fases siguientes.
+ * Enlaza a lo que ya está disponible —el horario de la Fase 2— y muestra el perfil y los
+ * dispositivos de la Fase 1. Las faltas y la agenda llegan en las fases 3 y 4.
  */
-export function InicioScreen() {
+export function InicioScreen({ onIrAHorario }: { onIrAHorario: () => void }) {
   const { user, logout } = useAuth();
   if (!user) return null;
 
@@ -28,11 +28,18 @@ export function InicioScreen() {
         <Text style={styles.subtitle}>@{user.username}</Text>
       </View>
 
+      <Card title="Tu horario">
+        <Text style={styles.body}>
+          Captura tus clases a mano o pega el horario que te genere una IA a partir de una
+          foto, y consúltalo en la vista semanal.
+        </Text>
+        <Button title="Ver mi horario" onPress={onIrAHorario} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Tu horario semanal de clases</Text>
         <Text style={styles.body}>· El control de faltas por materia</Text>
         <Text style={styles.body}>· La agenda de tareas y actividades</Text>
       </Card>

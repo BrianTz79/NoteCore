@@ -5,14 +5,16 @@ import { AuthProvider, useAuth } from './lib/auth-context';
 import { EntrarScreen } from './screens/EntrarScreen';
 import { RegistroScreen } from './screens/RegistroScreen';
 import { InicioScreen } from './screens/InicioScreen';
+import { HorarioScreen } from './screens/HorarioScreen';
 import { colors } from './components/ui';
 
 /**
  * Raíz de la app.
  *
- * La navegación es un simple cambio de estado entre tres pantallas: con las que hay en la
- * Fase 1 no compensa traer una librería de navegación. Cuando lleguen el horario, la
- * agenda y el calendario (fases 2 a 5) se introducirá `expo-router` con pestañas.
+ * La navegación sigue siendo un cambio de estado entre pantallas. La Fase 1 anotó que aquí
+ * entraría `expo-router`, pero con inicio y horario todavía no compensa: una librería de
+ * navegación se justifica cuando haya pestañas de verdad —horario, faltas, agenda y
+ * calendario—, que llegan en las fases 3 a 5.
  */
 export default function App() {
   return (
@@ -28,6 +30,7 @@ export default function App() {
 function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
+  const [seccion, setSeccion] = useState<'inicio' | 'horario'>('inicio');
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {
@@ -38,7 +41,13 @@ function Root() {
     );
   }
 
-  if (user) return <InicioScreen />;
+  if (user) {
+    return seccion === 'horario' ? (
+      <HorarioScreen onVolver={() => setSeccion('inicio')} />
+    ) : (
+      <InicioScreen onIrAHorario={() => setSeccion('horario')} />
+    );
+  }
 
   return pantalla === 'entrar' ? (
     <EntrarScreen onIrARegistro={() => setPantalla('registro')} />

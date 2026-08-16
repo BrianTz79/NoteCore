@@ -8,8 +8,8 @@ import { Button, Card } from '@/components/ui';
 /**
  * Inicio, ya con sesión.
  *
- * La Fase 1 solo entrega cuenta y sesión: aquí se confirma quién eres y se enlaza al
- * perfil. El horario, las faltas y la agenda llegan en las fases 2 a 4.
+ * Enlaza a lo que hay disponible: el horario (Fase 2) y el perfil. Las faltas y la agenda
+ * llegan en las fases 3 y 4.
  */
 export default function HomePage() {
   return (
@@ -37,6 +37,19 @@ function Inicio() {
         </Button>
       </header>
 
+      <Card title="Tu horario">
+        <p className="text-slate-300">
+          Captura tus clases a mano o pega el horario que te genere una IA a partir de una
+          foto, y consúltalo en la vista semanal.
+        </p>
+        <Link
+          href="/horario"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mi horario →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -52,7 +65,6 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· Tu horario semanal de clases</li>
           <li>· El control de faltas por materia</li>
           <li>· La agenda de tareas y actividades</li>
         </ul>

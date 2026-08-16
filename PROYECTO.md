@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Cuentas y sesión funcionando en app y web |
-| **Fases completadas** | 2 de 12 |
-| **Fase actual** | Fase 2 — Horario (no iniciada) |
+| **Estado general** | Horario capturable y visible en app y web |
+| **Fases completadas** | 3 de 12 |
+| **Fase actual** | Fase 3 — Control de faltas (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `██░░░░░░░░░░` 17%
+**Avance**: `███░░░░░░░░░` 25%
 
 ### Qué se ha hecho
 
@@ -53,11 +53,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Fase 1 cerrada**: registro, login y perfil con `@usuario` único; sesión simultánea en app y
   web verificada sobre un emulador Android real y un navegador real; aislamiento de datos
   comprobado con cuentas cruzadas
+- **Fase 2 cerrada**: materias y sesiones con alta manual e importación desde el JSON de una IA,
+  con vista previa antes de escribir; vista semanal idéntica en app y web, verificada con el
+  mismo horario en emulador Android y navegador a la vez
 
 ### Próximo paso
 
-**Fase 2 — Horario**: materias y sesiones (día, hora, aula), alta manual e importación del JSON
-generado por IA, y vista semanal en ambos clientes.
+**Fase 3 — Control de faltas**: registro por día completo o por materia/hora, conteo por materia
+y límite sugerido (20% de las sesiones) siempre editable.
 
 ---
 
@@ -69,7 +72,7 @@ generado por IA, y vista semanal en ambos clientes.
 |---|------|------|--------|-----|-----|-----|
 | 0 | Cimientos | — | ✅ | ✅ | ✅ | ✅ |
 | 1 | Cuentas y sesión | P1 | ✅ | ✅ | ✅ | ✅ |
-| 2 | Horario | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 2 | Horario | P1 | ✅ | ✅ | ✅ | ✅ |
 | 3 | Control de faltas | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 4 | Agenda | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 5 | Calendario y recordatorios | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -89,6 +92,81 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 2 — Horario · cerrada el 2026-08-16
+
+**Entregado**: materias con sus sesiones semanales —día, hora de inicio y fin, aula— con alta,
+edición y borrado en ambos clientes (FR-005); el prompt para la IA disponible desde la interfaz
+(FR-006); importación del JSON que devuelve esa IA (FR-007) con informe preciso de lo descartado
+(FR-008); vista semanal en rejilla (FR-009) con un color por materia (FR-010).
+
+**El flujo de importación, auditado**. El plan pedía revisar la comodidad del flujo de la v1. Se
+revisó el código original (`_respaldo_v1_20260816/`) y tenía tres problemas de fondo, corregidos:
+
+| Problema de la v1 | Qué hace ahora |
+|---|---|
+| **No validaba nada**: lo que la IA devolviera entraba tal cual en la base de datos, así que una hora mal escrita se guardaba y rompía la vista después | Cada materia y cada sesión se valida; lo que no pasa se descarta **con su motivo** ("Materia 3, sesión 2: el día no se reconoce"), sin tumbar el resto de la importación |
+| **Reimportar duplicaba el horario en silencio**: `POST /importar` siempre añadía | Se analiza primero y se devuelve una **vista previa** que marca qué materias ya existen; el usuario elige entre añadir y reemplazar |
+| **Sin vista previa**: se pegaba y se escribía | Nada se escribe hasta confirmar; el análisis es de solo lectura |
+
+Además se redujo la fricción de pegar: se aceptan las envolturas que la IA suele añadir —bloques
+` ```json `, texto antes o después, `{"materias": [...]}`— y las variantes de formato (`7:00`,
+`07:00:00`, `Miércoles`/`miercoles`/`1`), en vez de exigir un pegado limpio a mano.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| **Importar en dos pasos** (vista previa → confirmar) | Es la corrección del fallo de la v1: el usuario decide con la información delante en vez de descubrir el duplicado después |
+| El paso de confirmación **reenvía el texto**, no un identificador | El análisis es determinista, así que no hace falta guardar estado en el servidor entre los dos pasos |
+| Las horas se guardan como **`time`**, no `timestamp` | Una clase de los lunes a las 07:00 es una hora de reloj recurrente; con `timestamp` el horario se desplazaría al cambiar de huso o con el horario de verano |
+| `schedule_blocks` lleva **`user_id` propio** | Permite filtrar y borrar por usuario sin JOIN, y deja el aislamiento explícito en cada fila (Principio III) |
+| **Se rechazan los solapes** entre materias | Nadie está en dos clases a la vez; permitirlo dejaría ambiguo el conteo de faltas de la Fase 3. Dos clases consecutivas (una acaba a las 09:00 y otra empieza a las 09:00) sí se permiten |
+| Nombres duplicados rechazados **ignorando acentos y mayúsculas** | Para el estudiante "Cálculo" y "calculo" son la misma materia; tener las dos solo confunde al registrar faltas |
+| **Se retiró el campo `paquete`** de la v1 | Decisión del usuario: el grupo no se usa en ninguna pantalla |
+| **Sin `expo-router` todavía** | La Fase 1 lo previó para aquí, pero con inicio y horario no compensa; entra cuando haya pestañas de verdad (fases 3 a 5) |
+
+**Verificación ejecutada** — 140 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Normalización de horas y días, solapes, rotación de color, rango de la rejilla, y el analizador de importación con casos sucios | **51/51** |
+| API (`curl` contra la API real) | Alta, edición, borrado, validación, solapes, aislamiento entre cuentas, vista previa, importación en ambos modos y transaccionalidad | **60/60** |
+| Web (Playwright, navegador real) | Alta manual, validación, rechazo de solape, importación de principio a fin, reimportación, edición, persistencia, borrado y ruta protegida | **29/29** |
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| La app arranca y muestra la tarjeta "Tu horario" | correcto |
+| Pantalla de horario vacío, hablando con la API | correcto |
+| Pantalla de importación: prompt visible y botón de pegar | correcto |
+| Alta de materia desde la interfaz táctil (nombre, color, día, aula) | creada y guardada en PostgreSQL con su color |
+| La rejilla pinta el bloque en su día y hora, con aula | correcto |
+| Horario **importado desde la web** visible en la **app** | 2 materias y 3 sesiones idénticas |
+| Misma disposición, colores, aulas y horas que en el navegador | **paridad confirmada** |
+
+**Corregido durante la fase**:
+
+1. **Los errores de solape no llegaban al usuario.** La API los señala en el campo `blocks.N`,
+   pero ningún control del formulario está atado a esa clave, y `toFormErrors` (de la Fase 1)
+   descarta el mensaje general cuando hay errores por campo. Resultado: la materia no se creaba
+   y la pantalla no explicaba por qué. Se añadió `withBlockMessage()` en el formulario de **web
+   y app**, que sube esos mensajes a general. Sin esto, el usuario habría visto un formulario que
+   simplemente no responde.
+2. **`calculateAbsenceLimit` no se tocó**, pero conviene anotar que el orden de las sesiones
+   importadas se corrigió durante el desarrollo: se ordenaban solo por hora, así que una materia
+   con clase el viernes y el lunes salía en la vista previa en orden inverso al de la semana.
+
+**Añadido**: `expo-clipboard`, para copiar el prompt y pegar la respuesta de la IA desde la app.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display;
+sin esa bandera, Qt aborta). Además, `adb shell input text` no puede teclear `{` ni `}`, así que
+la importación en la app se verificó comprobando que muestra correctamente un horario importado
+desde la web —que es justo lo que exige la paridad—, mientras que el flujo completo de pegado se
+cubrió en las suites de API y web.
+
+---
 
 #### Fase 1 — Cuentas y sesión · cerrada el 2026-08-16
 
@@ -230,14 +308,14 @@ Cambios que exigió la actualización:
 │   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
-│   │       ├── routes/      endpoints por dominio (health, auth)
+│   │       ├── routes/      endpoints por dominio (health, auth, schedule)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
 │   │
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── app/         rutas (/, /entrar, /registro, /perfil)
+│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -245,17 +323,18 @@ Cambios que exigió la actualización:
 │       ├── plugins/         plugins de configuración nativa (cleartext local)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/     Entrar, Registro, Inicio
+│           ├── screens/     Entrar, Registro, Inicio, Horario
 │           ├── components/  componentes propios de la app
 │           └── lib/         cliente de API y contexto de sesión
 │
 ├── packages/
 │   └── shared/              tipos de dominio, validaciones y lógica común
 │       └── src/
-│           ├── types/       entidades (Usuario, Sesión, errores de API…)
+│           ├── types/       entidades (Usuario, Sesión, Materia, errores de API…)
 │           ├── schemas/     validaciones compartidas
 │           ├── api/         cliente HTTP y llamadas tipadas, para web y app
-│           └── logic/       reglas puras (límite de faltas, errores de formulario, fechas)
+│           └── logic/       reglas puras (límite de faltas, horario, importación,
+│                            errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -340,11 +419,13 @@ simultánea en app y web. Aislamiento de datos por usuario.
 **Verificado el 2026-08-16**: misma cuenta activa en emulador Android y navegador a la vez, con
 cambios cruzados en ambos sentidos y sin acceso entre cuentas. Detalle en el historial de cierres.
 
-#### Fase 2 — Horario (P1)
+#### Fase 2 — Horario (P1) ✅
 Materias y sesiones (día, hora, aula). Alta manual e importación del JSON generado por IA a partir
 de una foto del horario; la app proporciona el prompt. Vista semanal.
-**Pendiente de auditar**: comodidad y agilidad del flujo de importación (reportado por el usuario).
-**Verificación**: horario capturado por ambos métodos idéntico en app y web.
+**Auditoría del flujo de importación hecha**: la v1 no validaba, duplicaba el horario al reimportar
+y no mostraba vista previa. Las tres cosas están corregidas (detalle en el historial de cierres).
+**Verificado el 2026-08-16**: un horario importado desde la web se ve idéntico en el emulador
+Android, con las mismas materias, colores, aulas y horas.
 
 #### Fase 3 — Control de faltas (P1)
 Registro por día completo o por materia/hora. Conteo por materia. Límite sugerido = 20% de las

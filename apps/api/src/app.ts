@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { AppError, errors, sendError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
+import { scheduleRoutes } from './routes/schedule.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -98,6 +99,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(scheduleRoutes);
 
   return app;
 }

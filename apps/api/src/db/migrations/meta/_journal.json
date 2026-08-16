@@ -15,6 +15,13 @@
       "when": 1786882888476,
       "tag": "0001_young_wildside",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786887505184,
+      "tag": "0002_harsh_nemesis",
+      "breakpoints": true
     }
   ]
 }

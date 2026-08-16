@@ -1,5 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
-import { ApiClient, createAuthApi, type TokenStore } from '@notecore/shared';
+import {
+  ApiClient,
+  createAuthApi,
+  createScheduleApi,
+  type TokenStore,
+} from '@notecore/shared';
 
 /**
  * Cliente de API de la app.
@@ -51,3 +56,4 @@ export const apiClient = new ApiClient({
 });
 
 export const authApi = createAuthApi(apiClient);
+export const scheduleApi = createScheduleApi(apiClient);
