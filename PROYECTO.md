@@ -353,6 +353,25 @@ datos— que **no se sube al repositorio** por contener secretos reales. Es desc
 - **spec-kit** — comandos `/speckit-*` para el flujo de especificación y planificación
 - **hallmark** — skill de diseño de UI, se usará en la Fase 11
 
+### Infraestructura Cloudflare
+
+La zona `ourocore.net` sirve todos los subdominios como `CNAME → <túnel>.cfargotunnel.com`
+con proxy activado.
+
+**Arreglado el 2026-08-16**: `ourocore.net` (sin `www`) devolvía 404. El registro DNS del apex
+estaba bien, pero la Redirect Rule creada desde la plantilla de Cloudflare usaba el patrón
+`https://ourocore.net` **sin comodín final**, que nunca coincidía porque Cloudflare normaliza las
+peticiones a `https://ourocore.net/` con barra. Corregida a `https://ourocore.net/*`: ahora
+responde 301 al `www` preservando ruta y query.
+
+**Pendiente para la Fase 1**: crear el túnel de `notecore.ourocore.net` apuntando a `web:3000`,
+con el servicio `cloudflared` en `infra/docker-compose.yml`. Se hace al cerrar la Fase 1, no
+antes: exponer la web al exterior sin autenticación no aporta nada.
+
+**Nota de limpieza**: el túnel `Horarios-Universidad-OuroCore` (de la v1 eliminada) sigue
+existiendo en estado `down`, y `horarios.ourocore.net` aún le apunta. Pendiente de decisión del
+usuario.
+
 ### Decisiones tomadas
 
 - **Nombre**: NoteCore — *Note* (horario, agenda, notas) + *Core* (el núcleo que lo centraliza),
