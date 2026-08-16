@@ -1,10 +1,13 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (none) → 1.0.0
-Rationale: Ratificación inicial de la constitución del proyecto PaginaHorarios v2.
+Version change: 1.0.0 → 1.1.0
+Rationale: Revisión del stack tecnológico. El Principio VIII se redefine: la restricción
+heredada de esbuild/Astro deja de aplicar al sustituir Astro por Next.js, y su lugar lo
+ocupa el tipado estricto con código compartido, que sirve mejor al Principio I (paridad).
 
-Modified principles: N/A (documento inicial)
+Modified principles:
+  - VIII. Restricciones Técnicas Heredadas → VIII. Tipado Estricto y Código Compartido
 
 Added sections:
   - Core Principles (I-VIII)
@@ -98,24 +101,28 @@ criterio con el profesor de la materia, y MUST ser editable por el usuario en cu
 reglamento. Un límite presentado como autoridad induciría al estudiante a un error con
 consecuencias académicas reales.
 
-### VIII. Restricciones Técnicas Heredadas
+### VIII. Tipado Estricto y Código Compartido
 
-La lógica JavaScript compleja MUST vivir en archivos `.js` separados, nunca inline en `<script>`
-dentro de archivos `.astro`, cuando el contenido incluya caracteres multi-byte (emojis, acentos) o
-llaves `{}` en el HTML. Esta regla se origina en un fallo reproducido de esbuild/Astro que rompe
-la compilación de forma no evidente.
+Todo el proyecto MUST escribirse en TypeScript con verificación estricta. Los tipos de las
+entidades del dominio y las validaciones de datos MUST definirse una sola vez en el paquete
+compartido y consumirse desde la API, la web y la app; NO se permite redefinirlos por cliente.
+Todo componente o lógica que sirva a web y app MUST vivir en el paquete compartido en lugar de
+duplicarse.
 
-**Rationale**: Problema ya diagnosticado y resuelto a costa de tiempo en la v1. Documentarlo
-impide reincidir.
+**Rationale**: Con dos clientes obligados a mantener paridad (Principio I), la duplicación es el
+mayor riesgo del proyecto: dos copias divergen en silencio. Un tipo compartido convierte esa
+divergencia en un error de compilación en vez de un fallo descubierto por el usuario.
 
 ## Restricciones Técnicas y de Stack
 
-- **App Android**: React Native con Expo. Distribución inicial por `.apk` de instalación directa;
-  Play Store como objetivo posterior. iOS queda explícitamente fuera de alcance en esta etapa; los
-  usuarios de iPhone acceden por web.
-- **Web**: aplicación responsive funcional en escritorio y navegador móvil.
-- **Backend**: Node.js + Express (ESM), API REST.
-- **Base de datos**: PostgreSQL.
+- **Lenguaje**: TypeScript en todas las capas, con verificación estricta.
+- **App Android**: React Native con Expo (Nueva Arquitectura). Distribución inicial por `.apk` de
+  instalación directa; Play Store como objetivo posterior. iOS queda explícitamente fuera de
+  alcance en esta etapa; los usuarios de iPhone acceden por web.
+- **Web**: Next.js, responsive y funcional en escritorio y navegador móvil. Comparte componentes y
+  lógica React con la app a través del paquete compartido.
+- **Backend**: Node.js + Fastify, API REST con validación de esquemas.
+- **Base de datos**: PostgreSQL con Drizzle ORM y migraciones versionadas.
 - **Autenticación**: cuenta única por usuario, con sesión válida simultáneamente en app y web.
 - **Identidad de usuario**: nombre mostrado (ej. `Brian Tellez`) y nombre de usuario único
   (ej. `@mizllet`), utilizado para búsqueda y perfil compartible.
@@ -157,4 +164,4 @@ fecha de última enmienda.
 (paridad), II (backend como fuente de verdad) y III (aislamiento de datos). Cualquier complejidad
 añadida que no sirva a un principio debe justificarse o eliminarse.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-16
+**Version**: 1.1.0 | **Ratified**: 2026-08-16 | **Last Amended**: 2026-08-16

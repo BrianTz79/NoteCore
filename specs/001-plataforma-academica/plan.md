@@ -18,16 +18,20 @@ verificada en backend, app y web antes de avanzar. La v1 existente queda respald
 
 | Aspecto | Decisión |
 |---------|----------|
-| Lenguaje backend | Node.js (ESM) + Express |
-| Base de datos | PostgreSQL con migraciones versionadas |
-| App móvil | React Native + Expo → `.apk` |
-| Web | Astro + Tailwind, responsive |
+| Lenguaje | TypeScript estricto en las tres capas |
+| Backend | Node.js + Fastify, con validación de esquemas |
+| Base de datos | PostgreSQL + Drizzle ORM, migraciones versionadas |
+| App móvil | React Native + Expo (Nueva Arquitectura) → `.apk` |
+| Web | Next.js + Tailwind, responsive |
+| Código compartido | `packages/shared`: tipos de dominio, validaciones y reglas puras |
 | Autenticación | JWT, sesiones concurrentes app + web |
 | Despliegue | Docker Compose + túnel Cloudflare |
 | Control de versiones | Git, commit al cierre de cada fase |
 
-**Restricción heredada**: lógica JS compleja en archivos `.js` separados, nunca inline en `.astro`
-con caracteres multi-byte o llaves `{}` (bug de esbuild ya diagnosticado en v1).
+**Revisión de stack (2026-08-16)**: se sustituyó Astro por Next.js. El producto es una aplicación
+con sesión y estado, no un sitio de contenido; compartir React entre web y app hace viable la
+paridad del Principio I sin escribir cada pantalla dos veces. La restricción de esbuild que
+arrastraba la v1 desaparece con el cambio.
 
 ## Constitution Check
 
@@ -40,7 +44,7 @@ con caracteres multi-byte o llaves `{}` (bug de esbuild ya diagnosticado en v1).
 | V. Offline-first | Fase 9 dedicada; el modelo de datos de fases previas contempla sincronización diferida |
 | VI. Datos históricos | Fase 7 archiva semestres; ninguna fase incluye borrado destructivo automático |
 | VII. Presets orientativos | Fase 3 muestra el límite sugerido con la recomendación de confirmar con el profesor |
-| VIII. Restricción esbuild | Aplicada en todo el trabajo web desde la fase 1 |
+| VIII. Tipado y código compartido | Fase 0 establece `packages/shared`; cada fase define ahí sus tipos y reglas antes de consumirlos |
 
 ## Fases de Implementación
 
@@ -48,14 +52,18 @@ con caracteres multi-byte o llaves `{}` (bug de esbuild ya diagnosticado en v1).
 
 **Objetivo**: dejar el proyecto listo para construir, sin funcionalidad de usuario todavía.
 
-- Estructura de carpetas (`backend/`, `frontend/`, `app/`, `docs/`, `specs/`)
-- Repositorio Git inicializado con `.gitignore` que excluye secretos y respaldos
-- `docker-compose.yml` para desarrollo: PostgreSQL, backend, frontend
-- Sistema de migraciones de base de datos
+- Monorepo TypeScript con workspaces (`apps/api`, `apps/web`, `apps/mobile`, `packages/shared`)
+- Configuración de TypeScript estricto compartida entre paquetes
+- Repositorio Git inicializado con `.gitignore` que excluye secretos y respaldos ✅
+- `infra/docker-compose.yml` para desarrollo: PostgreSQL, API y web
+- Drizzle configurado con la primera migración aplicada
+- API Fastify que arranca y responde a una comprobación de salud
+- Web Next.js que carga
 - Proyecto Expo inicializado y compilando a `.apk`
-- Documento `docs/PROYECTO.md` en marcha
+- `PROYECTO.md` en la raíz, en marcha ✅
 
-**Verificación**: los tres servicios levantan; la app compila e instala en un dispositivo.
+**Verificación**: los tres servicios levantan; la app instala en un dispositivo; un tipo definido
+en `packages/shared` se importa sin error desde `api`, `web` y `mobile`.
 
 ---
 
@@ -213,24 +221,19 @@ rechazan.
 ## Project Structure
 
 ```
-backend/
-├── src/
-│   ├── db/           migraciones, pool de conexión
-│   ├── routes/       endpoints por dominio
-│   ├── middleware/   autenticación, validación
-│   └── services/     lógica de negocio
-frontend/             aplicación web (Astro)
-├── src/
-│   ├── pages/
-│   ├── components/
-│   └── lib/          lógica en .js separados (Principio VIII)
-app/                  aplicación Android (Expo)
-├── src/
-│   ├── screens/
-│   ├── components/
-│   └── lib/
-docs/
-└── PROYECTO.md       estado y avance por fases
+PROYECTO.md           estado y avance por fases (raíz, consulta rápida)
+CLAUDE.md             reglas del proyecto y flujo de trabajo
+apps/
+├── api/              backend Fastify + Drizzle
+│   └── src/{db,routes,middleware,services}/
+├── web/              aplicación web Next.js
+│   └── src/{app,components,lib}/
+└── mobile/           aplicación Android Expo
+    └── src/{screens,components,lib}/
+packages/
+└── shared/           tipos, validaciones y reglas comunes (Principio VIII)
+    └── src/{types,schemas,logic}/
+infra/                Docker Compose y despliegue
 specs/
 └── 001-plataforma-academica/
 ```

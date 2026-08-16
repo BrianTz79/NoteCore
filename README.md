@@ -31,11 +31,14 @@ cosas en un solo lugar, con el horario como eje.
 
 | Capa | Tecnología |
 |------|-----------|
-| App Android | React Native (Expo) |
-| Web | Astro + Tailwind CSS |
-| Backend | Node.js + Express (ESM), API REST |
-| Base de datos | PostgreSQL |
+| Lenguaje | TypeScript (estricto) |
+| App Android | React Native + Expo |
+| Web | Next.js + Tailwind CSS |
+| Backend | Node.js + Fastify, API REST |
+| Base de datos | PostgreSQL + Drizzle ORM |
 | Infraestructura | Docker Compose, túnel Cloudflare |
+
+Web y app comparten componentes, tipos y lógica de dominio a través de `packages/shared`.
 
 ## Puesta en marcha
 

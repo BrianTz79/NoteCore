@@ -98,27 +98,31 @@ _Sin fases cerradas todavía._
 ├── .env.example             plantilla de configuración
 │
 ├── apps/
-│   ├── api/                 backend — Node.js + Express
+│   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
-│   │       ├── db/          conexión y migraciones versionadas
+│   │       ├── db/          esquema y migraciones versionadas
 │   │       ├── routes/      endpoints por dominio
 │   │       ├── middleware/  autenticación y validación
 │   │       └── services/    lógica de negocio
 │   │
-│   ├── web/                 aplicación web — Astro + Tailwind
+│   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── pages/
-│   │       ├── components/
-│   │       └── lib/         lógica en .js separados (ver principio VIII)
+│   │       ├── app/         rutas
+│   │       ├── components/  componentes propios de web
+│   │       └── lib/         cliente de API y utilidades
 │   │
 │   └── mobile/              app Android — React Native + Expo
 │       └── src/
 │           ├── screens/
-│           ├── components/
+│           ├── components/  componentes propios de la app
 │           └── lib/
 │
 ├── packages/
-│   └── shared/              tipos y validaciones comunes a web y app
+│   └── shared/              tipos de dominio, validaciones y lógica común
+│       └── src/
+│           ├── types/       entidades (Usuario, Materia, Falta…)
+│           ├── schemas/     validaciones compartidas
+│           └── logic/       reglas puras (p. ej. cálculo de límite de faltas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -157,24 +161,34 @@ control de faltas y agenda de tareas en un solo lugar, con compartición entre c
 5. **Offline-first en la app** — lo ya cargado se consulta sin conexión
 6. **Los datos históricos no se borran** — los semestres se archivan
 7. **Los presets normativos son orientativos** — el límite de faltas se confirma con el profesor
-8. **Restricciones técnicas heredadas** — JS complejo fuera de los `.astro` (bug de esbuild)
+8. **Tipado estricto y código compartido** — los tipos se definen una vez y se usan en las tres capas
 
 ### 4.3 Stack
 
-| Capa | Tecnología |
-|------|-----------|
-| App Android | React Native + Expo |
-| Web | Astro + Tailwind CSS |
-| Backend | Node.js + Express (ESM), API REST |
-| Base de datos | PostgreSQL |
-| Infraestructura | Docker Compose + túnel Cloudflare |
+| Capa | Tecnología | Por qué |
+|------|-----------|---------|
+| Lenguaje | **TypeScript** (estricto) | Tipos compartidos entre las tres capas: si un campo cambia, el compilador señala dónde rompe |
+| App Android | **React Native + Expo** | Nueva Arquitectura estable; genera `.apk`, y cubre notificaciones, cámara/QR y widgets |
+| Web | **Next.js + Tailwind CSS** | Comparte componentes y lógica React con la app; evita escribir cada pantalla dos veces |
+| Backend | **Node.js + Fastify** | Rápido, con validación de esquemas integrada |
+| Base de datos | **PostgreSQL + Drizzle ORM** | Migraciones versionadas con tipos derivados del esquema |
+| Compartido | **`packages/shared`** | Tipos de dominio, validaciones y componentes comunes a web y app |
+| Infraestructura | **Docker Compose + Cloudflare Tunnel** | Igual que la v1, ya probado |
+
+**Decisión de stack (2026-08-16)**: se sustituyó Astro por Next.js. Astro brilla en sitios de
+contenido, pero este producto es una aplicación con sesión, estado y muchas pantallas
+interactivas. Con Next.js, web y app comparten React, lo que hace viable el Principio I (paridad)
+sin duplicar cada pantalla. Como efecto secundario desaparece la restricción de esbuild que
+arrastraba la v1.
 
 ### 4.4 Detalle de fases
 
 #### Fase 0 — Cimientos
-Docker Compose de desarrollo, sistema de migraciones versionadas, API mínima que responde, web
-mínima que carga, proyecto Expo compilando a `.apk`.
-**Verificación**: los tres servicios levantan y la app instala en un dispositivo.
+Monorepo TypeScript con workspaces. Docker Compose de desarrollo (PostgreSQL + API + web). Drizzle
+configurado con la primera migración. API Fastify que responde. Web Next.js que carga. Proyecto
+Expo compilando a `.apk`. Paquete `shared` consumido por las tres capas.
+**Verificación**: los tres servicios levantan, la app instala en un dispositivo, y un tipo definido
+en `shared` se importa correctamente desde `api`, `web` y `mobile`.
 
 #### Fase 1 — Cuentas y sesión (P1)
 Registro, login y perfil con nombre mostrado y nombre de usuario único (`@usuario`). Sesión

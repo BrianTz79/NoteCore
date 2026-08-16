@@ -1,7 +1,9 @@
 # PaginaHorarios
 
 Plataforma de organización académica para estudiantes universitarios: horario, control de faltas y
-agenda de tareas. **Dos clientes**: app Android (React Native/Expo, principal) y web (Astro).
+agenda de tareas. **Dos clientes**: app Android (React Native/Expo, principal) y web (Next.js).
+
+**Stack**: TypeScript en todo · Fastify + Drizzle + PostgreSQL · Next.js + Tailwind · Expo
 
 ## Antes de trabajar, lee siempre
 
@@ -31,10 +33,12 @@ en el servidor. Nunca confíes en un identificador de usuario que venga del clie
 Al aceptar un compartido, el receptor obtiene una copia independiente. No hay vínculo posterior
 entre origen y destino.
 
-### Restricción técnica heredada (importante)
-En `apps/web`, la lógica JS compleja va en archivos `.js` separados, **nunca inline** en `<script>`
-dentro de `.astro`, cuando haya caracteres multi-byte (emojis, acentos) o llaves `{}` en el HTML.
-Bug reproducido de esbuild/Astro que rompe la compilación de forma no evidente.
+### Tipado estricto y código compartido
+Todo en TypeScript estricto. Los tipos de dominio y las validaciones se definen **una sola vez** en
+`packages/shared` y se consumen desde `api`, `web` y `mobile` — nunca los redefinas por cliente.
+Todo componente o lógica que sirva a web y app va en `shared` en lugar de duplicarse.
+
+Antes de crear un tipo o un componente, revisa si ya existe en `packages/shared`.
 
 ### Datos históricos
 Los semestres se archivan, nunca se borran. Ninguna operación de rutina destruye historial.
@@ -47,10 +51,10 @@ visible de confirmarlo con el profesor.
 ## Estructura
 
 ```
-apps/api/       backend Node.js + Express (ESM) + PostgreSQL
-apps/web/       Astro + Tailwind
+apps/api/       Fastify + Drizzle + PostgreSQL
+apps/web/       Next.js + Tailwind
 apps/mobile/    React Native + Expo
-packages/shared tipos y validaciones comunes
+packages/shared tipos de dominio, validaciones y lógica común  ← revisa aquí primero
 infra/          Docker Compose
 specs/          especificación y plan
 ```
