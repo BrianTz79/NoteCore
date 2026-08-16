@@ -53,18 +53,20 @@ docker compose up -d
 ## Estructura del proyecto
 
 ```
-backend/     API REST y acceso a base de datos
-frontend/    Aplicación web
-app/         Aplicación Android (React Native)
-docs/        Documentación y estado del proyecto
-specs/       Especificaciones y planes de implementación
-.specify/    Constitución del proyecto y plantillas
+PROYECTO.md        estado del proyecto y avance por fases
+apps/
+├── api/           backend REST y acceso a base de datos
+├── web/           aplicación web
+└── mobile/        aplicación Android (React Native)
+packages/shared/   tipos y validaciones comunes
+infra/             Docker Compose y despliegue
+specs/             especificaciones y planes de implementación
 ```
 
 ## Documentación
 
 El estado del proyecto, las fases completadas y las pendientes se mantienen en
-[`docs/PROYECTO.md`](docs/PROYECTO.md).
+[`PROYECTO.md`](PROYECTO.md).
 
 Los principios que rigen el desarrollo están en
 [`.specify/memory/constitution.md`](.specify/memory/constitution.md).
