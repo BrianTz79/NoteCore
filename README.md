@@ -5,7 +5,7 @@ compartición entre compañeros, en un solo lugar.
 
 Disponible como **app Android** (principal) y **aplicación web** en [notecore.ourocore.net](https://notecore.ourocore.net).
 
-> Parte del ecosistema **[OuroCore](https://ourocore.net)**.
+> Parte del ecosistema **[OuroCore](https://www.ourocore.net/)**.
 
 ## El problema
 
@@ -44,15 +44,25 @@ Web y app comparten componentes, tipos y lógica de dominio a través de `packag
 
 ## Puesta en marcha
 
+Requiere **Node 20 o superior** y Docker.
+
 ```bash
 # 1. Configurar variables de entorno
 cp .env.example .env
-#    Editar .env con los valores reales
+#    Editar .env: contraseña de PostgreSQL y JWT_SECRET (openssl rand -hex 32)
 
-# 2. Levantar los servicios
-docker compose up -d
+# 2. Instalar dependencias y compilar el paquete compartido
+npm install
+npm run build:shared
 
-# 3. La web queda disponible en http://localhost:8083
+# 3. Levantar la base de datos y aplicar migraciones
+npm run docker:up
+npm run db:migrate
+
+# 4. Arrancar en desarrollo
+npm run dev:api      # API   → http://localhost:3101/health
+npm run dev:web      # Web   → http://localhost:3000
+npm run dev:mobile   # App   → Expo
 ```
 
 ## Estructura del proyecto
@@ -83,7 +93,8 @@ backend, app y web. Una fase no se cierra hasta verificarse en ambas plataformas
 
 ## Créditos
 
-Desarrollado por [@mizllet](https://github.com/mizllet).
+Desarrollado por **Brian Tellez** — *mizllet* — [@BrianTz79](https://github.com/BrianTz79).
+Más proyectos y trabajo en [briantellez.ourocore.net](https://briantellez.ourocore.net/).
 
 Este proyecto se desarrolla con asistencia de [Claude Code](https://claude.com/claude-code). Las
 decisiones de producto, alcance y arquitectura son propias; la asistencia de IA queda reflejada en

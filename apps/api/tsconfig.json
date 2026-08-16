@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "types": ["node"]
+  },
+  // `drizzle.config.ts` queda fuera: vive en la raíz del paquete, no bajo `rootDir`,
+  // y drizzle-kit lo compila por su cuenta al ejecutarse.
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

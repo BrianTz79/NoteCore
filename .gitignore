@@ -7,9 +7,21 @@
 !**/.env.example
 *.pem
 *.key
+*.p12
+*.jks
+*.crt
+secrets/
+# Credenciales de servicio (Google Play, Expo, Cloudflare…)
+**/google-services.json
+**/service-account*.json
+**/*credentials*.json
 
 # === Respaldo local de la v1 (contiene .env con secretos reales) ===
 _respaldo_v1_*/
+# Cualquier respaldo o volcado de base de datos
+*.sql
+*.dump
+!apps/api/src/db/migrations/*.sql
 
 # === Dependencias ===
 node_modules/
@@ -18,20 +30,27 @@ node_modules/
 # === Builds ===
 dist/
 build/
-.astro/
+out/
 **/dist/
 **/build/
+*.tsbuildinfo
+
+# === Next.js ===
+.next/
+**/.next/
+next-env.d.ts
 
 # === React Native / Expo ===
 .expo/
 .expo-shared/
 *.apk
 *.aab
+# Los keystores nunca se suben: el de release firma la app publicada
 *.keystore
-!debug.keystore
 android/app/build/
 android/build/
 android/.gradle/
+android/local.properties
 ios/Pods/
 ios/build/
 

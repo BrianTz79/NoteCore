@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "NoteCore",
+    "slug": "notecore",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "notecore",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "platforms": ["android"],
+    "android": {
+      "package": "net.ourocore.notecore",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      }
+    },
+    "extra": {
+      "apiUrl": "http://localhost:3001"
+    }
+  }
+}

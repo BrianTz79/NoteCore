@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Planificación completa — listo para Fase 0 |
-| **Fases completadas** | 0 de 12 |
-| **Fase actual** | Fase 0 — Cimientos (no iniciada) |
+| **Estado general** | Cimientos listos — construyendo funcionalidad |
+| **Fases completadas** | 1 de 12 |
+| **Fase actual** | Fase 1 — Cuentas y sesión (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `░░░░░░░░░░░░` 0%
+**Avance**: `█░░░░░░░░░░░` 8%
 
 ### Qué se ha hecho
 
@@ -48,11 +48,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Repositorio Git** inicializado, con secretos protegidos y verificados
 - **v1 eliminada**: contenedores, volumen de base de datos y código retirados. Queda un respaldo
   local fuera del repositorio
+- **Fase 0 cerrada**: monorepo con las cuatro capas compilando en TypeScript estricto, PostgreSQL
+  con migraciones versionadas, API respondiendo y bundle de Android generado
 
 ### Próximo paso
 
-**Fase 0 — Cimientos**: Docker Compose de desarrollo, sistema de migraciones, API mínima, web
-mínima y proyecto Expo compilando a `.apk`.
+**Fase 1 — Cuentas y sesión**: registro, login y perfil con `@usuario` único, sesión simultánea en
+app y web, y aislamiento de datos por usuario verificado en el servidor.
 
 ---
 
@@ -62,7 +64,7 @@ mínima y proyecto Expo compilando a `.apk`.
 
 | # | Fase | Prio | Estado | API | Web | App |
 |---|------|------|--------|-----|-----|-----|
-| 0 | Cimientos | — | ⬜ | ⬜ | ⬜ | ⬜ |
+| 0 | Cimientos | — | ✅ | ✅ | ✅ | ✅ |
 | 1 | Cuentas y sesión | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 2 | Horario | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 3 | Control de faltas | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -85,7 +87,35 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 
 ### Historial de cierres
 
-_Sin fases cerradas todavía._
+#### Fase 0 — Cimientos · cerrada el 2026-08-16
+
+**Entregado**: monorepo npm workspaces (`apps/api`, `apps/web`, `apps/mobile`,
+`packages/shared`) con TypeScript estricto compartido; Docker Compose con PostgreSQL 17; Drizzle
+con la primera migración aplicada; API Fastify con `/health`; web Next.js 15; app Expo 52.
+
+**Verificación ejecutada**:
+
+| Comprobación | Resultado |
+|---|---|
+| `npm run typecheck` en las 4 capas | sin errores en modo estricto |
+| PostgreSQL en contenedor | `healthy` |
+| Migración `0000` generada y aplicada | tabla `users` creada |
+| `GET /health` | `200` · `{"status":"ok","database":"up"}` |
+| Web Next.js | `200`, renderiza valores calculados por `shared` |
+| Bundle de Android (`expo export`) | 560 módulos, `calculateAbsenceLimit` incluido |
+| Tipo de `shared` importado desde api + web + mobile | correcto en las tres |
+
+**Corregido durante la fase**: `calculateAbsenceLimit` devolvía 15 en lugar de 16 faltas para 80
+sesiones. La causa era `1 - 0.8 = 0.19999999999999996` en coma flotante, que `Math.floor`
+truncaba a la baja. Ahora el cálculo usa aritmética entera (`sessions * 20 / 100`) y está
+verificado con 8 casos. El fallo habría restado una falta de margen a cada materia en la Fase 3.
+
+**Decisión**: el puerto por defecto de la API pasó de 3001 a **3101**, porque el 3001 ya lo ocupa
+de forma permanente otro servicio del equipo (Koko Signaling).
+
+**Pendiente no bloqueante**: Node 18.19.1 en la máquina de desarrollo está fuera de soporte; el
+proyecto declara `engines: node >=20.11.0`. Y `npm audit` reporta vulnerabilidades heredadas de
+la cadena de Expo SDK 52, resolubles al subir de SDK mayor.
 
 ---
 

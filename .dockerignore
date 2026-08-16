@@ -1,0 +1,35 @@
+# Nunca enviar secretos ni respaldos al contexto de build de Docker.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+_respaldo_v1_*/
+*.pem
+*.key
+*.keystore
+
+# Dependencias y builds: se reconstruyen dentro de la imagen.
+node_modules
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.expo
+
+# La app móvil no participa en las imágenes de servidor.
+apps/mobile
+
+# Metadatos y documentación.
+.git
+.github
+.claude
+.specify
+specs
+*.md
+!README.md
+
+# Logs y temporales.
+*.log
+tmp
+coverage
