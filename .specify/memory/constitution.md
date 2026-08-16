@@ -20,7 +20,7 @@ Removed sections: ninguna
 Follow-up TODOs: ninguno
 -->
 
-# PaginaHorarios Constitution
+# NoteCore Constitution
 
 Sistema de gestión de horarios, control de asistencias y agenda académica para estudiantes
 universitarios. Disponible como app Android (principal) y aplicación web (PC y móvil).
@@ -142,8 +142,8 @@ divergencia en un error de compilación en vez de un fallo descubierto por el us
   cada fase.
 - Los cambios de esquema de base de datos MUST ser migraciones versionadas, nunca ediciones
   destructivas sobre datos existentes.
-- Antes de sustituir el sistema v1 en producción, la v2 MUST demostrar paridad funcional con lo
-  que la v1 ya ofrece a sus usuarios actuales.
+- Antes de publicar una versión a usuarios reales, la funcionalidad MUST estar verificada en app y
+  web conforme a la puerta de fase.
 
 ## Governance
 

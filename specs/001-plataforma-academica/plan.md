@@ -3,16 +3,17 @@
 **Feature Directory**: `specs/001-plataforma-academica`
 **Created**: 2026-08-16
 **Spec**: [spec.md](spec.md)
-**Constitution**: [constitution.md](../../.specify/memory/constitution.md) v1.0.0
+**Constitution**: [constitution.md](../../.specify/memory/constitution.md) v1.1.0
 
 ## Summary
 
-Reconstrucción de PaginaHorarios como plataforma multiusuario con dos clientes —app Android
-(React Native/Expo) y web (Astro)— sobre una API REST única en Node.js/Express con PostgreSQL.
+NoteCore es una plataforma de organización académica multiusuario con dos clientes —app Android
+(React Native/Expo) y web (Next.js)— sobre una API REST única en Fastify con PostgreSQL, escrita
+en TypeScript de extremo a extremo.
 
 El desarrollo procede en **fases verticales**: cada fase entrega una funcionalidad completa y
-verificada en backend, app y web antes de avanzar. La v1 existente queda respaldada en
-`_respaldo_v1_20260816/` y sigue operando en producción hasta que la v2 alcance paridad funcional.
+verificada en app y web antes de avanzar. La v1 fue eliminada; queda un respaldo local descartable
+en `_respaldo_v1_20260816/`, fuera del repositorio.
 
 ## Technical Context
 
@@ -245,7 +246,7 @@ specs/
 | Paridad de dos clientes | Divergencia funcional entre app y web | Puerta de cierre por fase que exige verificar ambos |
 | Sincronización offline | Conflictos de escritura diferida | Fase dedicada, endpoints idempotentes, resolución por marca de tiempo |
 | Mensajería en tiempo real | Alta complejidad y superficie de privacidad | Última fase, sobre base estable; alcance limitado a texto entre contactos |
-| Migración desde v1 | Pérdida de datos reales en uso | v1 respaldada e intacta en producción hasta demostrar paridad |
+| Arranque desde cero | Perder aprendizajes de la v1 | Respaldo local del código y del esquema de la v1 disponible para consulta |
 | Modelo de semestres | Afecta a materias, agenda y faltas | Se introduce en fase 7 con migración que asigna lo existente a un semestre activo |
 
 ## Notas de decisión

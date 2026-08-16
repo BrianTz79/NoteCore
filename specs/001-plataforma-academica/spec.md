@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: Reconstrucción completa de PaginaHorarios como plataforma multiusuario con app Android
+**Input**: Reconstrucción completa de NoteCore como plataforma multiusuario con app Android
 (principal) y web (PC/móvil): horario visual, control de faltas, agenda de tareas, compartición por
 QR/código/enlace, gestión de semestres, notificaciones, offline y sección social con perfiles y
 mensajería.

@@ -1,4 +1,4 @@
-# PaginaHorarios
+# NoteCore
 
 Plataforma de organización académica para estudiantes universitarios: horario, control de faltas y
 agenda de tareas. **Dos clientes**: app Android (React Native/Expo, principal) y web (Next.js).

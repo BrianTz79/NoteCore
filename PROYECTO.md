@@ -1,4 +1,4 @@
-# PaginaHorarios — Estado del Proyecto
+# NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
 > Última actualización: **2026-08-16**
@@ -36,7 +36,7 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | **Fases completadas** | 0 de 12 |
 | **Fase actual** | Fase 0 — Cimientos (no iniciada) |
 | **Bloqueos** | Ninguno |
-| **Pendiente de decisión** | Nombre definitivo del proyecto · crear repositorio en GitHub |
+| **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
 **Avance**: `░░░░░░░░░░░░` 0%
 
@@ -145,12 +145,23 @@ app va en `packages/shared` para no duplicar.
 
 ### 4.1 Qué es
 
-Plataforma de organización académica para estudiantes universitarios. Reúne horario de clases,
-control de faltas y agenda de tareas en un solo lugar, con compartición entre compañeros.
+**NoteCore** — el núcleo de tu vida académica. Reúne horario de clases, control de faltas y agenda
+de tareas en un solo lugar, con compartición entre compañeros.
 
 **Dos clientes, mismo producto**:
-- **App Android** (principal) — instalación por `.apk`
-- **Web** (PC y móvil) — para quien no instala la app y para usuarios de iPhone
+- **App Android** (principal) — instalación por `.apk`, nombre de paquete `net.ourocore.notecore`
+- **Web** (PC y móvil) — en `notecore.ourocore.net`, para quien no instala la app y para usuarios
+  de iPhone
+
+**Identidad**: el nombre une *Note* (las notas, el horario, la agenda) con *Core* (el núcleo donde
+se centraliza todo), y enlaza con la marca **OuroCore**.
+
+| | |
+|---|---|
+| Repositorio | https://github.com/BrianTz79/NoteCore |
+| Web | `notecore.ourocore.net` |
+| Paquete Android | `net.ourocore.notecore` |
+| Scope npm | `@notecore/*` |
 
 ### 4.2 Principios rectores
 
@@ -285,7 +296,10 @@ datos— que **no se sube al repositorio** por contener secretos reales. Es desc
 - **spec-kit** — comandos `/speckit-*` para el flujo de especificación y planificación
 - **hallmark** — skill de diseño de UI, se usará en la Fase 11
 
-### Pendientes de decisión
+### Decisiones tomadas
 
-- **Nombre definitivo** del proyecto, la app y la web
-- **Crear el repositorio en GitHub** (requiere instalar `gh` o crearlo desde la web)
+- **Nombre**: NoteCore — *Note* (horario, agenda, notas) + *Core* (el núcleo que lo centraliza),
+  en línea con la marca OuroCore
+- **Repositorio**: https://github.com/BrianTz79/NoteCore
+- **Web**: `notecore.ourocore.net`
+- **Stack**: revisado el 2026-08-16 (ver sección 4.3)

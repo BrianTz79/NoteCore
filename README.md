@@ -1,14 +1,16 @@
-# PaginaHorarios
+# NoteCore
 
-Plataforma de organización académica para estudiantes universitarios: horario visual, control de
-faltas, agenda de tareas y compartición entre compañeros.
+**El núcleo de tu vida académica.** Horario visual, control de faltas, agenda de tareas y
+compartición entre compañeros, en un solo lugar.
 
-Disponible como **app Android** (principal) y **aplicación web** para PC y móvil.
+Disponible como **app Android** (principal) y **aplicación web** en [notecore.ourocore.net](https://notecore.ourocore.net).
+
+> Parte del ecosistema **[OuroCore](https://ourocore.net)**.
 
 ## El problema
 
 Los estudiantes pierden materias por acumular faltas sin darse cuenta, y organizan sus tareas en
-notas dispersas que no están vinculadas a su horario real de clases. PaginaHorarios reúne ambas
+notas dispersas que no están vinculadas a su horario real de clases. NoteCore reúne ambas
 cosas en un solo lugar, con el horario como eje.
 
 ## Funcionalidades
