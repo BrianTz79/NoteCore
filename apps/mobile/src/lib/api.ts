@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import {
   ApiClient,
+  createAttendanceApi,
   createAuthApi,
   createScheduleApi,
   type TokenStore,
@@ -57,3 +58,4 @@ export const apiClient = new ApiClient({
 
 export const authApi = createAuthApi(apiClient);
 export const scheduleApi = createScheduleApi(apiClient);
+export const attendanceApi = createAttendanceApi(apiClient);

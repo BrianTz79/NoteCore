@@ -1,5 +1,16 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, text, time, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  date,
+  index,
+  integer,
+  pgTable,
+  text,
+  time,
+  timestamp,
+  unique,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 /**
  * Esquema de base de datos.
@@ -69,6 +80,15 @@ export const subjects = pgTable(
     name: text('name').notNull(),
     /** Color con el que se distingue en la vista semanal (FR-010). Formato `#rrggbb`. */
     color: text('color').notNull(),
+    /**
+     * Límite de faltas fijado a mano por el estudiante (FR-015).
+     *
+     * `null` significa "usa la sugerencia calculada": no se guarda el 20% ya resuelto
+     * porque cambiaría al editar el horario o las semanas del semestre, y quedaría un
+     * número obsoleto. Guardando solo lo que el usuario decidió, la sugerencia se recalcula
+     * siempre y se distingue de un ajuste deliberado (Principio VII).
+     */
+    absenceLimit: integer('absence_limit'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -112,10 +132,100 @@ export const scheduleBlocks = pgTable(
   ],
 );
 
-export const usersRelations = relations(users, ({ many }) => ({
+/**
+ * Inasistencias registradas (FR-011, FR-012, FR-017).
+ *
+ * Una fila por sesión a la que se faltó, nunca por día: una materia puede tener dos clases
+ * el mismo día, y sin el bloque no se podría saber si se faltó a una o a las dos. El "día
+ * completo" de FR-011 se guarda como varias filas, una por clase de ese día.
+ *
+ * La fecha es `date` de PostgreSQL —día de calendario sin hora ni zona—: "falté el 3 de
+ * septiembre" es un día, no un instante. Con `timestamp` la falta se desplazaría de día al
+ * cambiar de huso.
+ */
+export const absenceRecords = pgTable(
+  'absence_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    subjectId: uuid('subject_id')
+      .notNull()
+      .references(() => subjects.id, { onDelete: 'cascade' }),
+    /**
+     * Sesión a la que se faltó.
+     *
+     * Si el estudiante reorganiza su horario y borra la sesión, la falta se va con ella:
+     * una inasistencia a una clase que ya no existe en el horario no se puede contar contra
+     * ningún límite. No es historial archivable (Principio VI), es un registro del semestre
+     * en curso que la Fase 7 archivará como parte del semestre entero.
+     */
+    blockId: uuid('block_id')
+      .notNull()
+      .references(() => scheduleBlocks.id, { onDelete: 'cascade' }),
+    date: date('date').notNull(),
+    /** Justificada: se conserva pero no cuenta para el límite (FR-017). */
+    justified: boolean('justified').notNull().default(false),
+    note: text('note'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('absence_records_user_id_idx').on(table.userId),
+    index('absence_records_subject_id_idx').on(table.subjectId),
+    // El panel de faltas cuenta por materia y la pantalla de marcar consulta por fecha.
+    index('absence_records_user_date_idx').on(table.userId, table.date),
+    /**
+     * Una misma sesión no puede tener dos faltas el mismo día.
+     *
+     * Lo impone la base de datos y no solo el servicio: dos toques rápidos en la app
+     * lanzarían dos peticiones a la vez, y la comprobación previa de ambas pasaría antes de
+     * que ninguna insertara. El conteo de FR-012 saldría inflado.
+     */
+    unique('absence_records_block_date_unique').on(table.blockId, table.date),
+  ],
+);
+
+/**
+ * Ajustes del usuario.
+ *
+ * Una fila por usuario, creada al vuelo la primera vez que hace falta. De momento solo
+ * guarda las semanas del semestre; es el sitio natural para lo que vayan pidiendo las
+ * fases siguientes.
+ */
+export const userSettings = pgTable('user_settings', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  /**
+   * Semanas de clase del semestre, base del límite sugerido (FR-013).
+   *
+   * Es un ajuste del usuario porque el calendario varía por plantel y periodo. La Fase 7 lo
+   * sustituirá por las fechas reales del semestre.
+   */
+  semesterWeeks: integer('semester_weeks').notNull().default(16),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   subjects: many(subjects),
   scheduleBlocks: many(scheduleBlocks),
+  absenceRecords: many(absenceRecords),
+  settings: one(userSettings),
+}));
+
+export const absenceRecordsRelations = relations(absenceRecords, ({ one }) => ({
+  user: one(users, { fields: [absenceRecords.userId], references: [users.id] }),
+  subject: one(subjects, { fields: [absenceRecords.subjectId], references: [subjects.id] }),
+  block: one(scheduleBlocks, {
+    fields: [absenceRecords.blockId],
+    references: [scheduleBlocks.id],
+  }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, { fields: [userSettings.userId], references: [users.id] }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -125,6 +235,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   user: one(users, { fields: [subjects.userId], references: [users.id] }),
   blocks: many(scheduleBlocks),
+  absences: many(absenceRecords),
 }));
 
 export const scheduleBlocksRelations = relations(scheduleBlocks, ({ one }) => ({
@@ -140,3 +251,6 @@ export type SubjectRow = typeof subjects.$inferSelect;
 export type NewSubjectRow = typeof subjects.$inferInsert;
 export type ScheduleBlockRow = typeof scheduleBlocks.$inferSelect;
 export type NewScheduleBlockRow = typeof scheduleBlocks.$inferInsert;
+export type AbsenceRecordRow = typeof absenceRecords.$inferSelect;
+export type NewAbsenceRecordRow = typeof absenceRecords.$inferInsert;
+export type UserSettingsRow = typeof userSettings.$inferSelect;

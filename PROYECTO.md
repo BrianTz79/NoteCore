@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario capturable y visible en app y web |
-| **Fases completadas** | 3 de 12 |
-| **Fase actual** | Fase 3 — Control de faltas (no iniciada) |
+| **Estado general** | Horario y control de faltas funcionando en app y web |
+| **Fases completadas** | 4 de 12 |
+| **Fase actual** | Fase 4 — Agenda (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `███░░░░░░░░░` 25%
+**Avance**: `████░░░░░░░░` 33%
 
 ### Qué se ha hecho
 
@@ -56,11 +56,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Fase 2 cerrada**: materias y sesiones con alta manual e importación desde el JSON de una IA,
   con vista previa antes de escribir; vista semanal idéntica en app y web, verificada con el
   mismo horario en emulador Android y navegador a la vez
+- **Fase 3 cerrada**: registro de faltas por sesión o día completo, conteo por materia con
+  límite sugerido editable y alerta de proximidad; verificada marcando en la web y leyendo en el
+  emulador Android, y al revés
 
 ### Próximo paso
 
-**Fase 3 — Control de faltas**: registro por día completo o por materia/hora, conteo por materia
-y límite sugerido (20% de las sesiones) siempre editable.
+**Fase 4 — Agenda**: tareas, proyectos y actividades con materia y fecha límite opcionales, y
+estado de completado.
 
 ---
 
@@ -73,7 +76,7 @@ y límite sugerido (20% de las sesiones) siempre editable.
 | 0 | Cimientos | — | ✅ | ✅ | ✅ | ✅ |
 | 1 | Cuentas y sesión | P1 | ✅ | ✅ | ✅ | ✅ |
 | 2 | Horario | P1 | ✅ | ✅ | ✅ | ✅ |
-| 3 | Control de faltas | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 3 | Control de faltas | P1 | ✅ | ✅ | ✅ | ✅ |
 | 4 | Agenda | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 5 | Calendario y recordatorios | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 6 | Compartir | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -92,6 +95,83 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 3 — Control de faltas · cerrada el 2026-08-16
+
+**Entregado**: registro de inasistencias eligiendo fecha y, dentro de ella, una sesión suelta o el
+día completo (FR-011); conteo por materia (FR-012); límite sugerido del 20% de las sesiones del
+semestre (FR-013), presentado siempre con la recomendación de confirmarlo con el profesor (FR-014)
+y editable por materia (FR-015); alerta al acercarse al límite (FR-016); faltas justificables y
+eliminables, con el conteo recalculado (FR-017).
+
+**El problema del semestre que todavía no existe**. FR-013 mide el límite sobre las sesiones
+totales *del semestre*, pero el semestre como entidad —con sus fechas— es la Fase 7. Se resolvió
+con un ajuste de **semanas del semestre** por usuario (16 por defecto, lo habitual en el TecNM):
+el total es `sesiones semanales × semanas`. Cuando la Fase 7 traiga las fechas reales, se sustituye
+`estimateTotalSessions` por el conteo del calendario y nada más cambia.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| La falta se guarda **por sesión**, no por materia y día | Una materia puede tener dos clases el mismo día; sin el bloque no se sabría si se faltó a una o a las dos, y el conteo de FR-012 saldría mal |
+| El **día completo no es un modo aparte**: el cliente manda todas las sesiones del día | El servidor guarda siempre lo mismo —una falta por sesión— así que el conteo no depende de cómo se registró |
+| `absence_limit` guarda **solo lo que el usuario fijó**; `null` = usa la sugerencia | Guardar el 20% ya resuelto lo dejaría obsoleto al editar el horario o las semanas. Así la sugerencia se recalcula sola y se distingue de un ajuste deliberado |
+| **Justificar no borra** (FR-017) | El registro se conserva y deja de contar. Borrarlo perdería el hecho de que ese día no se asistió |
+| Fechas como **`date`** de PostgreSQL y `YYYY-MM-DD` como texto en el dominio | "Falté el 3 de septiembre" es un día de calendario, no un instante. Con `timestamp` la falta se movería de día al cambiar de huso |
+| Restricción **única `(block_id, date)`** en la base de datos | Dos toques rápidos en la app lanzan dos peticiones a la vez y la comprobación previa de ambas pasaría antes de que ninguna insertara. El conteo saldría inflado |
+| Marcar algo **ya marcado no falla**, se omite | Marcar el día completo cuando ya había una falta suelta es razonable; fallar entero obligaría a desmarcarla primero |
+| Las faltas caen con su **sesión del horario** (cascada) | Una inasistencia a una clase que ya no existe no se puede contar contra ningún límite. No es historial archivable (Principio VI): la Fase 7 archivará el semestre entero |
+| El **color del estado** vive en `shared` | El color *es* la alerta de FR-016; si web pintara el aviso en ámbar y la app en rojo, la misma situación se leería distinto según el dispositivo |
+| **Sin `expo-router` todavía** | Con tres secciones y vuelta siempre al inicio no hay rutas anidadas ni enlaces profundos que resolver. Entra cuando la agenda y el calendario lo conviertan en pestañas de verdad |
+
+**Verificación ejecutada** — 193 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Límite sugerido, estimación de sesiones, umbrales de alerta en todos los límites de 1 a 40, fechas de calendario y validaciones | **60/60** |
+| API (`curl` contra la API real) | Panel, clases del día, registro suelto y de día completo, duplicados, justificación, borrado, límite editable, semanas, aislamiento entre cuentas, rutas protegidas y cascada | **92/92** |
+| Web (Playwright, navegador real) | Ruta protegida, panel, marcar, justificar, quitar, límite propio y vuelta al sugerido, alerta, semanas, persistencia y enlace desde el inicio | **41/41** |
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Falta marcada **desde la web** visible en la **app** | 1 de 6 en Cálculo, idéntico |
+| Totales y sugeridos coinciden con la web | 32 y 16 sesiones · sugeridos 6 y 3 |
+| El domingo avisa de que no hay clases | correcto |
+| Navegación por días y clases del lunes con hora y aula | correcto |
+| Marcar una falta desde la interfaz táctil | Taller pasó a 1 de 3, barra y margen actualizados |
+| Justificar (FR-017) | "0 de 3 faltas · 1 justificada": se conserva y deja de contar |
+| Fijar un límite propio de 1 (FR-015) | estado rojo "Alcanzaste el límite", sugerido 6 aún visible |
+| Recomendación de confirmar con el profesor (FR-014) | visible junto a los límites |
+| Cambios hechos en la **app** leídos desde la **web** | **paridad bidireccional confirmada** |
+
+**Corregido durante la fase** — las dos las encontraron las suites, no la revisión a ojo:
+
+1. **Con límites bajos, la alerta de FR-016 no saltaba nunca.** Con el umbral del 80% a secas, un
+   límite de 3 avisaría a las 2.4 faltas —es decir, jamás, porque las faltas son enteras— y el
+   estudiante pasaba de "vas bien" a "alcanzaste el límite" sin aviso intermedio. Ocurría en todos
+   los límites de **1 a 4**, justo los de las materias de una sesión por semana, donde cada falta
+   pesa más. `absenceStatus` avisa ahora también cuando queda una sola falta de margen. La suite
+   incluye una comprobación que recorre los límites de 1 a 40 y exige que ninguno pase de "bien" a
+   "alcanzado" sin avisar.
+2. **`PATCH` de una falta con cuerpo vacío borraba la nota.** `absenceNoteSchema` convierte el
+   `undefined` de una nota ausente en `null` —para no tener dos formas de decir "sin nota"—, así
+   que tras transformar, `note` nunca valía `undefined` y el `refine` de "algo que actualizar"
+   nunca se activaba: un `PATCH {}` pasaba la validación y vaciaba la nota. El esquema de edición
+   define ahora su propio `note` opcional de verdad, que distingue "no lo mandes" de "déjalo
+   vacío".
+
+**Nota sobre los tipos de Zod**: los esquemas con `transform` o `default` exportan dos tipos —
+`…Input` (lo que manda el cliente) y `…Parsed` (lo que valida el servidor)—. Sin esa separación,
+`note` salía obligatorio en el cliente y justificar una falta exigía repetir la nota que ya tenía.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display).
+`adb shell input text` no teclea `ñ`, así que la cuenta de prueba en dispositivo usa una contraseña
+ASCII; el flujo con caracteres acentuados ya está cubierto por las suites de API y web.
+
+---
 
 #### Fase 2 — Horario · cerrada el 2026-08-16
 
@@ -308,14 +388,14 @@ Cambios que exigió la actualización:
 │   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
-│   │       ├── routes/      endpoints por dominio (health, auth, schedule)
+│   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
 │   │
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario)
+│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -323,18 +403,18 @@ Cambios que exigió la actualización:
 │       ├── plugins/         plugins de configuración nativa (cleartext local)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/     Entrar, Registro, Inicio, Horario
+│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas
 │           ├── components/  componentes propios de la app
 │           └── lib/         cliente de API y contexto de sesión
 │
 ├── packages/
 │   └── shared/              tipos de dominio, validaciones y lógica común
 │       └── src/
-│           ├── types/       entidades (Usuario, Sesión, Materia, errores de API…)
+│           ├── types/       entidades (Usuario, Sesión, Materia, Falta, errores de API…)
 │           ├── schemas/     validaciones compartidas
 │           ├── api/         cliente HTTP y llamadas tipadas, para web y app
-│           └── logic/       reglas puras (límite de faltas, horario, importación,
-│                            errores de formulario, fechas)
+│           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
+│                            errores de formulario, fechas de calendario)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -427,12 +507,15 @@ y no mostraba vista previa. Las tres cosas están corregidas (detalle en el hist
 **Verificado el 2026-08-16**: un horario importado desde la web se ve idéntico en el emulador
 Android, con las mismas materias, colores, aulas y horas.
 
-#### Fase 3 — Control de faltas (P1)
+#### Fase 3 — Control de faltas (P1) ✅
 Registro por día completo o por materia/hora. Conteo por materia. Límite sugerido = 20% de las
 sesiones del semestre, derivado de la norma TecNM de **80% de asistencia mínima** —por debajo, el
 profesor registra NP. Siempre editable y siempre con la recomendación de confirmarlo con el
 profesor. Alertas de proximidad.
-**Verificación**: conteos y alertas coinciden entre plataformas.
+**Las sesiones del semestre se estiman** con un ajuste de semanas por usuario (16 por defecto),
+porque el semestre con fechas llega en la Fase 7.
+**Verificado el 2026-08-16**: una falta marcada en la web se ve igual en el emulador Android, y lo
+marcado, justificado y ajustado desde la app se lee igual desde la web. Detalle en el historial.
 
 #### Fase 4 — Agenda (P1)
 Tareas, proyectos y actividades. Materia y fecha límite opcionales, estado de completado.

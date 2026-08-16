@@ -1,9 +1,12 @@
 /**
- * Regla del límite de faltas.
+ * Reglas del control de faltas (FR-011 a FR-017).
  *
- * Principio II: esta regla vive aquí y en la API — nunca se reimplementa en web ni en mobile.
- * Principio VII: el resultado es SIEMPRE una sugerencia editable por el estudiante.
+ * Principio II: estas reglas viven aquí y en la API — nunca se reimplementan en web ni en
+ * mobile.
+ * Principio VII: el límite es SIEMPRE una sugerencia editable por el estudiante.
  */
+
+import type { AbsenceStatus } from '../types/attendance.js';
 
 /**
  * Asistencia mínima exigida por la norma TecNM. Por debajo de este porcentaje el profesor
@@ -60,3 +63,124 @@ export function calculateAbsenceLimit(totalSessions: number): AbsenceLimit {
 export const ABSENCE_LIMIT_DISCLAIMER =
   'Este límite es una sugerencia basada en el 80% de asistencia mínima. ' +
   'Confírmalo con tu profesor: cada materia puede tener criterios distintos.';
+
+/**
+ * Semanas de clase de un semestre, por defecto.
+ *
+ * 16 semanas es la duración habitual de un semestre en el TecNM. Es un ajuste editable por
+ * el usuario: el calendario real varía por plantel y por periodo.
+ *
+ * FR-013 mide el límite sobre las sesiones del semestre, pero el semestre como entidad —con
+ * sus fechas— no llega hasta la Fase 7. Hasta entonces el total se estima multiplicando las
+ * sesiones semanales del horario por este número.
+ */
+export const DEFAULT_SEMESTER_WEEKS = 16;
+
+/** Mínimo y máximo aceptados para las semanas del semestre. */
+export const MIN_SEMESTER_WEEKS = 1;
+export const MAX_SEMESTER_WEEKS = 52;
+
+/**
+ * Proporción del límite a partir de la cual se avisa al estudiante (FR-016).
+ *
+ * Al 80% del límite quedan aún faltas de margen, que es lo que hace útil el aviso: llegar
+ * justo al límite ya no deja margen de reacción.
+ *
+ * No es el único disparador del aviso: `absenceStatus` avisa además cuando queda una sola
+ * falta, porque con límites bajos el 80% cae entre dos enteros y no llegaría a activarse.
+ */
+export const ABSENCE_WARNING_RATE = 0.8;
+
+/**
+ * Sesiones totales de una materia en el semestre.
+ *
+ * Estimación: sesiones de una semana × semanas del semestre. Cuando la Fase 7 introduzca
+ * las fechas reales, esta función se sustituye por el conteo del calendario y todo lo que
+ * la consume sigue igual.
+ */
+export function estimateTotalSessions(
+  sessionsPerWeek: number,
+  semesterWeeks: number = DEFAULT_SEMESTER_WEEKS,
+): number {
+  if (!Number.isFinite(sessionsPerWeek) || sessionsPerWeek < 0) {
+    throw new RangeError(
+      `sessionsPerWeek debe ser un número finito no negativo, se recibió: ${sessionsPerWeek}`,
+    );
+  }
+  if (!Number.isFinite(semesterWeeks) || semesterWeeks < 0) {
+    throw new RangeError(
+      `semesterWeeks debe ser un número finito no negativo, se recibió: ${semesterWeeks}`,
+    );
+  }
+
+  return Math.floor(sessionsPerWeek) * Math.floor(semesterWeeks);
+}
+
+/**
+ * Nivel de aviso de una materia según sus faltas y su límite (FR-016).
+ *
+ * Avisa al llegar al 80% del límite **o** cuando queda una sola falta de margen, lo que
+ * ocurra antes. La segunda condición no es redundante: con el 80% a secas, un límite de 3
+ * avisaría a las 2.4 faltas —es decir, nunca, porque las faltas son enteras— y el
+ * estudiante pasaría de "vas bien" a "alcanzaste el límite" sin aviso intermedio. Eso
+ * ocurre en todos los límites de 1 a 4, justo los de las materias de una sesión por semana,
+ * donde cada falta pesa más.
+ *
+ * Con límite 0 —una materia sin sesiones, o un límite puesto a mano en cero— cualquier
+ * falta se considera alcanzada y sin faltas se está en `bien`: no hay margen que avisar.
+ */
+export function absenceStatus(absences: number, limit: number): AbsenceStatus {
+  if (absences >= limit) return limit === 0 && absences === 0 ? 'bien' : 'alcanzado';
+
+  // Queda una sola falta antes del límite: se avisa siempre, sea cual sea el límite.
+  if (limit - absences <= 1) return 'cerca';
+
+  // Se compara con productos enteros en vez de `limit * 0.8`: el 0.8 en coma flotante
+  // desplaza el umbral en los límites donde el 80% cae justo en un entero.
+  return absences * 100 >= limit * ABSENCE_WARNING_RATE * 100 ? 'cerca' : 'bien';
+}
+
+/** Faltas que quedan antes de alcanzar el límite. Nunca negativo. */
+export function remainingAbsences(absences: number, limit: number): number {
+  return Math.max(0, limit - absences);
+}
+
+/** Texto del estado, igual en web y en app (Principio VIII). */
+export const ABSENCE_STATUS_LABELS: Readonly<Record<AbsenceStatus, string>> = {
+  bien: 'Vas bien',
+  cerca: 'Te acercas al límite',
+  alcanzado: 'Alcanzaste el límite',
+};
+
+/**
+ * Color de cada estado, para que la señal visual sea la misma en web y en app.
+ *
+ * Se define aquí en vez de en cada cliente porque el color ES la alerta de FR-016: si web
+ * pintara el aviso en ámbar y la app en rojo, la misma situación se leería distinto según
+ * el dispositivo.
+ */
+export const ABSENCE_STATUS_COLORS: Readonly<Record<AbsenceStatus, string>> = {
+  bien: '#10b981',
+  cerca: '#f59e0b',
+  alcanzado: '#ef4444',
+};
+
+/**
+ * Explicación del estado, con los números concretos delante.
+ *
+ * Vive aquí para que ambos clientes digan exactamente lo mismo ante la misma situación.
+ */
+export function absenceStatusMessage(status: AbsenceStatus, remaining: number): string {
+  switch (status) {
+    case 'alcanzado':
+      return 'Llegaste al límite sugerido. Habla con tu profesor sobre tu situación.';
+    case 'cerca':
+      return remaining === 1
+        ? 'Te queda 1 falta antes del límite sugerido.'
+        : `Te quedan ${remaining} faltas antes del límite sugerido.`;
+    case 'bien':
+      return remaining === 1
+        ? 'Te queda 1 falta de margen.'
+        : `Te quedan ${remaining} faltas de margen.`;
+  }
+}

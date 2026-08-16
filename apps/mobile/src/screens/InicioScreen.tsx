@@ -14,10 +14,16 @@ import { Button, Card, Field, FormError, colors } from '../components/ui';
 /**
  * Inicio con sesión abierta.
  *
- * Enlaza a lo que ya está disponible —el horario de la Fase 2— y muestra el perfil y los
- * dispositivos de la Fase 1. Las faltas y la agenda llegan en las fases 3 y 4.
+ * Enlaza a lo que ya está disponible —el horario de la Fase 2 y las faltas de la Fase 3— y
+ * muestra el perfil y los dispositivos de la Fase 1. La agenda llega en la Fase 4.
  */
-export function InicioScreen({ onIrAHorario }: { onIrAHorario: () => void }) {
+export function InicioScreen({
+  onIrAHorario,
+  onIrAFaltas,
+}: {
+  onIrAHorario: () => void;
+  onIrAFaltas: () => void;
+}) {
   const { user, logout } = useAuth();
   if (!user) return null;
 
@@ -36,12 +42,20 @@ export function InicioScreen({ onIrAHorario }: { onIrAHorario: () => void }) {
         <Button title="Ver mi horario" onPress={onIrAHorario} />
       </Card>
 
+      <Card title="Tus faltas">
+        <Text style={styles.body}>
+          Marca las clases a las que faltaste y lleva el conteo por materia, con un límite
+          sugerido que puedes ajustar.
+        </Text>
+        <Button title="Ver mis faltas" onPress={onIrAFaltas} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· El control de faltas por materia</Text>
         <Text style={styles.body}>· La agenda de tareas y actividades</Text>
+        <Text style={styles.body}>· El calendario con recordatorios</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />

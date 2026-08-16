@@ -1,4 +1,9 @@
-import { ApiClient, createAuthApi, createScheduleApi } from '@notecore/shared';
+import {
+  ApiClient,
+  createAttendanceApi,
+  createAuthApi,
+  createScheduleApi,
+} from '@notecore/shared';
 
 /**
  * Cliente de API de la web.
@@ -26,3 +31,4 @@ export const apiClient = new ApiClient({
 
 export const authApi = createAuthApi(apiClient);
 export const scheduleApi = createScheduleApi(apiClient);
+export const attendanceApi = createAttendanceApi(apiClient);

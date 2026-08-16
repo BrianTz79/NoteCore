@@ -8,8 +8,8 @@ import { Button, Card } from '@/components/ui';
 /**
  * Inicio, ya con sesión.
  *
- * Enlaza a lo que hay disponible: el horario (Fase 2) y el perfil. Las faltas y la agenda
- * llegan en las fases 3 y 4.
+ * Enlaza a lo que hay disponible: el horario (Fase 2), las faltas (Fase 3) y el perfil. La
+ * agenda llega en la Fase 4.
  */
 export default function HomePage() {
   return (
@@ -50,6 +50,19 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Tus faltas">
+        <p className="text-slate-300">
+          Marca las clases a las que faltaste y lleva el conteo por materia, con un límite
+          sugerido que puedes ajustar.
+        </p>
+        <Link
+          href="/faltas"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mis faltas →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -65,8 +78,8 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· El control de faltas por materia</li>
           <li>· La agenda de tareas y actividades</li>
+          <li>· El calendario con recordatorios</li>
         </ul>
       </Card>
     </main>

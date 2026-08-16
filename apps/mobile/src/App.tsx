@@ -6,15 +6,16 @@ import { EntrarScreen } from './screens/EntrarScreen';
 import { RegistroScreen } from './screens/RegistroScreen';
 import { InicioScreen } from './screens/InicioScreen';
 import { HorarioScreen } from './screens/HorarioScreen';
+import { FaltasScreen } from './screens/FaltasScreen';
 import { colors } from './components/ui';
 
 /**
  * Raíz de la app.
  *
- * La navegación sigue siendo un cambio de estado entre pantallas. La Fase 1 anotó que aquí
- * entraría `expo-router`, pero con inicio y horario todavía no compensa: una librería de
- * navegación se justifica cuando haya pestañas de verdad —horario, faltas, agenda y
- * calendario—, que llegan en las fases 3 a 5.
+ * La navegación sigue siendo un cambio de estado entre pantallas. Con tres secciones
+ * —inicio, horario y faltas— y vuelta siempre al inicio, `expo-router` seguiría sin ganar
+ * nada: no hay rutas anidadas ni enlaces profundos que resolver. Entra cuando la agenda y
+ * el calendario (fases 4 y 5) conviertan esto en una barra de pestañas de verdad.
  */
 export default function App() {
   return (
@@ -30,7 +31,7 @@ export default function App() {
 function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
-  const [seccion, setSeccion] = useState<'inicio' | 'horario'>('inicio');
+  const [seccion, setSeccion] = useState<'inicio' | 'horario' | 'faltas'>('inicio');
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {
@@ -42,10 +43,17 @@ function Root() {
   }
 
   if (user) {
-    return seccion === 'horario' ? (
-      <HorarioScreen onVolver={() => setSeccion('inicio')} />
-    ) : (
-      <InicioScreen onIrAHorario={() => setSeccion('horario')} />
+    if (seccion === 'horario') {
+      return <HorarioScreen onVolver={() => setSeccion('inicio')} />;
+    }
+    if (seccion === 'faltas') {
+      return <FaltasScreen onVolver={() => setSeccion('inicio')} />;
+    }
+    return (
+      <InicioScreen
+        onIrAHorario={() => setSeccion('horario')}
+        onIrAFaltas={() => setSeccion('faltas')}
+      />
     );
   }
 
