@@ -33,18 +33,18 @@ cosas en un solo lugar, con el horario como eje.
 
 | Capa | Tecnología |
 |------|-----------|
-| Lenguaje | TypeScript (estricto) |
-| App Android | React Native + Expo |
-| Web | Next.js + Tailwind CSS |
-| Backend | Node.js + Fastify, API REST |
-| Base de datos | PostgreSQL + Drizzle ORM |
+| Lenguaje | TypeScript 5.9 (estricto) |
+| App Android | React Native 0.86 + Expo SDK 57 |
+| Web | Next.js 16 + Tailwind CSS 4 |
+| Backend | Node.js 24 + Fastify 5, API REST |
+| Base de datos | PostgreSQL 18 + Drizzle ORM |
 | Infraestructura | Docker Compose, túnel Cloudflare |
 
 Web y app comparten componentes, tipos y lógica de dominio a través de `packages/shared`.
 
 ## Puesta en marcha
 
-Requiere **Node 20 o superior** y Docker.
+Requiere **Node 22 o superior** (el proyecto usa 24 LTS, fijado en `.nvmrc`) y Docker.
 
 ```bash
 # 1. Configurar variables de entorno

@@ -1,7 +1,7 @@
 # Web de NoteCore — Next.js
 # Contexto de build: la raíz del monorepo (necesita `packages/shared`).
 
-FROM node:20-alpine AS base
+FROM node:24-alpine AS base
 WORKDIR /app
 
 # --- Dependencias ---

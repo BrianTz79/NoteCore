@@ -1,3 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind 4: una sola importación sustituye a las tres directivas @tailwind. */
+@import 'tailwindcss';
+
+/*
+ * Rutas donde Tailwind busca clases. En Tailwind 4 se declara aquí, en el CSS,
+ * en lugar de en `tailwind.config.ts`.
+ * Se incluye `packages/shared` para cubrir los componentes compartidos con la app.
+ */
+@source '../../src';
+@source '../../../../packages/shared/src';

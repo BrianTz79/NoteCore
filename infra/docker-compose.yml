@@ -5,7 +5,7 @@ name: notecore
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: notecore-postgres
     restart: unless-stopped
     environment:
@@ -16,7 +16,10 @@ services:
       # Expuesto solo en localhost: la base de datos nunca escucha en la red.
       - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ espera el montaje en `/var/lib/postgresql` (no en `.../data`):
+      # coloca los datos en un subdirectorio por versión mayor, lo que permite
+      # `pg_upgrade --link` en futuras actualizaciones sin cruzar el punto de montaje.
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 10s

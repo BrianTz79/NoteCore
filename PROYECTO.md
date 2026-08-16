@@ -113,9 +113,36 @@ verificado con 8 casos. El fallo habría restado una falta de margen a cada mate
 **Decisión**: el puerto por defecto de la API pasó de 3001 a **3101**, porque el 3001 ya lo ocupa
 de forma permanente otro servicio del equipo (Koko Signaling).
 
-**Pendiente no bloqueante**: Node 18.19.1 en la máquina de desarrollo está fuera de soporte; el
-proyecto declara `engines: node >=20.11.0`. Y `npm audit` reporta vulnerabilidades heredadas de
-la cadena de Expo SDK 52, resolubles al subir de SDK mayor.
+**Actualización de dependencias (mismo día, tras cerrar la fase)**: se subió todo el stack a las
+versiones vigentes y se reverificó cada capa.
+
+| | Antes | Ahora |
+|---|---|---|
+| Node | 18.19.1 (EOL) | **24.19.0 LTS** (`nvm default`) |
+| PostgreSQL | 17 | **18.6** |
+| Next.js | 15.5 | **16.3** |
+| React | 18.3 | **19.2** |
+| Expo SDK | 52 | **57** |
+| React Native | 0.76 | **0.86** |
+| Tailwind | 3.4 | **4.3** |
+| Drizzle ORM | 0.38 | **0.45** |
+| Zod | 3.25 | **4.4** |
+
+`npm audit`: de **30 vulnerabilidades (1 crítica)** a **22, ninguna crítica**. Las restantes
+provienen de las CLI de desarrollo de Expo y React Native (`@expo/cli`,
+`@react-native/community-cli-plugin`, `@esbuild-kit`), no de código que llegue al dispositivo ni
+al servidor, y ya están en el último SDK disponible.
+
+Cambios que exigió la actualización:
+- **Tailwind 4**: `tailwind.config.ts` eliminado; la configuración pasa a `globals.css` con
+  `@import 'tailwindcss'` y directivas `@source`. El plugin de PostCSS ahora es
+  `@tailwindcss/postcss` y autoprefixer ya no hace falta.
+- **Expo 57**: `babel-preset-expo` dejó de venir incluido y hubo que declararlo como dependencia.
+  `@types/react` tuvo que subir a 19 porque RN 0.86 lo exige.
+- **PostgreSQL 18**: cambió el punto de montaje esperado a `/var/lib/postgresql` (antes
+  `/var/lib/postgresql/data`). El volumen se recreó; la base solo tenía la tabla vacía de prueba.
+- **TypeScript**: se mantiene en 5.9. La versión 7 es la reescritura nativa, demasiado reciente
+  para asentar sobre ella un proyecto que empieza.
 
 ---
 
@@ -208,11 +235,11 @@ se centraliza todo), y enlaza con la marca **OuroCore**.
 
 | Capa | Tecnología | Por qué |
 |------|-----------|---------|
-| Lenguaje | **TypeScript** (estricto) | Tipos compartidos entre las tres capas: si un campo cambia, el compilador señala dónde rompe |
-| App Android | **React Native + Expo** | Nueva Arquitectura estable; genera `.apk`, y cubre notificaciones, cámara/QR y widgets |
-| Web | **Next.js + Tailwind CSS** | Comparte componentes y lógica React con la app; evita escribir cada pantalla dos veces |
-| Backend | **Node.js + Fastify** | Rápido, con validación de esquemas integrada |
-| Base de datos | **PostgreSQL + Drizzle ORM** | Migraciones versionadas con tipos derivados del esquema |
+| Lenguaje | **TypeScript 5.9** (estricto) | Tipos compartidos entre las tres capas: si un campo cambia, el compilador señala dónde rompe |
+| App Android | **React Native 0.86 + Expo SDK 57** | Nueva Arquitectura estable; genera `.apk`, y cubre notificaciones, cámara/QR y widgets |
+| Web | **Next.js 16 + Tailwind CSS 4** | Comparte componentes y lógica React con la app; evita escribir cada pantalla dos veces |
+| Backend | **Node.js 24 + Fastify 5** | Rápido, con validación de esquemas integrada |
+| Base de datos | **PostgreSQL 18 + Drizzle ORM** | Migraciones versionadas con tipos derivados del esquema |
 | Compartido | **`packages/shared`** | Tipos de dominio, validaciones y componentes comunes a web y app |
 | Infraestructura | **Docker Compose + Cloudflare Tunnel** | Igual que la v1, ya probado |
 

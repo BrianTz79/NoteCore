@@ -39,6 +39,10 @@ out/
 .next/
 **/.next/
 next-env.d.ts
+# Next 16 genera estos archivos para agentes de IA en cada arranque; el CLAUDE.md
+# válido es el de la raíz, escrito a mano.
+apps/web/CLAUDE.md
+apps/web/AGENTS.md
 
 # === React Native / Expo ===
 .expo/
