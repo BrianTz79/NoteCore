@@ -1,0 +1,55 @@
+# === Secretos: NUNCA subir ===
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+
+# === Respaldo local de la v1 (contiene .env con secretos reales) ===
+_respaldo_v1_*/
+
+# === Dependencias ===
+node_modules/
+**/node_modules/
+
+# === Builds ===
+dist/
+build/
+.astro/
+**/dist/
+**/build/
+
+# === React Native / Expo ===
+.expo/
+.expo-shared/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+android/app/build/
+android/build/
+android/.gradle/
+ios/Pods/
+ios/build/
+
+# === Logs ===
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Sistema / editor ===
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# === Temporales ===
+tmp/
+temp/
+.cache/
+coverage/

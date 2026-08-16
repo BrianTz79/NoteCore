@@ -1,0 +1,111 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Iniciar sesión — Horarios">
+  <div class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+      <div class="text-center mb-8">
+        <div class="text-4xl mb-2">🎓</div>
+        <h1 class="text-2xl font-bold text-white">Horarios Universitarios</h1>
+        <p class="text-gray-400 text-sm mt-1">Gestiona tus materias y asistencias</p>
+      </div>
+
+      <div class="bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-800">
+        <div id="tab-bar" class="flex mb-6 bg-gray-800 rounded-lg p-1">
+          <button id="btn-login" class="flex-1 py-1.5 text-sm font-medium rounded-md bg-indigo-600 text-white transition-all">Entrar</button>
+          <button id="btn-register" class="flex-1 py-1.5 text-sm font-medium rounded-md text-gray-400 transition-all">Registrarse</button>
+        </div>
+
+        <div id="error-msg" class="hidden mb-4 px-3 py-2 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm"></div>
+
+        <form id="login-form">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Correo</label>
+              <input name="email" type="email" required placeholder="tu@correo.com"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1">Contraseña</label>
+              <input name="password" type="password" required placeholder="••••••••"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <div id="nombre-field" class="hidden">
+              <label class="block text-xs font-medium text-gray-400 mb-1">Nombre</label>
+              <input name="nombre" type="text" placeholder="Tu nombre"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+            <button type="submit" id="submit-btn"
+              class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors">
+              Iniciar sesión
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+import { api } from '../lib/api.js';
+
+if (localStorage.getItem('token')) window.location.href = '/';
+
+let isRegister = false;
+
+const loginBtn = document.getElementById('btn-login');
+const registerBtn = document.getElementById('btn-register');
+const nombreField = document.getElementById('nombre-field');
+const submitBtn = document.getElementById('submit-btn');
+const errorMsg = document.getElementById('error-msg');
+const form = document.getElementById('login-form');
+
+function setTab(reg) {
+  isRegister = reg;
+  if (reg) {
+    registerBtn.classList.replace('text-gray-400', 'text-white');
+    registerBtn.classList.add('bg-indigo-600');
+    loginBtn.classList.remove('bg-indigo-600');
+    loginBtn.classList.replace('text-white', 'text-gray-400');
+    nombreField.classList.remove('hidden');
+    nombreField.querySelector('input').required = true;
+    submitBtn.textContent = 'Crear cuenta';
+  } else {
+    loginBtn.classList.replace('text-gray-400', 'text-white');
+    loginBtn.classList.add('bg-indigo-600');
+    registerBtn.classList.remove('bg-indigo-600');
+    registerBtn.classList.replace('text-white', 'text-gray-400');
+    nombreField.classList.add('hidden');
+    nombreField.querySelector('input').required = false;
+    submitBtn.textContent = 'Iniciar sesión';
+  }
+  errorMsg.classList.add('hidden');
+}
+
+loginBtn.addEventListener('click', () => setTab(false));
+registerBtn.addEventListener('click', () => setTab(true));
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorMsg.classList.add('hidden');
+  const fd = new FormData(form);
+  try {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Cargando...';
+    let data;
+    if (isRegister) {
+      data = await api.auth.register({ email: fd.get('email'), password: fd.get('password'), nombre: fd.get('nombre') });
+    } else {
+      data = await api.auth.login({ email: fd.get('email'), password: fd.get('password') });
+    }
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    window.location.href = '/';
+  } catch (err) {
+    errorMsg.textContent = err.message;
+    errorMsg.classList.remove('hidden');
+    submitBtn.disabled = false;
+    submitBtn.textContent = isRegister ? 'Crear cuenta' : 'Iniciar sesión';
+  }
+});
+</script>
