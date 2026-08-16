@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Cimientos listos — construyendo funcionalidad |
-| **Fases completadas** | 1 de 12 |
-| **Fase actual** | Fase 1 — Cuentas y sesión (no iniciada) |
+| **Estado general** | Cuentas y sesión funcionando en app y web |
+| **Fases completadas** | 2 de 12 |
+| **Fase actual** | Fase 2 — Horario (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `█░░░░░░░░░░░` 8%
+**Avance**: `██░░░░░░░░░░` 17%
 
 ### Qué se ha hecho
 
@@ -50,11 +50,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   local fuera del repositorio
 - **Fase 0 cerrada**: monorepo con las cuatro capas compilando en TypeScript estricto, PostgreSQL
   con migraciones versionadas, API respondiendo y bundle de Android generado
+- **Fase 1 cerrada**: registro, login y perfil con `@usuario` único; sesión simultánea en app y
+  web verificada sobre un emulador Android real y un navegador real; aislamiento de datos
+  comprobado con cuentas cruzadas
 
 ### Próximo paso
 
-**Fase 1 — Cuentas y sesión**: registro, login y perfil con `@usuario` único, sesión simultánea en
-app y web, y aislamiento de datos por usuario verificado en el servidor.
+**Fase 2 — Horario**: materias y sesiones (día, hora, aula), alta manual e importación del JSON
+generado por IA, y vista semanal en ambos clientes.
 
 ---
 
@@ -65,7 +68,7 @@ app y web, y aislamiento de datos por usuario verificado en el servidor.
 | # | Fase | Prio | Estado | API | Web | App |
 |---|------|------|--------|-----|-----|-----|
 | 0 | Cimientos | — | ✅ | ✅ | ✅ | ✅ |
-| 1 | Cuentas y sesión | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 1 | Cuentas y sesión | P1 | ✅ | ✅ | ✅ | ✅ |
 | 2 | Horario | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 3 | Control de faltas | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 4 | Agenda | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -86,6 +89,75 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 1 — Cuentas y sesión · cerrada el 2026-08-16
+
+**Entregado**: registro y login con correo, contraseña, nombre mostrado y `@usuario` único
+(FR-001, FR-004); sesión simultánea e independiente en app y web (FR-002); aislamiento de datos
+por usuario verificado en el servidor (FR-003); perfil editable, cambio de contraseña y gestión
+de dispositivos con cierre remoto de sesiones.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Login por **correo**, `@usuario` para lo social | El `@usuario` lo pide FR-004 y lo usará la búsqueda de la Fase 8; el correo deja la puerta abierta a recuperar contraseña |
+| **Cookies `httpOnly`** en web, **SecureStore** en la app | En web, un XSS no puede leer la sesión porque el token no es accesible desde JavaScript. En la app no hay cookies, y el Keystore de Android cifra los tokens |
+| **Access + refresh token** con sesión en base de datos | Cerrar sesión surte efecto de inmediato en vez de esperar a que caduque el token, y cada dispositivo se cierra por separado (FR-002) |
+| El refresh token **rota** en cada uso | Un token robado deja de servir en cuanto el legítimo renueva |
+| Contraseñas con **bcrypt**, 12 rondas | Se eligió `bcryptjs` (JS puro) sobre `bcrypt` (nativo): el `allowScripts` del entorno bloquea la compilación del segundo |
+| Sin librería de navegación en la app | Con tres pantallas no compensa; entra `expo-router` en la Fase 2, cuando lleguen las pestañas |
+
+**Verificación ejecutada** — 123 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| API (`curl` contra la API real) | 10 bloques: validación, duplicados, login, sesiones, aislamiento, rutas protegidas, perfil, rotación de tokens, cambio de contraseña, límite de intentos | **56/56** |
+| Web (Playwright, navegador real) | Registro, cookies `httpOnly`, persistencia al recargar, rutas protegidas, perfil, dispositivos, logout, errores | **28/28** |
+| App (cliente real contra la API) | Registro, validación, sesión persistente, renovación automática, perfil, convivencia con la web, aislamiento, logout | **26/26** |
+| Paridad (navegador + cliente de app a la vez) | Cuenta creada en un cliente y usada en el otro, cambios cruzados, aislamiento entre cuentas | **13/13** |
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| La app arranca y muestra la pantalla de entrada | correcto |
+| Registro completo desde la interfaz táctil | usuario y sesión `mobile` creados en PostgreSQL |
+| Pantalla de inicio con nombre, `@usuario` y dispositivos | correcto |
+| Sesión persistente tras cerrar y reabrir la app | la restaura desde SecureStore |
+| Cambio hecho en la **web** visible en la **app** | correcto |
+| La app lista su sesión **y** la del navegador | correcto |
+| Cerrar la sesión del navegador **desde la app** | 2 sesiones → 1; la web queda fuera |
+
+**Corregido durante la fase**:
+
+1. **El límite de intentos respondía 500 en vez de 429.** `errorResponseBuilder` de
+   `@fastify/rate-limit` devolvía un objeto plano sin `statusCode`, que el manejador de errores
+   no reconocía y trataba como fallo interno. Ahora devuelve un `AppError`. El usuario habría
+   visto "error inesperado" en lugar de "espera un momento".
+2. **La app no podía hablar con la API en el APK de release.** Android bloquea HTTP sin cifrar
+   desde Android 9 y Expo no declara excepción alguna. Se añadió el plugin
+   [`with-dev-cleartext.js`](apps/mobile/plugins/with-dev-cleartext.js), que permite cleartext
+   **solo** hacia `localhost`, `127.0.0.1` y `10.0.2.2`; producción sigue exigiendo HTTPS.
+3. **Los mensajes de campo obligatorio salían en inglés.** Zod 4 emite "expected string, received
+   undefined" por defecto, y esos textos se muestran tal cual en el formulario. Se añadió
+   `requiredString()` en `shared`.
+4. **El límite de login era demasiado estricto.** 10 intentos por IP cada 15 minutos dejaba fuera
+   a varios estudiantes tras un mismo NAT (casa o residencia) si uno se equivocaba. Subido a 30,
+   que sigue haciendo inviable la fuerza bruta.
+
+**Retirado**: `@react-native-async-storage/async-storage`, que entró como dependencia pero no se
+usa — los tokens van en SecureStore, no en almacenamiento en claro.
+
+**Nota de entorno**: se instaló el SDK de Android y un JDK 21 en `~/jdks/` para poder verificar en
+dispositivo. El Java del sistema es solo JRE (sin compilador) y el 21 de Ubuntu no trae `javac`.
+Metro usa el **puerto 8083**: el 8081 lo ocupa `qbittorrent-nox`, igual que el 3001 lo ocupa Koko.
+
+**Pendiente que hereda la Fase 2**: `apps/mobile/android/` lo genera `expo prebuild` y no se
+versiona; quien clone el repositorio debe ejecutar `npx expo prebuild --platform android` antes de
+compilar.
+
+---
 
 #### Fase 0 — Cimientos · cerrada el 2026-08-16
 
@@ -158,28 +230,32 @@ Cambios que exigió la actualización:
 │   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
-│   │       ├── routes/      endpoints por dominio
-│   │       ├── middleware/  autenticación y validación
-│   │       └── services/    lógica de negocio
+│   │       ├── routes/      endpoints por dominio (health, auth)
+│   │       ├── middleware/  autenticación: único lugar que fija quién eres
+│   │       ├── services/    lógica de negocio (Principio II)
+│   │       └── lib/         tokens, contraseñas, cookies, errores, validación
 │   │
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── app/         rutas
+│   │       ├── app/         rutas (/, /entrar, /registro, /perfil)
 │   │       ├── components/  componentes propios de web
-│   │       └── lib/         cliente de API y utilidades
+│   │       └── lib/         cliente de API y contexto de sesión
 │   │
 │   └── mobile/              app Android — React Native + Expo
+│       ├── plugins/         plugins de configuración nativa (cleartext local)
+│       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/
+│           ├── screens/     Entrar, Registro, Inicio
 │           ├── components/  componentes propios de la app
-│           └── lib/
+│           └── lib/         cliente de API y contexto de sesión
 │
 ├── packages/
 │   └── shared/              tipos de dominio, validaciones y lógica común
 │       └── src/
-│           ├── types/       entidades (Usuario, Materia, Falta…)
+│           ├── types/       entidades (Usuario, Sesión, errores de API…)
 │           ├── schemas/     validaciones compartidas
-│           └── logic/       reglas puras (p. ej. cálculo de límite de faltas)
+│           ├── api/         cliente HTTP y llamadas tipadas, para web y app
+│           └── logic/       reglas puras (límite de faltas, errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -258,10 +334,11 @@ Expo compilando a `.apk`. Paquete `shared` consumido por las tres capas.
 **Verificación**: los tres servicios levantan, la app instala en un dispositivo, y un tipo definido
 en `shared` se importa correctamente desde `api`, `web` y `mobile`.
 
-#### Fase 1 — Cuentas y sesión (P1)
+#### Fase 1 — Cuentas y sesión (P1) ✅
 Registro, login y perfil con nombre mostrado y nombre de usuario único (`@usuario`). Sesión
 simultánea en app y web. Aislamiento de datos por usuario.
-**Verificación**: misma cuenta activa en ambos clientes; ningún acceso cruzado.
+**Verificado el 2026-08-16**: misma cuenta activa en emulador Android y navegador a la vez, con
+cambios cruzados en ambos sentidos y sin acceso entre cuentas. Detalle en el historial de cierres.
 
 #### Fase 2 — Horario (P1)
 Materias y sesiones (día, hora, aula). Alta manual e importación del JSON generado por IA a partir
@@ -364,9 +441,16 @@ estaba bien, pero la Redirect Rule creada desde la plantilla de Cloudflare usaba
 peticiones a `https://ourocore.net/` con barra. Corregida a `https://ourocore.net/*`: ahora
 responde 301 al `www` preservando ruta y query.
 
-**Pendiente para la Fase 1**: crear el túnel de `notecore.ourocore.net` apuntando a `web:3000`,
-con el servicio `cloudflared` en `infra/docker-compose.yml`. Se hace al cerrar la Fase 1, no
-antes: exponer la web al exterior sin autenticación no aporta nada.
+**Pendiente**: crear el túnel de `notecore.ourocore.net` apuntando a `web:3000`, con el servicio
+`cloudflared` en `infra/docker-compose.yml`. Estaba previsto al cerrar la Fase 1 y **no se hizo**:
+la fase se verificó entera en local (emulador Android + navegador), que es lo que exige la regla
+de cierre, y exponer al exterior no añadía nada a esa verificación.
+
+Cuando se monte, hay dos cosas que atender por lo hecho en la Fase 1:
+- **`COOKIE_DOMAIN`** debe valer el dominio que compartan web y API para que la cookie de sesión
+  viaje entre ambas.
+- El plugin `with-dev-cleartext.js` solo abre HTTP hacia direcciones locales, así que la app
+  apuntando al túnel irá por HTTPS sin tocar nada.
 
 **Limpieza de la v1 (2026-08-16)**: eliminados el túnel `Horarios-Universidad-OuroCore` y su
 registro `horarios.ourocore.net`, que quedaban de la versión retirada. Verificado que el resto de

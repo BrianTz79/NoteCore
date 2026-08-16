@@ -19,6 +19,27 @@ const envSchema = z.object({
 
   /** Orígenes permitidos para CORS, separados por coma. */
   CORS_ORIGINS: z.string().default('http://localhost:3000'),
+
+  /**
+   * Secreto de firma de los tokens. 32 caracteres es el mínimo razonable para HS256;
+   * `openssl rand -hex 32` genera 64.
+   */
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener al menos 32 caracteres'),
+
+  /**
+   * Vida del token de acceso, en minutos. Corta a propósito: si se filtra, la ventana de
+   * uso es pequeña, y el refresh token lo renueva sin que el usuario note nada.
+   */
+  ACCESS_TOKEN_MINUTES: z.coerce.number().int().positive().default(15),
+
+  /** Vida del refresh token, en días. Define cuánto dura la sesión sin volver a entrar. */
+  REFRESH_TOKEN_DAYS: z.coerce.number().int().positive().default(30),
+
+  /**
+   * Dominio de las cookies de sesión. Vacío en desarrollo (el navegador usa el host de la
+   * petición); en producción, el dominio compartido por web y API.
+   */
+  COOKIE_DOMAIN: z.string().optional(),
 });
 
 function loadConfig() {
@@ -49,6 +70,10 @@ function loadConfig() {
     corsOrigins: env.CORS_ORIGINS.split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
+    jwtSecret: env.JWT_SECRET,
+    accessTokenSeconds: env.ACCESS_TOKEN_MINUTES * 60,
+    refreshTokenSeconds: env.REFRESH_TOKEN_DAYS * 24 * 60 * 60,
+    cookieDomain: env.COOKIE_DOMAIN && env.COOKIE_DOMAIN.length > 0 ? env.COOKIE_DOMAIN : null,
   } as const;
 }
 

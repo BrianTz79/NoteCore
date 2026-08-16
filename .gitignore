@@ -51,12 +51,11 @@ apps/web/AGENTS.md
 *.aab
 # Los keystores nunca se suben: el de release firma la app publicada
 *.keystore
-android/app/build/
-android/build/
-android/.gradle/
-android/local.properties
-ios/Pods/
-ios/build/
+# Los directorios nativos los regenera `expo prebuild` a partir de `app.json` y de los
+# plugins de `apps/mobile/plugins/`. No se versionan: editarlos a mano se perdería en el
+# siguiente prebuild, y la configuración real vive en `app.json`.
+apps/mobile/android/
+apps/mobile/ios/
 
 # === Logs ===
 *.log

@@ -7,7 +7,9 @@
     "scheme": "notecore",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "android": {
       "package": "net.ourocore.notecore",
       "versionCode": 1,
@@ -15,8 +17,9 @@
         "backgroundColor": "#0f172a"
       }
     },
-    "extra": {
-      "apiUrl": "http://localhost:3001"
-    }
+    "plugins": [
+      "expo-secure-store",
+      "./plugins/with-dev-cleartext.js"
+    ]
   }
 }

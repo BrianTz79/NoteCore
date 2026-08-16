@@ -1,73 +1,58 @@
+import { useState } from 'react';
+import { ActivityIndicator, SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
-// Verificación de la Fase 0: la app consume los mismos tipos y reglas que web y api,
-// definidos una sola vez en `packages/shared` (Principio VIII).
-import {
-  calculateAbsenceLimit,
-  ABSENCE_LIMIT_DISCLAIMER,
-  WEEKDAYS,
-} from '@notecore/shared';
+import { AuthProvider, useAuth } from './lib/auth-context';
+import { EntrarScreen } from './screens/EntrarScreen';
+import { RegistroScreen } from './screens/RegistroScreen';
+import { InicioScreen } from './screens/InicioScreen';
+import { colors } from './components/ui';
 
+/**
+ * Raíz de la app.
+ *
+ * La navegación es un simple cambio de estado entre tres pantallas: con las que hay en la
+ * Fase 1 no compensa traer una librería de navegación. Cuando lleguen el horario, la
+ * agenda y el calendario (fases 2 a 5) se introducirá `expo-router` con pestañas.
+ */
 export default function App() {
-  const ejemplo = calculateAbsenceLimit(80);
-
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar style="light" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>NoteCore</Text>
-        <Text style={styles.subtitle}>
-          El núcleo de tu vida académica. Fase 0 — cimientos en marcha.
-        </Text>
+    <AuthProvider>
+      <SafeAreaView style={styles.safe}>
+        <StatusBar style="light" />
+        <Root />
+      </SafeAreaView>
+    </AuthProvider>
+  );
+}
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Código compartido en funcionamiento</Text>
-          <Text style={styles.body}>
-            Con {ejemplo.totalSessions} sesiones en el semestre, el límite sugerido es de{' '}
-            <Text style={styles.strong}>{ejemplo.suggested} faltas</Text>.
-          </Text>
-          <Text style={styles.caption}>{ABSENCE_LIMIT_DISCLAIMER}</Text>
-        </View>
+function Root() {
+  const { user, loading } = useAuth();
+  const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Días de clase</Text>
-          <View style={styles.chips}>
-            {WEEKDAYS.map((dia) => (
-              <View key={dia} style={styles.chip}>
-                <Text style={styles.chipText}>{dia}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+  // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
+  if (loading) {
+    return (
+      <View style={styles.centro}>
+        <ActivityIndicator color={colors.acentoClaro} size="large" />
+      </View>
+    );
+  }
+
+  if (user) return <InicioScreen />;
+
+  return pantalla === 'entrar' ? (
+    <EntrarScreen onIrARegistro={() => setPantalla('registro')} />
+  ) : (
+    <RegistroScreen onIrAEntrar={() => setPantalla('entrar')} />
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#020617' },
-  content: { padding: 24, gap: 24 },
-  title: { color: '#f8fafc', fontSize: 32, fontWeight: '600' },
-  subtitle: { color: '#94a3b8', fontSize: 15, marginTop: -16 },
-  card: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 20,
-    gap: 10,
+  safe: {
+    flex: 1,
+    backgroundColor: colors.fondo,
+    // En Android `SafeAreaView` no reserva la barra de estado: se compensa a mano.
+    paddingTop: RNStatusBar.currentHeight ?? 0,
   },
-  cardTitle: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '500',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  body: { color: '#e2e8f0', fontSize: 16 },
-  strong: { color: '#ffffff', fontWeight: '600' },
-  caption: { color: '#94a3b8', fontSize: 13 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { backgroundColor: '#1e293b', borderRadius: 6, paddingHorizontal: 12, paddingVertical: 5 },
-  chipText: { color: '#e2e8f0', fontSize: 13, textTransform: 'capitalize' },
+  centro: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

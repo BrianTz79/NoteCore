@@ -13,5 +13,6 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
-  "exclude": ["node_modules", "android", "ios"]
+  // `android/` e `ios/` los genera `expo prebuild` y contienen su propio JS de plantilla.
+  "exclude": ["node_modules", "android", "ios", "plugins"]
 }
