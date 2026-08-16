@@ -368,9 +368,9 @@ responde 301 al `www` preservando ruta y query.
 con el servicio `cloudflared` en `infra/docker-compose.yml`. Se hace al cerrar la Fase 1, no
 antes: exponer la web al exterior sin autenticación no aporta nada.
 
-**Nota de limpieza**: el túnel `Horarios-Universidad-OuroCore` (de la v1 eliminada) sigue
-existiendo en estado `down`, y `horarios.ourocore.net` aún le apunta. Pendiente de decisión del
-usuario.
+**Limpieza de la v1 (2026-08-16)**: eliminados el túnel `Horarios-Universidad-OuroCore` y su
+registro `horarios.ourocore.net`, que quedaban de la versión retirada. Verificado que el resto de
+subdominios sigue respondiendo y que ya no queda ningún túnel caído.
 
 ### Decisiones tomadas
 
