@@ -9,7 +9,7 @@ import { Button, Card } from '@/components/ui';
  * Inicio, ya con sesión.
  *
  * Enlaza a lo que hay disponible: el horario (Fase 2), las faltas (Fase 3), la agenda
- * (Fase 4) y el perfil. El calendario llega en la Fase 5.
+ * (Fase 4), el calendario (Fase 5) y el perfil.
  */
 export default function HomePage() {
   return (
@@ -76,6 +76,19 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Tu calendario">
+        <p className="text-slate-300">
+          Tus clases y tus entregas en la misma vista, día a día, con avisos antes de que
+          venza cada cosa.
+        </p>
+        <Link
+          href="/calendario"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mi calendario →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -91,8 +104,8 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· El calendario con recordatorios</li>
           <li>· Compartir tu horario con tus compañeros</li>
+          <li>· Archivar el semestre y empezar uno nuevo</li>
         </ul>
       </Card>
     </main>

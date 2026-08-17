@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, control de faltas y agenda funcionando en app y web |
-| **Fases completadas** | 5 de 12 |
-| **Fase actual** | Fase 5 — Calendario y recordatorios (no iniciada) |
+| **Estado general** | Horario, faltas, agenda y calendario con recordatorios funcionando en app y web |
+| **Fases completadas** | 6 de 12 |
+| **Fase actual** | Fase 6 — Compartir (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `█████░░░░░░░` 42%
+**Avance**: `██████░░░░░░` 50%
 
 ### Qué se ha hecho
 
@@ -62,11 +62,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Fase 4 cerrada**: agenda de tareas, proyectos y exámenes con materia y fecha límite
   opcionales, ordenada por proximidad de vencimiento; verificada creando en la web y leyendo en
   el emulador Android, y al revés
+- **Fase 5 cerrada**: calendario mensual que combina clases y vencimientos, detalle por día, y
+  recordatorios con anticipación y hora configurables; la notificación local se verificó
+  programada en el sistema Android y cancelándose al completar la actividad desde la web
 
 ### Próximo paso
 
-**Fase 5 — Calendario y recordatorios**: vista que combina clases y vencimientos, detalle por
-día y notificaciones locales con anticipación configurable.
+**Fase 6 — Compartir**: horarios y actividades por QR, código corto y enlace, con vista previa
+antes de aceptar y copia independiente para el receptor.
 
 ---
 
@@ -81,7 +84,7 @@ día y notificaciones locales con anticipación configurable.
 | 2 | Horario | P1 | ✅ | ✅ | ✅ | ✅ |
 | 3 | Control de faltas | P1 | ✅ | ✅ | ✅ | ✅ |
 | 4 | Agenda | P1 | ✅ | ✅ | ✅ | ✅ |
-| 5 | Calendario y recordatorios | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 5 | Calendario y recordatorios | P2 | ✅ | ✅ | ✅ | ✅ |
 | 6 | Compartir | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 7 | Semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 8 | Social: perfiles y contactos | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -98,6 +101,107 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 5 — Calendario y recordatorios · cerrada el 2026-08-17
+
+**Entregado**: vista de calendario mensual que combina clases y vencimientos en la misma rejilla
+(FR-023); detalle de un día concreto con sus clases —hora, aula y si se faltó— y lo que vence
+(FR-024); recordatorios activables con anticipación configurable —el mismo día, 1, 2, 3 días o una
+semana— y hora del aviso (FR-025); **notificación local real en Android** (FR-026); y
+reprogramación o cancelación automática cuando la actividad cambia de fecha, se completa, pierde su
+fecha o se borra (FR-027).
+
+**El problema de la hora que la agenda no tiene**. FR-025 pide anticipación configurable y FR-026
+un momento concreto, pero las actividades guardan `dueDate` como `date` sin hora —decisión de la
+Fase 4: "se entrega el 3 de septiembre" es un día de calendario—. Darle hora a cada entrega la
+convertiría en instante y reabriría el problema de husos que esa decisión cerró. Se resolvió con
+una **hora de aviso por usuario** (20:00 por defecto): da el momento que la notificación necesita
+sin tocar el modelo de la agenda.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| El servidor devuelve **un día por fecha del rango**, incluidos los vacíos | El cliente pinta la rejilla recorriendo la lista. Generar las fechas en el cliente es justo donde reaparecen los errores de huso que `CalendarDate` existe para evitar |
+| El **momento del aviso lo calcula el servidor** (`remindOn`, `remindAt`, `overdue`) | Si cada cliente restara los días de anticipación por su cuenta, app y web discreparían sobre cuándo toca avisar, y el fallo sería invisible hasta que la notificación llegara tarde |
+| El plan devuelve **todos** los recordatorios vigentes, no solo los nuevos | Así FR-027 se cumple sin llevar registro de lo ya programado: el cliente cancela todo y reprograma la lista entera. Lo que cambió, se completó o se borró simplemente ya no aparece. Calcular diferencias exigiría un estado local que se desincronizaría al editar desde el otro cliente |
+| Notificaciones **locales**, no push | Un recordatorio de entrega no necesita servidor en el momento del aviso. Push exigiría credenciales de Firebase, un token por dispositivo y un servicio que despierte a la hora exacta, para decir algo que el teléfono ya sabe |
+| Los recordatorios arrancan **apagados** | Programar avisos que nadie pidió es lo que hace que se desactiven para siempre |
+| Anticipación como **conjunto cerrado** (0, 1, 2, 3, 7 días) | Son las que se usan de verdad, y así la elección es un toque en la app en lugar de escribir un número |
+| La **web configura y muestra**; la app **emite** la notificación | El navegador no puede programar un aviso que llegue con la pestaña cerrada. La paridad se cumple donde importa: los mismos ajustes y los mismos datos en ambos clientes (Principio I) |
+| `reminderInstant` construye la fecha con **componentes locales** | `new Date('2026-08-19T20:00')` y `toISOString()` reinterpretan la hora en UTC: el aviso saldría desplazado seis horas en México |
+| Los ajustes de recordatorio viven en `user_settings`, y su `UPDATE` **no toca `semesterWeeks`** | Es la tabla que comparte con la Fase 3. Sin esa separación, cambiar la hora del aviso reescribiría las semanas del semestre, y con ellas el límite sugerido de faltas |
+| El detalle del día se abre **dentro** del calendario, no en otra pantalla | El usuario alterna entre días y perdería el contexto del mes si cada toque lo llevara fuera |
+| **Sin `expo-router` todavía** | La Fase 4 lo previó aquí, pero los dos motivos no se materializaron: el detalle del día no es una ruta (se abre bajo la rejilla) y la notificación aún no abre una actividad concreta, porque no existe esa pantalla de detalle. El `itemId` ya viaja en la notificación para cuando la haya. Entra en la Fase 6, que comparte por enlace y sí necesita resolver rutas |
+
+**Verificación ejecutada** — 244 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Rangos de fechas con años bisiestos y cambios de horario, rejilla mensual en 24 meses, momento y vigencia del aviso, textos, y validación de rangos y ajustes | **58/58** |
+| API (`fetch` contra la API real) | Calendario por rango, recurrencia de clases por día de la semana, faltas en el calendario, detalle del día, ajustes, plan de recordatorios, los cinco caminos de FR-027, validación, aislamiento entre cuentas y rutas protegidas | **102/102** |
+| Web (Playwright, navegador real) | Ruta protegida, enlace desde el inicio, rejilla, navegación entre meses, detalle del día con horas y aula, ajustes de recordatorio, persistencia al recargar y ausencia de errores de JavaScript | **38/38** |
+
+Además se reejecutó una **regresión de las fases 1 a 4** (46/46) porque esta fase toca
+`user_settings`, que comparte con el control de faltas, y el esquema de rangos de fechas.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Rejilla mensual con clases y vencimientos (FR-023) | 42 celdas, coincide con la API día a día |
+| Clases recurrentes en su día de la semana, con color por materia | correcto |
+| Hoy destacado y meses vecinos atenuados | correcto |
+| Detalle de un día (FR-024) | "Calculo · 07:00–09:00 · A-101" y "Reporte de lab · Tarea · Calculo" |
+| Android pide permiso de notificaciones al activar | correcto (`POST_NOTIFICATIONS: granted=true`) |
+| Aviso **programado en el sistema** (FR-026) | `dumpsys alarm`: `RTC_WAKEUP` de `net.ourocore.notecore` para **2026-08-24 20:00**, el momento exacto esperado |
+| Lo ya vencido no se programa, y se señala | "Ya debería haberte avisado" |
+| Completar la actividad **desde la web** cancela la alarma (FR-027) | `dumpsys alarm`: **0 alarmas**; la app muestra "No hay avisos pendientes que programar" |
+| Cambiar la anticipación **desde la app** leído en la **web** | `leadDays: 7` y "Una semana antes" marcado en el navegador |
+| Paridad bidireccional | **confirmada** |
+
+**Corregido durante la fase**:
+
+1. **Una fecha con forma válida pero inexistente devolvía 500.** `GET /calendar?from=2026-02-31`
+   respondía "Ocurrió un error inesperado" en lugar de un error de campo. Zod ejecuta las
+   comprobaciones de nivel superior **aunque las de los campos ya hayan fallado**, así que la
+   comprobación del tamaño del rango llamaba a `daysBetween` con una fecha que
+   `calendarDateSchema` acababa de rechazar, y el `RangeError` de `calendarDateToLocal` escapaba
+   como fallo interno. Se guardó esa comprobación con `isCalendarDate`. Se revisó el esquema
+   equivalente de la Fase 3 (`absenceHistoryQuerySchema`) y no tiene el fallo: solo compara texto.
+2. **"Vence mañana" para una entrega a nueve días.** Lo encontró la verificación en el emulador,
+   no las suites: la lista de próximos avisos anunciaba igual una entrega de mañana y un examen a
+   nueve días. `reminderMessage` deriva el plazo de `leadDays`, que es la distancia entre el
+   **aviso** y la entrega —correcta en la notificación, que se lee el día que salta, pero no en
+   una lista que se lee hoy—. Se separó `reminderListMessage`, que cuenta desde hoy. Los dos
+   textos viven en `shared` porque es justo el detalle que se corregiría en un cliente y se
+   olvidaría en el otro.
+3. **`POST_NOTIFICATIONS` no llegaba al manifiesto.** Instalar `expo-notifications` no basta:
+   sin declarar el plugin en `app.json`, el prebuild no añade el permiso, y en Android 13+ las
+   notificaciones **no se muestran y no hay error**. Se habría descubierto solo en un teléfono
+   real. Se descartó `SCHEDULE_EXACT_ALARM`: los avisos son de día y hora fija, no exigen
+   precisión al segundo, y es un permiso restringido que Google Play examina.
+4. **Cambiar de mes reprogramaba todas las notificaciones.** El plan de recordatorios se cargaba
+   en el mismo efecto que la rejilla, así que pasar de agosto a septiembre cancelaba y volvía a
+   programar cada aviso del teléfono sin que nada hubiera cambiado. Se separaron los efectos en
+   ambos clientes.
+5. **"Agosto De 2026".** `textTransform: 'capitalize'` de React Native y `capitalize` de CSS ponen
+   mayúscula en **cada palabra**, y en español solo la lleva la primera. `formatMonthName`
+   devuelve ahora el nombre ya capitalizado y ningún cliente aplica la transformación.
+
+**Añadido**: `expo-notifications`, para programar los avisos locales en Android.
+
+**Migración**: `0005` añade a `user_settings` los campos `reminders_enabled`,
+`reminder_lead_days` y `reminder_time_of_day`. Es aditiva y con valores por defecto: las cuentas
+que ya existían quedan con los recordatorios apagados, sin perder nada.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. Se reejecutó `expo prebuild` porque
+`expo-notifications` es un módulo nativo y hay que enlazarlo en el proyecto Android. Igual que en
+las fases 3 y 4, la cuenta de prueba en dispositivo usa una contraseña ASCII, porque
+`adb shell input text` no teclea `ñ`.
+
+---
 
 #### Fase 4 — Agenda · cerrada el 2026-08-17
 
@@ -470,14 +574,16 @@ Cambios que exigió la actualización:
 │   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
-│   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance, agenda)
+│   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance,
+│   │       │                agenda, calendar)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
 │   │
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas, /agenda)
+│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas,
+│   │       │                /agenda, /calendario)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -485,9 +591,9 @@ Cambios que exigió la actualización:
 │       ├── plugins/         plugins de configuración nativa (cleartext local)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda
+│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario
 │           ├── components/  componentes propios de la app
-│           └── lib/         cliente de API y contexto de sesión
+│           └── lib/         cliente de API, contexto de sesión y notificaciones locales
 │
 ├── packages/
 │   └── shared/              tipos de dominio, validaciones y lógica común
@@ -496,7 +602,8 @@ Cambios que exigió la actualización:
 │           ├── schemas/     validaciones compartidas
 │           ├── api/         cliente HTTP y llamadas tipadas, para web y app
 │           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
-│                            urgencia y orden de la agenda, errores de formulario, fechas)
+│                            urgencia y orden de la agenda, rejilla mensual y momento de los
+│                            recordatorios, errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -608,10 +715,16 @@ y la misma tarea saldría "vence hoy" en uno y "venció ayer" en el otro.
 **Verificado el 2026-08-17**: una agenda creada en la web se ve igual en el emulador Android, y
 lo creado, editado y completado desde la app se lee igual desde la web. Detalle en el historial.
 
-#### Fase 5 — Calendario y recordatorios (P2)
-Calendario que combina clases y vencimientos, con detalle por día. Recordatorios con anticipación
-configurable y notificación en el dispositivo.
-**Verificación**: la notificación llega a tiempo y se cancela al completar la actividad.
+#### Fase 5 — Calendario y recordatorios (P2) ✅
+Calendario mensual que combina clases y vencimientos, con detalle por día que incluye horas, aula
+y las faltas registradas. Recordatorios con anticipación configurable (el mismo día, 1, 2, 3 días
+o una semana) y hora del aviso, con notificación local en Android.
+**La hora del aviso es un ajuste del usuario, no un campo de cada entrega**: las actividades
+guardan el día sin hora (Fase 4), y darles hora reabriría el problema de husos que esa decisión
+cerró.
+**Verificado el 2026-08-17**: el aviso quedó programado en el sistema Android
+(`RTC_WAKEUP` para el día y hora exactos) y se canceló al completar la actividad desde la web
+—verificado con `dumpsys alarm`: 0 alarmas—. Detalle en el historial.
 
 #### Fase 6 — Compartir (P2)
 Horarios y actividades por QR, código corto y enlace —las tres entregan lo mismo. El emisor elige

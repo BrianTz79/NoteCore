@@ -15,10 +15,14 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0f172a"
-      }
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "plugins": [
       "expo-secure-store",
+      "expo-notifications",
       "./plugins/with-dev-cleartext.js"
     ]
   }

@@ -257,6 +257,28 @@ export const userSettings = pgTable('user_settings', {
    * sustituirá por las fechas reales del semestre.
    */
   semesterWeeks: integer('semester_weeks').notNull().default(16),
+  /**
+   * Si el usuario quiere recibir recordatorios de sus entregas (FR-025).
+   *
+   * Arranca apagado: programar notificaciones sin que nadie las pida es justo lo que hace
+   * que se desactiven para siempre. El usuario las enciende cuando las quiere.
+   */
+  remindersEnabled: boolean('reminders_enabled').notNull().default(false),
+  /** Días de anticipación del aviso (FR-025). Uno de `REMINDER_LEAD_DAYS`. */
+  reminderLeadDays: integer('reminder_lead_days').notNull().default(1),
+  /**
+   * Hora del día a la que se emite el aviso.
+   *
+   * Es un ajuste del usuario y no un campo de cada actividad porque `agenda_items.due_date`
+   * es `date`, sin hora: "se entrega el 3 de septiembre" es un día de calendario (Fase 4).
+   * Darle hora a cada entrega la convertiría en instante y reabriría el problema de husos que
+   * esa decisión cerró; una hora fija da el momento que la notificación necesita sin tocar
+   * el modelo de la agenda.
+   *
+   * `time` y no `timestamp`, por lo mismo que las horas del horario: es una hora de reloj
+   * recurrente, no un instante.
+   */
+  reminderTimeOfDay: time('reminder_time_of_day').notNull().default('20:00'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

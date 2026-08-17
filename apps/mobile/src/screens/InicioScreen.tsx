@@ -14,18 +14,20 @@ import { Button, Card, Field, FormError, colors } from '../components/ui';
 /**
  * Inicio con sesión abierta.
  *
- * Enlaza a lo que ya está disponible —el horario de la Fase 2, las faltas de la Fase 3 y la
- * agenda de la Fase 4— y muestra el perfil y los dispositivos de la Fase 1. El calendario
- * llega en la Fase 5.
+ * Enlaza a lo que ya está disponible —el horario de la Fase 2, las faltas de la Fase 3, la
+ * agenda de la Fase 4 y el calendario de la Fase 5— y muestra el perfil y los dispositivos de
+ * la Fase 1.
  */
 export function InicioScreen({
   onIrAHorario,
   onIrAFaltas,
   onIrAAgenda,
+  onIrACalendario,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
   onIrAAgenda: () => void;
+  onIrACalendario: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -61,12 +63,20 @@ export function InicioScreen({
         <Button title="Ver mi agenda" onPress={onIrAAgenda} />
       </Card>
 
+      <Card title="Tu calendario">
+        <Text style={styles.body}>
+          Tus clases y tus entregas en la misma vista, día a día, con avisos en este teléfono
+          antes de que venza cada cosa.
+        </Text>
+        <Button title="Ver mi calendario" onPress={onIrACalendario} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· El calendario con recordatorios</Text>
         <Text style={styles.body}>· Compartir tu horario con tus compañeros</Text>
+        <Text style={styles.body}>· Archivar el semestre y empezar uno nuevo</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />

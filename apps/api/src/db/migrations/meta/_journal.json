@@ -36,6 +36,13 @@
       "when": 1786901266968,
       "tag": "0004_stiff_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786939916911,
+      "tag": "0005_broken_chronomancer",
+      "breakpoints": true
     }
   ]
 }
