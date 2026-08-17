@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import {
   ApiClient,
+  createAgendaApi,
   createAttendanceApi,
   createAuthApi,
   createScheduleApi,
@@ -59,3 +60,4 @@ export const apiClient = new ApiClient({
 export const authApi = createAuthApi(apiClient);
 export const scheduleApi = createScheduleApi(apiClient);
 export const attendanceApi = createAttendanceApi(apiClient);
+export const agendaApi = createAgendaApi(apiClient);

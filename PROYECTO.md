@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-16**
+> Última actualización: **2026-08-17**
 
 ---
 
@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario y control de faltas funcionando en app y web |
-| **Fases completadas** | 4 de 12 |
-| **Fase actual** | Fase 4 — Agenda (no iniciada) |
+| **Estado general** | Horario, control de faltas y agenda funcionando en app y web |
+| **Fases completadas** | 5 de 12 |
+| **Fase actual** | Fase 5 — Calendario y recordatorios (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `████░░░░░░░░` 33%
+**Avance**: `█████░░░░░░░` 42%
 
 ### Qué se ha hecho
 
@@ -59,11 +59,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Fase 3 cerrada**: registro de faltas por sesión o día completo, conteo por materia con
   límite sugerido editable y alerta de proximidad; verificada marcando en la web y leyendo en el
   emulador Android, y al revés
+- **Fase 4 cerrada**: agenda de tareas, proyectos y exámenes con materia y fecha límite
+  opcionales, ordenada por proximidad de vencimiento; verificada creando en la web y leyendo en
+  el emulador Android, y al revés
 
 ### Próximo paso
 
-**Fase 4 — Agenda**: tareas, proyectos y actividades con materia y fecha límite opcionales, y
-estado de completado.
+**Fase 5 — Calendario y recordatorios**: vista que combina clases y vencimientos, detalle por
+día y notificaciones locales con anticipación configurable.
 
 ---
 
@@ -77,7 +80,7 @@ estado de completado.
 | 1 | Cuentas y sesión | P1 | ✅ | ✅ | ✅ | ✅ |
 | 2 | Horario | P1 | ✅ | ✅ | ✅ | ✅ |
 | 3 | Control de faltas | P1 | ✅ | ✅ | ✅ | ✅ |
-| 4 | Agenda | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 4 | Agenda | P1 | ✅ | ✅ | ✅ | ✅ |
 | 5 | Calendario y recordatorios | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 6 | Compartir | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 7 | Semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -95,6 +98,85 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 4 — Agenda · cerrada el 2026-08-17
+
+**Entregado**: actividades con título, descripción, materia y fecha límite opcionales (FR-018),
+en cuatro tipos —tarea, proyecto, examen y actividad—; edición de **todos** los campos tras la
+creación (FR-019); completar conservando el registro, y reabrir (FR-020); eliminación explícita
+(FR-021); pendientes ordenadas por proximidad de vencimiento (FR-022), con lo vencido primero y
+un resumen de lo vencido y lo que vence hoy.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Borrar una materia **no borra** sus tareas (`set null`, no `cascade`) | Al contrario que las faltas, una entrega sigue existiendo aunque el estudiante reorganice su horario. Perderla en silencio sería justo el fallo que la agenda existe para evitar; se queda sin materia, que es un estado válido |
+| **Completar y borrar son acciones distintas** | FR-020 conserva el registro y FR-021 exige el borrado explícito. La casilla completa de un toque; eliminar pide confirmación porque sí se pierde |
+| Lo **vencido va primero**, no al final | Una entrega que ya pasó es lo más urgente de la lista. Enterrarla abajo la escondería justo cuando más importa |
+| Lo que **no tiene fecha** va al final, pero se muestra | FR-018 permite omitirla, así que esconderla la perdería; simplemente no compite por urgencia con lo que sí la tiene |
+| Una actividad **completada nunca urge**, aunque su fecha haya pasado | Marcar como "vencida" algo ya entregado es una alarma falsa |
+| `daysUntilDue` y la urgencia los **calcula el servidor** | El cliente los derivaría del reloj del dispositivo, que puede ir en otro huso o mal. Con dos clientes, la misma tarea saldría "vence hoy" en uno y "venció ayer" en el otro |
+| Toda la lista se calcula contra **una misma fecha** | Si el servidor cruzara la medianoche a mitad del recorrido, unas actividades saldrían "vencidas" y otras "vencen hoy" en la misma respuesta |
+| Fechas como **`date`** de PostgreSQL, igual que las faltas | "Se entrega el 3 de septiembre" es un día de calendario. Con `timestamp` la entrega se movería de día al cambiar de huso |
+| `completedAt` **solo se toca cuando el estado cambia** | Reenviar `completed: true` sobre algo ya completado reescribiría la fecha, y las completadas —ordenadas por ella— saltarían al principio sin que el usuario hiciera nada |
+| El orden final lo pone `sortByDueDate`, no el `ORDER BY` | PostgreSQL pone los nulos al final en orden ascendente, pero no distingue lo vencido ni desempata por fecha de creación como pide FR-022 |
+| **Sin `expo-router` todavía** | Con cuatro secciones que se abren desde el inicio sigue sin haber rutas anidadas. Entra en la Fase 5: el calendario enlaza al detalle de un día y a la actividad de ese día, y los recordatorios exigen abrir la app directamente en una actividad desde una notificación |
+
+**Verificación ejecutada** — 264 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Días entre fechas (con cambios de horario y años bisiestos), urgencias en todos sus umbrales, orden de FR-022, y los esquemas de alta, edición y filtros | **111/111** |
+| API (`fetch` contra la API real) | Alta mínima y completa, validación, orden por vencimiento, edición campo a campo, completar y reabrir, filtros, borrado, aislamiento entre cuentas, rutas protegidas y la cascada `set null` | **109/109** |
+| Web (Playwright, navegador real) | Ruta protegida, enlace desde el inicio, alta, validación, orden, completar y reabrir, edición, persistencia y borrado, sin errores de JavaScript | **44/44** |
+
+Además se reejecutó una **regresión de las fases 1 a 3** (24/24) porque esta fase tocó el
+manejador de cuerpos de peticiones, que es común a todas las rutas.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| La app arranca y muestra la tarjeta "Tu agenda" | correcto |
+| Agenda **creada desde la web** visible en la **app** | las 5 actividades, en el mismo orden |
+| Urgencias, materias y fechas idénticas a la web | "Vencida · Venció hace 4 días", "Próxima · Vence en 3 días" |
+| Resumen de vencidas y de hoy | "1 actividad vencida · 1 vence hoy" |
+| Alta desde la interfaz táctil (tipo, materia y atajo de fecha) | creada y ordenada en su sitio entre las de hoy y las de 3 días |
+| Editar el título conservando tipo, materia y fecha (FR-019) | correcto |
+| Completar con la casilla (FR-020) | de 6 a 5 pendientes; el aviso de vencidas desaparece |
+| La completada se conserva en su sección | "Completadas (1)" con la casilla marcada |
+| Cambios hechos en la **app** leídos desde la **web** | **paridad bidireccional confirmada** |
+
+**Corregido durante la fase**:
+
+1. **Un `DELETE` con `content-type: application/json` fallaba con 400 en toda la API.** No es un
+   fallo de la agenda: afectaba igual a las rutas de horario y faltas de las fases 2 y 3, y
+   estaba ahí desde entonces. Fastify lee un cuerpo vacío con esa cabecera como
+   `FST_ERR_CTP_EMPTY_JSON_BODY` —"prometiste JSON y no mandaste nada"—, que el manejador de
+   errores traducía a "el cuerpo de la petición debe ser JSON válido": el borrado no se
+   ejecutaba y el mensaje no tenía nada que ver con lo ocurrido. Los clientes propios se
+   libraban por casualidad, porque `ApiClient` solo pone la cabecera cuando hay cuerpo, pero
+   cualquier cliente HTTP corriente (curl con `-H`, axios, una cola de reintentos) la manda
+   siempre. Se añadió un analizador de contenido que entrega `undefined` ante el cuerpo vacío.
+   Importa de cara a la Fase 6, que expone compartición por enlace, y a la Fase 9, que sincroniza
+   desde una cola. Efecto secundario bueno: un `POST` sin cuerpo ahora responde "Falta el correo"
+   en lugar del error genérico de JSON.
+2. **"Vence hoy · Vence hoy" en la lista.** Lo encontró la verificación en el emulador, no las
+   suites. La línea de vencimiento concatenaba la etiqueta de urgencia con el mensaje de días, y
+   para una entrega de hoy ambas mitades dicen lo mismo. Se añadió `dueDateLine` en `shared`
+   —que omite la etiqueta cuando no aporta nada— en vez de parchearlo en cada cliente: es
+   justo el detalle que se corrige en uno y se olvida en el otro, y entonces la misma actividad
+   se lee distinto según el dispositivo. La suite recorre ahora todas las combinaciones de
+   urgencia y días exigiendo que ninguna repita la misma frase.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. `adb shell input text` parte el texto en el primer
+espacio, así que los títulos de varias palabras se teclean con `%s` como separador; tampoco teclea
+`ñ`, por lo que la cuenta de prueba en dispositivo usa una contraseña ASCII, igual que en la
+Fase 3.
+
+---
 
 #### Fase 3 — Control de faltas · cerrada el 2026-08-16
 
@@ -388,14 +470,14 @@ Cambios que exigió la actualización:
 │   ├── api/                 backend — Fastify + Drizzle
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
-│   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance)
+│   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance, agenda)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
 │   │
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
-│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas)
+│   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas, /agenda)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -403,18 +485,18 @@ Cambios que exigió la actualización:
 │       ├── plugins/         plugins de configuración nativa (cleartext local)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas
+│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda
 │           ├── components/  componentes propios de la app
 │           └── lib/         cliente de API y contexto de sesión
 │
 ├── packages/
 │   └── shared/              tipos de dominio, validaciones y lógica común
 │       └── src/
-│           ├── types/       entidades (Usuario, Sesión, Materia, Falta, errores de API…)
+│           ├── types/       entidades (Usuario, Sesión, Materia, Falta, Actividad…)
 │           ├── schemas/     validaciones compartidas
 │           ├── api/         cliente HTTP y llamadas tipadas, para web y app
 │           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
-│                            errores de formulario, fechas de calendario)
+│                            urgencia y orden de la agenda, errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -517,9 +599,14 @@ porque el semestre con fechas llega en la Fase 7.
 **Verificado el 2026-08-16**: una falta marcada en la web se ve igual en el emulador Android, y lo
 marcado, justificado y ajustado desde la app se lee igual desde la web. Detalle en el historial.
 
-#### Fase 4 — Agenda (P1)
-Tareas, proyectos y actividades. Materia y fecha límite opcionales, estado de completado.
-**Verificación**: actividad creada en un cliente se edita desde el otro.
+#### Fase 4 — Agenda (P1) ✅
+Tareas, proyectos, exámenes y actividades. Materia y fecha límite opcionales, estado de
+completado que **conserva** el registro, y borrado como acción aparte. Las pendientes se ordenan
+por proximidad de vencimiento, con **lo vencido primero**.
+**La urgencia la calcula el servidor**: derivarla en el cliente usaría el reloj del dispositivo,
+y la misma tarea saldría "vence hoy" en uno y "venció ayer" en el otro.
+**Verificado el 2026-08-17**: una agenda creada en la web se ve igual en el emulador Android, y
+lo creado, editado y completado desde la app se lee igual desde la web. Detalle en el historial.
 
 #### Fase 5 — Calendario y recordatorios (P2)
 Calendario que combina clases y vencimientos, con detalle por día. Recordatorios con anticipación

@@ -9,6 +9,7 @@ import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { scheduleRoutes } from './routes/schedule.js';
 import { attendanceRoutes } from './routes/attendance.js';
+import { agendaRoutes } from './routes/agenda.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -39,6 +40,42 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(cookie);
+
+  /**
+   * Analizador de JSON que acepta el cuerpo vacío.
+   *
+   * `DELETE /agenda/items/:id` no lleva cuerpo, pero muchos clientes HTTP —curl con `-H
+   * content-type`, axios, las colas de reintento— mandan `content-type: application/json`
+   * en toda petición. Fastify lo lee entonces como "prometiste JSON y no mandaste nada" y
+   * responde 400 "el cuerpo debe ser JSON válido": el borrado no se ejecuta y el mensaje no
+   * tiene nada que ver con lo que pasó.
+   *
+   * Los clientes propios se libraban porque `ApiClient` solo pone la cabecera cuando hay
+   * cuerpo, pero la API es superficie pública —la Fase 6 comparte por enlace y la Fase 9
+   * sincroniza desde una cola—, así que no puede depender de ese detalle.
+   *
+   * Un cuerpo vacío se entrega como `undefined`, no como `{}`: los esquemas de edición
+   * rechazan el objeto vacío con "no hay nada que actualizar", y convertirlo en `{}` haría
+   * que un `PATCH` sin cuerpo diera ese error en lugar del de campos faltantes.
+   */
+  app.addContentTypeParser(
+    'application/json',
+    { parseAs: 'string' },
+    (_request, body: string, done) => {
+      if (body === '') {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body));
+      } catch {
+        done(
+          new AppError('validacion', 'El cuerpo de la petición debe ser JSON válido.', 400),
+          undefined,
+        );
+      }
+    },
+  );
 
   /**
    * Límite de peticiones.
@@ -102,6 +139,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(authRoutes);
   await app.register(scheduleRoutes);
   await app.register(attendanceRoutes);
+  await app.register(agendaRoutes);
 
   return app;
 }

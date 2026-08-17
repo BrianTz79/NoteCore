@@ -14,15 +14,18 @@ import { Button, Card, Field, FormError, colors } from '../components/ui';
 /**
  * Inicio con sesión abierta.
  *
- * Enlaza a lo que ya está disponible —el horario de la Fase 2 y las faltas de la Fase 3— y
- * muestra el perfil y los dispositivos de la Fase 1. La agenda llega en la Fase 4.
+ * Enlaza a lo que ya está disponible —el horario de la Fase 2, las faltas de la Fase 3 y la
+ * agenda de la Fase 4— y muestra el perfil y los dispositivos de la Fase 1. El calendario
+ * llega en la Fase 5.
  */
 export function InicioScreen({
   onIrAHorario,
   onIrAFaltas,
+  onIrAAgenda,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
+  onIrAAgenda: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -50,12 +53,20 @@ export function InicioScreen({
         <Button title="Ver mis faltas" onPress={onIrAFaltas} />
       </Card>
 
+      <Card title="Tu agenda">
+        <Text style={styles.body}>
+          Anota tareas, proyectos y exámenes con su materia y su fecha de entrega, y
+          consúltalos ordenados por lo que vence antes.
+        </Text>
+        <Button title="Ver mi agenda" onPress={onIrAAgenda} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· La agenda de tareas y actividades</Text>
         <Text style={styles.body}>· El calendario con recordatorios</Text>
+        <Text style={styles.body}>· Compartir tu horario con tus compañeros</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />

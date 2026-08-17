@@ -187,6 +187,59 @@ export const absenceRecords = pgTable(
 );
 
 /**
+ * Actividades de la agenda: tareas, proyectos, exámenes (FR-018 a FR-022).
+ *
+ * `subjectId` y `dueDate` son nulos a propósito: FR-018 los declara opcionales, porque
+ * "renovar la credencial" no cuelga de ninguna materia y "leer el capítulo 4" puede no
+ * tener entrega.
+ *
+ * La fecha límite es `date` y no `timestamp` por lo mismo que la fecha de una falta: "se
+ * entrega el 3 de septiembre" es un día de calendario. Con `timestamp` la entrega se
+ * movería de día al cambiar de huso, y una tarea aparecería vencida un día antes.
+ */
+export const agendaItems = pgTable(
+  'agenda_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    /** `tarea`, `proyecto`, `examen` o `actividad`, tal como los define `AGENDA_KINDS`. */
+    kind: text('kind').notNull().default('tarea'),
+    /**
+     * Materia asociada, si la tiene (FR-018).
+     *
+     * `set null` y no `cascade`: borrar una materia no puede llevarse la tarea. La entrega
+     * sigue existiendo aunque el estudiante reorganice su horario, y perderla en silencio
+     * sería justo el fallo que la agenda existe para evitar. Se queda sin materia, que es
+     * un estado válido.
+     */
+    subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'set null' }),
+    dueDate: date('due_date'),
+    /** Completada (FR-020). Completar conserva el registro; borrar es otra acción (FR-021). */
+    completed: boolean('completed').notNull().default(false),
+    /** Cuándo se completó. `null` mientras siga pendiente. */
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('agenda_items_user_id_idx').on(table.userId),
+    index('agenda_items_subject_id_idx').on(table.subjectId),
+    /**
+     * La consulta de FR-022: los pendientes del usuario ordenados por vencimiento.
+     *
+     * Va sobre las tres columnas juntas porque es como se pide siempre —filtrar por usuario,
+     * separar completadas y ordenar por fecha—, y así el índice resuelve la ordenación sin
+     * pasar por un sort aparte.
+     */
+    index('agenda_items_user_due_idx').on(table.userId, table.completed, table.dueDate),
+  ],
+);
+
+/**
  * Ajustes del usuario.
  *
  * Una fila por usuario, creada al vuelo la primera vez que hace falta. De momento solo
@@ -212,7 +265,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   subjects: many(subjects),
   scheduleBlocks: many(scheduleBlocks),
   absenceRecords: many(absenceRecords),
+  agendaItems: many(agendaItems),
   settings: one(userSettings),
+}));
+
+export const agendaItemsRelations = relations(agendaItems, ({ one }) => ({
+  user: one(users, { fields: [agendaItems.userId], references: [users.id] }),
+  subject: one(subjects, { fields: [agendaItems.subjectId], references: [subjects.id] }),
 }));
 
 export const absenceRecordsRelations = relations(absenceRecords, ({ one }) => ({
@@ -236,6 +295,7 @@ export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   user: one(users, { fields: [subjects.userId], references: [users.id] }),
   blocks: many(scheduleBlocks),
   absences: many(absenceRecords),
+  agendaItems: many(agendaItems),
 }));
 
 export const scheduleBlocksRelations = relations(scheduleBlocks, ({ one }) => ({
@@ -253,4 +313,6 @@ export type ScheduleBlockRow = typeof scheduleBlocks.$inferSelect;
 export type NewScheduleBlockRow = typeof scheduleBlocks.$inferInsert;
 export type AbsenceRecordRow = typeof absenceRecords.$inferSelect;
 export type NewAbsenceRecordRow = typeof absenceRecords.$inferInsert;
+export type AgendaItemRow = typeof agendaItems.$inferSelect;
+export type NewAgendaItemRow = typeof agendaItems.$inferInsert;
 export type UserSettingsRow = typeof userSettings.$inferSelect;

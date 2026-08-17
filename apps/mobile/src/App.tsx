@@ -7,15 +7,20 @@ import { RegistroScreen } from './screens/RegistroScreen';
 import { InicioScreen } from './screens/InicioScreen';
 import { HorarioScreen } from './screens/HorarioScreen';
 import { FaltasScreen } from './screens/FaltasScreen';
+import { AgendaScreen } from './screens/AgendaScreen';
 import { colors } from './components/ui';
 
 /**
  * Raíz de la app.
  *
- * La navegación sigue siendo un cambio de estado entre pantallas. Con tres secciones
- * —inicio, horario y faltas— y vuelta siempre al inicio, `expo-router` seguiría sin ganar
- * nada: no hay rutas anidadas ni enlaces profundos que resolver. Entra cuando la agenda y
- * el calendario (fases 4 y 5) conviertan esto en una barra de pestañas de verdad.
+ * La navegación sigue siendo un cambio de estado entre pantallas. Con cuatro secciones
+ * —inicio, horario, faltas y agenda— y vuelta siempre al inicio, `expo-router` seguiría sin
+ * ganar nada: no hay rutas anidadas ni enlaces profundos que resolver, y cada sección es
+ * una pantalla completa que se abre desde el inicio.
+ *
+ * Entra en la Fase 5: el calendario enlaza con el detalle de un día y con la actividad
+ * concreta de ese día, y ahí sí aparece la anidación —y con los recordatorios, la necesidad
+ * de abrir la app directamente en una actividad desde una notificación—.
  */
 export default function App() {
   return (
@@ -31,7 +36,9 @@ export default function App() {
 function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
-  const [seccion, setSeccion] = useState<'inicio' | 'horario' | 'faltas'>('inicio');
+  const [seccion, setSeccion] = useState<'inicio' | 'horario' | 'faltas' | 'agenda'>(
+    'inicio',
+  );
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {
@@ -49,10 +56,14 @@ function Root() {
     if (seccion === 'faltas') {
       return <FaltasScreen onVolver={() => setSeccion('inicio')} />;
     }
+    if (seccion === 'agenda') {
+      return <AgendaScreen onVolver={() => setSeccion('inicio')} />;
+    }
     return (
       <InicioScreen
         onIrAHorario={() => setSeccion('horario')}
         onIrAFaltas={() => setSeccion('faltas')}
+        onIrAAgenda={() => setSeccion('agenda')}
       />
     );
   }

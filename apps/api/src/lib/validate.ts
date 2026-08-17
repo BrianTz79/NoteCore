@@ -9,7 +9,16 @@ import { errors } from './errors.js';
  * para dar feedback inmediato; el servidor nunca da por bueno lo que recibe.
  */
 export function parseBody<T extends z.ZodType>(schema: T, body: unknown): z.infer<T> {
-  const result = schema.safeParse(body);
+  /**
+   * Una petición sin cuerpo se valida como objeto vacío.
+   *
+   * El analizador de contenido entrega `undefined` cuando no vino nada, y Zod respondería a
+   * eso con "expected object, received undefined" —en inglés y sin decir qué falta—. Con
+   * `{}` el error vuelve a ser el de los campos obligatorios, que es lo que el formulario
+   * necesita pintar. Los esquemas de edición siguen rechazándolo con "no hay nada que
+   * actualizar", que también es correcto.
+   */
+  const result = schema.safeParse(body === undefined ? {} : body);
 
   if (result.success) return result.data;
 
