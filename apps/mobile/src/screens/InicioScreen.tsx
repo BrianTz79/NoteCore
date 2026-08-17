@@ -23,11 +23,13 @@ export function InicioScreen({
   onIrAFaltas,
   onIrAAgenda,
   onIrACalendario,
+  onIrACompartir,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
   onIrAAgenda: () => void;
   onIrACalendario: () => void;
+  onIrACompartir: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -71,11 +73,18 @@ export function InicioScreen({
         <Button title="Ver mi calendario" onPress={onIrACalendario} />
       </Card>
 
+      <Card title="Compartir">
+        <Text style={styles.body}>
+          Pásale tu horario o tus actividades a un compañero por QR, código o enlace, o escanea
+          el suyo para recibir una copia tuya.
+        </Text>
+        <Button title="Compartir o recibir" onPress={onIrACompartir} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Compartir tu horario con tus compañeros</Text>
         <Text style={styles.body}>· Archivar el semestre y empezar uno nuevo</Text>
       </Card>
 

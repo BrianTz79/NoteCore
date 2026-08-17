@@ -9,6 +9,7 @@ import { HorarioScreen } from './screens/HorarioScreen';
 import { FaltasScreen } from './screens/FaltasScreen';
 import { AgendaScreen } from './screens/AgendaScreen';
 import { CalendarioScreen } from './screens/CalendarioScreen';
+import { CompartirScreen } from './screens/CompartirScreen';
 import { colors } from './components/ui';
 
 /**
@@ -26,9 +27,13 @@ import { colors } from './components/ui';
  *   pero abrir la app en una actividad que todavía no tiene vista propia no es funcionalidad
  *   que ninguna fase haya pedido.
  *
- * Entra cuando haya una pantalla de detalle de actividad a la que enlazar de verdad —la
- * compartición por enlace de la Fase 6 la necesita—. Adoptarlo ahora sería reescribir cinco
- * pantallas para no resolver ningún problema existente.
+ * **La Fase 6 tampoco lo ha necesitado**, contra lo que preveía la Fase 5. El motivo es que
+ * el enlace de compartición no lo abre la app: lo abre la web, que sí tiene rutas. En el
+ * teléfono, el compartido llega por la cámara o tecleando el código, y ambos caminos
+ * desembocan en un panel dentro de la propia pantalla de compartir —no en una ruta—.
+ *
+ * Entra cuando exista un enlace profundo que deba abrir la app en una pantalla concreta:
+ * la Fase 8 comparte perfiles por enlace y es la primera que lo pide de verdad.
  */
 export default function App() {
   return (
@@ -45,7 +50,7 @@ function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
   const [seccion, setSeccion] = useState<
-    'inicio' | 'horario' | 'faltas' | 'agenda' | 'calendario'
+    'inicio' | 'horario' | 'faltas' | 'agenda' | 'calendario' | 'compartir'
   >('inicio');
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
@@ -70,12 +75,16 @@ function Root() {
     if (seccion === 'calendario') {
       return <CalendarioScreen onVolver={() => setSeccion('inicio')} />;
     }
+    if (seccion === 'compartir') {
+      return <CompartirScreen onVolver={() => setSeccion('inicio')} />;
+    }
     return (
       <InicioScreen
         onIrAHorario={() => setSeccion('horario')}
         onIrAFaltas={() => setSeccion('faltas')}
         onIrAAgenda={() => setSeccion('agenda')}
         onIrACalendario={() => setSeccion('calendario')}
+        onIrACompartir={() => setSeccion('compartir')}
       />
     );
   }

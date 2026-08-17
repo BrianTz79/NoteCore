@@ -1,5 +1,10 @@
 import type { FastifyReply } from 'fastify';
-import type { ApiErrorCode, FieldError } from '@notecore/shared';
+import {
+  SHARE_UNAVAILABLE_MESSAGES,
+  type ApiErrorCode,
+  type FieldError,
+  type ShareUnavailableReason,
+} from '@notecore/shared';
 
 /**
  * Errores de la API con el formato único que consumen web y app.
@@ -52,6 +57,22 @@ export const errors = {
 
   noEncontrado: (message = 'No se encontró lo que buscas.') =>
     new AppError('no_encontrado', message, 404),
+
+  /**
+   * Un compartido que no se puede aceptar (FR-033).
+   *
+   * El motivo viaja en `fields` bajo la clave `code` para que el cliente lo lea sin analizar
+   * el texto: revocado y caducado llevan al receptor a acciones distintas, y "no encontrado"
+   * significa que probablemente tecleó mal.
+   *
+   * El estado es 404 en los tres casos: desde fuera, un compartido revocado o caducado es
+   * indistinguible de uno que nunca existió, y devolver 410 solo para el caducado confirmaría
+   * a quien pruebe códigos al azar que ese sí era válido.
+   */
+  compartidoNoDisponible: (reason: ShareUnavailableReason) =>
+    new AppError('compartido_no_disponible', SHARE_UNAVAILABLE_MESSAGES[reason], 404, [
+      { field: 'code', message: SHARE_UNAVAILABLE_MESSAGES[reason] },
+    ]),
 
   demasiadosIntentos: () =>
     new AppError(

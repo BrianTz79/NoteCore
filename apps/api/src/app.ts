@@ -11,6 +11,7 @@ import { scheduleRoutes } from './routes/schedule.js';
 import { attendanceRoutes } from './routes/attendance.js';
 import { agendaRoutes } from './routes/agenda.js';
 import { calendarRoutes } from './routes/calendar.js';
+import { shareRoutes } from './routes/share.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -142,6 +143,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(attendanceRoutes);
   await app.register(agendaRoutes);
   await app.register(calendarRoutes);
+  await app.register(shareRoutes);
 
   return app;
 }

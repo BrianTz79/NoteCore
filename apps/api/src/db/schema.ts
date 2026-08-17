@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   time,
@@ -282,6 +283,74 @@ export const userSettings = pgTable('user_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * Compartidos generados por un usuario (FR-028 a FR-033).
+ *
+ * La decisión que define la tabla: `payload` guarda una **copia congelada** del contenido en
+ * el momento de generarlo, no referencias a `subjects` ni a `agenda_items`.
+ *
+ * Guardar identificadores habría sido menos escritura, pero rompe el Principio IV en los dos
+ * extremos: si el emisor borra una materia, un enlace ya repartido se queda apuntando a nada
+ * y falla al abrirlo; si la edita, el receptor recibe algo distinto de lo que la vista previa
+ * le enseñó. Con la copia dentro, el compartido es una fotografía: lo que el emisor haga
+ * después con su horario no lo toca.
+ *
+ * Es también lo que permite que la Fase 7 archive semestres sin invalidar compartidos.
+ */
+export const shares = pgTable(
+  'shares',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      // Si se borra la cuenta se van sus compartidos: sin emisor no hay nada que mostrar en
+      // la vista previa, y el contenido ya copiado por otros es de ellos y no cuelga de aquí.
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * El código corto (FR-028), único en toda la tabla.
+     *
+     * Es la **única** credencial de las tres modalidades: el enlace lo incrusta y el QR
+     * codifica el enlace. Un identificador por modalidad es exactamente cómo acabarían
+     * entregando contenidos distintos, que es lo que FR-032 prohíbe.
+     */
+    code: text('code').notNull().unique(),
+    /** `horario` o `agenda`, tal como los define `SHARE_KINDS` en `shared`. */
+    kind: text('kind').notNull(),
+    title: text('title').notNull(),
+    /**
+     * El contenido congelado, con la forma de `SharePayload`.
+     *
+     * `jsonb` y no `json`: PostgreSQL lo guarda ya analizado, así que leerlo no vuelve a
+     * parsear el texto en cada consulta.
+     */
+    payload: jsonb('payload').notNull(),
+    /**
+     * Cuándo deja de servir.
+     *
+     * La caducidad no se guarda como estado sino como fecha, y el estado se deriva al
+     * consultar: un estado almacenado exigiría un proceso que recorriera la tabla marcando
+     * los vencidos, y hasta que corriera un compartido caducado seguiría diciendo "activo".
+     */
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    /**
+     * Cuándo lo revocó el emisor (FR-033). `null` mientras siga vigente.
+     *
+     * Se marca en lugar de borrar la fila: quien abra el enlace debe recibir "lo retiraron"
+     * y no "no existe", que son cosas distintas y llevan a acciones distintas.
+     */
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    /** Cuántas veces se aceptó. Cada aceptación es una copia independiente (Principio IV). */
+    acceptedCount: integer('accepted_count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Listar los compartidos propios es la consulta del emisor.
+    index('shares_user_id_idx').on(table.userId),
+    // Abrir un enlace o teclear un código busca por aquí, y es la ruta más caliente:
+    // la resuelve el índice único de `code`.
+  ],
+);
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   subjects: many(subjects),
@@ -289,6 +358,11 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   absenceRecords: many(absenceRecords),
   agendaItems: many(agendaItems),
   settings: one(userSettings),
+  shares: many(shares),
+}));
+
+export const sharesRelations = relations(shares, ({ one }) => ({
+  user: one(users, { fields: [shares.userId], references: [users.id] }),
 }));
 
 export const agendaItemsRelations = relations(agendaItems, ({ one }) => ({
@@ -338,3 +412,5 @@ export type NewAbsenceRecordRow = typeof absenceRecords.$inferInsert;
 export type AgendaItemRow = typeof agendaItems.$inferSelect;
 export type NewAgendaItemRow = typeof agendaItems.$inferInsert;
 export type UserSettingsRow = typeof userSettings.$inferSelect;
+export type ShareRow = typeof shares.$inferSelect;
+export type NewShareRow = typeof shares.$inferInsert;

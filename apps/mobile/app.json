@@ -23,6 +23,13 @@
     "plugins": [
       "expo-secure-store",
       "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "NoteCore usa la cámara para escanear los códigos QR que te comparten tus compañeros.",
+          "recordAudioAndroid": false
+        }
+      ],
       "./plugins/with-dev-cleartext.js"
     ]
   }

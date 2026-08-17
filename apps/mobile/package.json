@@ -13,12 +13,14 @@
     "@notecore/shared": "*",
     "babel-preset-expo": "~57.0.0",
     "expo": "^57.0.13",
+    "expo-camera": "~57.0.3",
     "expo-clipboard": "~57.0.1",
     "expo-notifications": "~57.0.11",
     "expo-secure-store": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-native": "0.86.2",
+    "react-native-svg": "^15.15.5"
   },
   "devDependencies": {
     "@types/react": "~19.2.0",

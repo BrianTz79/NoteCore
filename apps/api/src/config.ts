@@ -40,6 +40,18 @@ const envSchema = z.object({
    * petición); en producción, el dominio compartido por web y API.
    */
   COOKIE_DOMAIN: z.string().optional(),
+
+  /**
+   * URL pública de la web, base de los enlaces de compartición (FR-028).
+   *
+   * La compone el servidor y no cada cliente: el enlace es lo que se codifica en el QR, así
+   * que si la app armara una URL y la web otra, escanear y abrir el enlace llevarían a
+   * sitios distintos —y FR-032 exige que las tres modalidades entreguen lo mismo—.
+   *
+   * Sin definir toma el primer origen de CORS, que en desarrollo es la web local. En
+   * producción se fija explícitamente al dominio del túnel.
+   */
+  WEB_URL: z.string().url('WEB_URL debe ser una URL completa').optional(),
 });
 
 function loadConfig() {
@@ -62,14 +74,19 @@ function loadConfig() {
     `${encodeURIComponent(env.POSTGRES_PASSWORD)}@` +
     `${env.POSTGRES_HOST}:${env.POSTGRES_PORT}/${env.POSTGRES_DB}`;
 
+  const corsOrigins = env.CORS_ORIGINS.split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+
   return {
     nodeEnv: env.NODE_ENV,
     isProduction: env.NODE_ENV === 'production',
     port: env.PORT,
     databaseUrl,
-    corsOrigins: env.CORS_ORIGINS.split(',')
-      .map((origin) => origin.trim())
-      .filter((origin) => origin.length > 0),
+    corsOrigins,
+    // El primer origen de CORS es la web en desarrollo; `http://localhost:3000` si no hay
+    // ninguno, que es donde `next dev` levanta.
+    webUrl: env.WEB_URL ?? corsOrigins[0] ?? 'http://localhost:3000',
     jwtSecret: env.JWT_SECRET,
     accessTokenSeconds: env.ACCESS_TOKEN_MINUTES * 60,
     refreshTokenSeconds: env.REFRESH_TOKEN_DAYS * 24 * 60 * 60,

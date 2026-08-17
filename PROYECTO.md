@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda y calendario con recordatorios funcionando en app y web |
-| **Fases completadas** | 6 de 12 |
-| **Fase actual** | Fase 6 — Compartir (no iniciada) |
+| **Estado general** | Horario, faltas, agenda, calendario con recordatorios y compartición por QR, código y enlace funcionando en app y web |
+| **Fases completadas** | 7 de 12 |
+| **Fase actual** | Fase 7 — Semestres (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `██████░░░░░░` 50%
+**Avance**: `███████░░░░░` 58%
 
 ### Qué se ha hecho
 
@@ -65,11 +65,16 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 - **Fase 5 cerrada**: calendario mensual que combina clases y vencimientos, detalle por día, y
   recordatorios con anticipación y hora configurables; la notificación local se verificó
   programada en el sistema Android y cancelándose al completar la actividad desde la web
+- **Fase 6 cerrada**: compartición de horario y actividades por QR, código corto y enlace, con
+  selección del contenido, vista previa antes de aceptar y copia independiente; el QR se genera
+  con un codificador propio en `shared` y se verificó **decodificando la pantalla real del
+  emulador**; la independencia de la copia se comprobó editando y borrando el original mientras
+  el receptor mantenía la suya intacta
 
 ### Próximo paso
 
-**Fase 6 — Compartir**: horarios y actividades por QR, código corto y enlace, con vista previa
-antes de aceptar y copia independiente para el receptor.
+**Fase 7 — Semestres**: iniciar un semestre nuevo archivando el anterior íntegro, consultable de
+forma indefinida y protegido contra modificación accidental.
 
 ---
 
@@ -85,7 +90,7 @@ antes de aceptar y copia independiente para el receptor.
 | 3 | Control de faltas | P1 | ✅ | ✅ | ✅ | ✅ |
 | 4 | Agenda | P1 | ✅ | ✅ | ✅ | ✅ |
 | 5 | Calendario y recordatorios | P2 | ✅ | ✅ | ✅ | ✅ |
-| 6 | Compartir | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 6 | Compartir | P2 | ✅ | ✅ | ✅ | ✅ |
 | 7 | Semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 8 | Social: perfiles y contactos | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 9 | Offline y sincronización | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -101,6 +106,120 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 6 — Compartir · cerrada el 2026-08-17
+
+**Entregado**: compartición de horario y actividades por **código QR, código corto y enlace**, las
+tres ofrecidas a la vez (FR-028); selección de qué materias o actividades incluye cada compartido
+(FR-029); vista previa del contenido antes de aceptar (FR-030); copia **independiente y editable**
+para el receptor, sin vínculo posterior con el original (FR-031); las tres modalidades entregan
+exactamente el mismo contenido (FR-032); y revocación por parte del emisor, con aviso claro al
+receptor cuando está revocado o caducado (FR-033).
+
+**El compartido es una fotografía, no una ventana**. La decisión que gobierna toda la fase:
+`shares.payload` guarda una **copia congelada** del contenido en el momento de generarlo, no
+referencias a `subjects` ni a `agenda_items`. Guardar identificadores era menos escritura, pero
+rompía el Principio IV por los dos extremos: si el emisor borra una materia, un enlace ya
+repartido apunta a nada; si la edita, el receptor recibe algo distinto de lo que la vista previa
+le enseñó. Con la copia dentro, lo que el emisor haga después no toca el compartido —y eso se
+verificó en el emulador, no solo en las suites—.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| El contenido se **congela al generar**, no al aceptar | Es lo que permite que la vista previa sea fiel aunque el receptor acepte una semana después, y que el compartido sobreviva a que el emisor borre el original |
+| **Un solo `code` para las tres modalidades** | El enlace lo incrusta y el QR codifica el enlace. Un identificador por modalidad es exactamente cómo acabarían entregando contenidos distintos, que es lo que FR-032 prohíbe |
+| El **enlace lo compone el servidor** (`WEB_URL`) | Es lo que se codifica en el QR: si la app armara una URL y la web otra, escanear y abrir el enlace llevarían a sitios distintos |
+| Alfabeto **sin I, L, O ni U** | El código se dicta en voz alta y se copia a ojo; las tres primeras se confunden con `1` y `0`, y la `U` se excluye para no formar palabras malsonantes por azar |
+| `normalizeShareCode` **corrige** esas confusiones al recibir | Quien teclea `IL0` desde un mensaje obtiene el código correcto en vez de "no encontrado" |
+| El **código se genera con `crypto.getRandomValues`** | Es la única credencial que protege el contenido; con `Math.random()` se podrían enumerar los compartidos de otras personas |
+| La **caducidad se deriva**, no se guarda como estado | Un estado almacenado exigiría un proceso que recorriera la tabla marcando vencidos, y hasta que corriera un compartido caducado seguiría diciendo "activo" |
+| Revocar **marca la fila**, no la borra | Quien abra el enlace debe recibir "lo retiraron" y no "no existe": son mensajes distintos que llevan a acciones distintas |
+| Los tres motivos —revocado, caducado, no encontrado— **se distinguen** (FR-033) | Cada uno lleva al receptor a algo distinto: pedir uno nuevo, o revisar lo que tecleó. Un único "no disponible" lo dejaría sin saber qué hacer |
+| Pero los tres responden **404**, no 410 | Desde fuera, un compartido revocado es indistinguible de uno que nunca existió; devolver 410 solo para el caducado confirmaría a quien pruebe códigos al azar que ese sí era válido |
+| La materia de una actividad viaja como **nombre**, no como identificador | El identificador del emisor no significa nada en la cuenta del receptor. Al aceptar se busca por nombre y, si no aparece, la actividad entra sin materia —estado válido desde FR-018— en vez de descartarse |
+| Los nombres repetidos se **desambiguan con sufijo**, no se rechazan | Dos compañeros de la misma carrera tienen las mismas materias. Rechazar la copia entera por una repetida dejaría al receptor sin las otras cinco |
+| Los **solapes no se rechazan** al aceptar | La alta manual sí los rechaza (Fase 2), pero allí el usuario corrige una sesión. Aquí rechazaría el horario entero por una hora que se encima, y el caso es real: quien recibe un horario suele tener ya algo capturado |
+| El estado de **completado no se comparte** | Se comparte lo que hay que hacer, no lo que el emisor ya hizo: una tarea que llegara marcada como entregada no le serviría de nada al receptor |
+| La **agenda siempre suma**, sin modo reemplazar | Reemplazarla borraría tareas propias que nada tienen que ver con lo recibido |
+| La vista previa **exige sesión** | El código es la credencial, pero dejarla abierta convertiría cada enlace en una página pública indexable |
+| El **codificador QR se escribió en `shared`** | Con una librería por plataforma serían dos implementaciones del mismo código; basta que difieran en el margen o en la versión elegida para que una cámara lea el de un cliente y no el del otro. Una sola matriz, dos formas de pintarla (Principio VIII) |
+| **Sin `expo-router` todavía** | La Fase 5 lo previó aquí y no hizo falta: el enlace lo abre la **web**, que sí tiene rutas. En el teléfono el compartido llega por cámara o tecleando, y ambos caminos desembocan en un panel de la propia pantalla. Entra en la Fase 8, que comparte perfiles por enlace |
+
+**Verificación ejecutada** — 246 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Generación y normalización de códigos (incluido el reparto sin sesgo sobre 32 000 caracteres), enlaces, estado y caducidad en sus límites exactos, resúmenes con singular y plural, orden de la lista y los esquemas de creación, código y aceptación | **67/67** |
+| Codificador QR (Node + jsQR) | 50 enlaces aleatorios generados y **decodificados con un decodificador independiente**, UTF-8 con acentos, estructura de la matriz, elección de versión, salida SVG y lectura a escala baja | **21/21** |
+| API (`fetch` contra la API real) | Generación con selección, vista previa que no copia, aceptación, independencia de la copia, las tres modalidades, revocación, caducidad forzada en base de datos, aislamiento entre cuentas y rutas protegidas | **108/108** |
+| Web (Playwright, navegador real) | Pantalla de compartir, selección de contenido, las tres modalidades, vista previa desde otra cuenta, aceptación, independencia tras editar el original, recepción por código, revocación y ausencia de errores de JavaScript | **50/50** |
+
+Además se reejecutó una **regresión de las fases 1 a 5** (16/16), porque esta fase tocó el contrato
+de errores (código nuevo `compartido_no_disponible`), el `package.json` de la raíz y la versión de
+React de todo el árbol.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Tarjeta "Compartir" en el inicio y pantalla completa | correcto |
+| Android pide permiso de cámara al escanear | correcto (`CAMERA: granted=true`) |
+| Visor de la cámara con su marco e instrucción | correcto |
+| Código tecleado en **minúsculas** (`434pvr20`) | se normaliza en pantalla: "Se abrirá 434P-VR20" |
+| Vista previa (FR-030) | emisor, "2 materias · 3 sesiones", días, horas y aulas |
+| Aceptar (FR-031) | "Se copiaron 2 materias con 3 sesiones" |
+| Nombre repetido con lo que ya había | desambiguado como "Calculo (2)" |
+| **El emisor renombra y borra desde la web** | la app del receptor sigue mostrando `Calculo`, `Calculo (2)` y `Fisica`, sin rastro del renombrado |
+| Generación con selección (FR-029) | de "4 de 4" a "3 de 4" al desmarcar |
+| Las tres modalidades en pantalla (FR-028) | QR + `1D97-CAJB` + enlace, los tres con el mismo código |
+| **El QR de la pantalla real, decodificado** | la captura del emulador devuelve `http://localhost:3000/compartido/1D97CAJB` |
+| Revocar desde la app (FR-033) | pasa a "Revocado"; quien abre el código recibe "Quien lo compartió retiró este contenido." |
+| Paridad bidireccional | **confirmada** |
+
+**Corregido durante la fase**:
+
+1. **El codificador QR producía códigos ilegibles, con estructura perfecta.** Fueron tres fallos
+   encadenados que solo la decodificación real destapó —a ojo, y en las comprobaciones de
+   estructura, el QR parecía impecable—:
+   - Los **separadores** de los patrones de búsqueda salían en negro, porque la condición del
+     borde (`r === 0`) daba por buena la fila superior también en las columnas del separador. Los
+     patrones quedaban pegados al resto del código y ninguna cámara los localizaba.
+   - El **zigzag de datos** saltaba la columna 6 restando al contador del bucle, lo que desplazaba
+     todos los pares siguientes y escribía los datos en columnas equivocadas.
+   - El **polinomio generador** de Reed-Solomon salía con los coeficientes invertidos
+     (`193,157,…,1` en vez de `1,216,194,…`), así que los símbolos de corrección no correspondían
+     a los datos. Este era el que quedaba: los otros dos ya estaban arreglados y el QR seguía sin
+     leerse.
+
+   Se añadió una suite que **decodifica lo generado con jsQR**, un decodificador independiente. Sin
+   ella, el fallo habría llegado al teléfono como "el QR no funciona" y sin ninguna pista de por
+   qué.
+2. **`CameraView` no se podía usar como componente JSX.** Las herramientas de desarrollo de Expo
+   arrastran un `react` 18.3.1 que ninguna capa declara, y npm lo subía a la raíz. Los módulos
+   nativos que también quedan izados —`expo-camera`— resolvían sus tipos de React contra **esa**
+   copia, incompatible con el React 19 que ejecuta la app. Se intentó primero con `paths` en el
+   `tsconfig` de mobile, y fue peor: Metro también lee esos `paths` y acabó importando el paquete
+   de **tipos** en tiempo de ejecución, rompiendo el bundle. La solución correcta fue un
+   `overrides` en la raíz que deja un solo React en todo el árbol.
+3. **La app pedía permiso de micrófono para escanear un QR.** El plugin de `expo-camera` añade
+   `RECORD_AUDIO` por defecto, porque también graba vídeo. Aquí solo se escanea, y pedir el
+   micrófono para leer un código es justo lo que hace que la gente deniegue permisos por
+   costumbre. Se desactivó con `recordAudioAndroid: false`; el manifiesto queda solo con `CAMERA`.
+
+**Añadido**: `expo-camera` (escanear QR) y `react-native-svg` (pintarlo en la app). El **codificador
+QR es propio**, en `packages/shared`: así los dos clientes generan la misma matriz.
+
+**Migración**: `0006` crea la tabla `shares`. Es puramente aditiva —una tabla nueva, ninguna
+existente se toca—, así que las cuentas que ya existían no pierden nada.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. Se reejecutó `expo prebuild` porque `expo-camera` y
+`react-native-svg` son módulos nativos. La contraseña de las cuentas de prueba en dispositivo es
+ASCII, igual que en las fases 3 a 5.
+
+---
 
 #### Fase 5 — Calendario y recordatorios · cerrada el 2026-08-17
 
@@ -575,7 +694,7 @@ Cambios que exigió la actualización:
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
 │   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance,
-│   │       │                agenda, calendar)
+│   │       │                agenda, calendar, share)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
@@ -583,7 +702,7 @@ Cambios que exigió la actualización:
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
 │   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas,
-│   │       │                /agenda, /calendario)
+│   │       │                /agenda, /calendario, /compartir, /compartido/[code])
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -591,8 +710,9 @@ Cambios que exigió la actualización:
 │       ├── plugins/         plugins de configuración nativa (cleartext local)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
-│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario
-│           ├── components/  componentes propios de la app
+│           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario,
+│           │                Compartir
+│           ├── components/  componentes propios de la app (incluye QR y escáner de cámara)
 │           └── lib/         cliente de API, contexto de sesión y notificaciones locales
 │
 ├── packages/
@@ -603,7 +723,8 @@ Cambios que exigió la actualización:
 │           ├── api/         cliente HTTP y llamadas tipadas, para web y app
 │           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
 │                            urgencia y orden de la agenda, rejilla mensual y momento de los
-│                            recordatorios, errores de formulario, fechas)
+│                            recordatorios, códigos y estado de los compartidos, codificador
+│                            de QR, errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -726,11 +847,16 @@ cerró.
 (`RTC_WAKEUP` para el día y hora exactos) y se canceló al completar la actividad desde la web
 —verificado con `dumpsys alarm`: 0 alarmas—. Detalle en el historial.
 
-#### Fase 6 — Compartir (P2)
-Horarios y actividades por QR, código corto y enlace —las tres entregan lo mismo. El emisor elige
-el contenido; el receptor ve vista previa y, al aceptar, obtiene una copia independiente.
-Revocación y caducidad.
-**Verificación**: la copia no cambia cuando el emisor edita su original.
+#### Fase 6 — Compartir (P2) ✅
+Horarios y actividades por QR, código corto y enlace —las tres entregan lo mismo, porque las tres
+salen del mismo código. El emisor elige el contenido; el receptor ve vista previa y, al aceptar,
+obtiene una copia independiente. Revocación y caducidad a los 30 días.
+**El compartido guarda una copia congelada del contenido**, no referencias: así sobrevive a que el
+emisor edite o borre el original, y la vista previa es fiel aunque se acepte una semana después.
+**El codificador QR es propio y vive en `shared`**, para que app y web generen la misma matriz.
+**Verificado el 2026-08-17**: el emisor renombró y borró sus materias desde la web y el horario
+copiado en el emulador Android quedó intacto; el QR mostrado en la pantalla del emulador se
+decodificó y devolvió el enlace correcto. Detalle en el historial.
 
 #### Fase 7 — Semestres (P2)
 Iniciar semestre nuevo desde configuración. El anterior se archiva íntegro y queda consultable de

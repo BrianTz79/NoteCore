@@ -29,6 +29,11 @@
     "docker:logs": "docker compose -f infra/docker-compose.yml logs -f"
   },
   "devDependencies": {
+    "@types/react": "~19.2.0",
     "typescript": "^5.7.3"
+  },
+  "_comentario_overrides": "Las herramientas de desarrollo de Expo arrastran un react 18.3.1 que ninguna capa declara, y npm lo sube a la raíz. Los módulos nativos que también quedan izados (expo-camera) resolvían sus tipos contra ESA copia, y sus componentes salían incompatibles con el React 19 que ejecuta la app: CameraView no se podía usar como componente JSX. Fijarlo aquí deja un solo React en todo el árbol.",
+  "overrides": {
+    "react": "19.2.3"
   }
 }

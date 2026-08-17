@@ -89,6 +89,19 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Compartir">
+        <p className="text-slate-300">
+          Pásale tu horario o tus actividades a un compañero por QR, código o enlace. Recibe
+          una copia suya que puede editar sin afectar a la tuya.
+        </p>
+        <Link
+          href="/compartir"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Compartir o recibir →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -104,7 +117,6 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· Compartir tu horario con tus compañeros</li>
           <li>· Archivar el semestre y empezar uno nuevo</li>
         </ul>
       </Card>
