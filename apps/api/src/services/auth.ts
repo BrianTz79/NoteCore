@@ -10,7 +10,7 @@ import type {
 } from '@notecore/shared';
 import { db } from '../db/client.js';
 import { sessions, users, type UserRow } from '../db/schema.js';
-import { errors } from '../lib/errors.js';
+import { errors, isUniqueViolation } from '../lib/errors.js';
 import { hashPassword, verifyPassword, wastePasswordComparison } from '../lib/passwords.js';
 import { generateRefreshToken, hashRefreshToken, signAccessToken } from '../lib/tokens.js';
 import { config } from '../config.js';
@@ -295,9 +295,12 @@ export async function purgeExpiredSessions(): Promise<number> {
   return deleted.length;
 }
 
-/** Detecta la violación de una restricción UNIQUE concreta de PostgreSQL. */
-function isUniqueViolation(error: unknown, constraint: string): boolean {
-  if (typeof error !== 'object' || error === null) return false;
-  const candidate = error as { code?: unknown; constraint_name?: unknown };
-  return candidate.code === '23505' && candidate.constraint_name === constraint;
-}
+/*
+ * `isUniqueViolation` vive ahora en `lib/errors.ts`.
+ *
+ * La versión que había aquí solo miraba el nivel superior del error, y Drizzle envuelve el
+ * del driver en un `DrizzleQueryError`: el `23505` queda en `cause` y la comprobación no lo
+ * veía nunca. El efecto era que dos registros simultáneos con el mismo `@usuario` —o el
+ * mismo correo— respondían 500 "ocurrió un error inesperado" en lugar de "ese nombre ya está
+ * tomado", que es lo que el formulario necesita para marcar el campo.
+ */

@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-17** (Fase 7 cerrada)
+> Última actualización: **2026-08-17** (Fase 8 cerrada)
 
 ---
 
@@ -32,13 +32,18 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace y ciclo de semestres con archivo histórico, funcionando en app y web |
+| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico y sección social —perfil ampliado, contactos y publicaciones—, funcionando en app y web |
 | **Fases completadas** | 8 de 12 |
-| **Fase actual** | Fase 8 — Social: perfiles y contactos (no iniciada) |
+| **Fase actual** | Fase 9 — Offline y sincronización (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
 **Avance**: `████████░░░░` 67%
+
+> **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
+> hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
+> *toolchain* no tiene `JAVA_COMPILER` después de instalarlo, es el **demonio en caché**: `./gradlew
+> --stop` y volver a compilar.
 
 ### Qué se ha hecho
 
@@ -75,11 +80,16 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   lo deja en solo lectura. Verificada cerrando desde el **emulador Android** y leyendo el archivo
   desde el navegador, con las materias, faltas y actividades intactas en la base de datos
 
+- **Fase 8 cerrada**: perfil público ampliado —biografía, carrera, escuela y edad, todo opcional—
+  con un ajuste de visibilidad que decide quién lo ve; búsqueda por `@usuario`; solicitudes de
+  contacto con aceptación, rechazo, eliminación y bloqueo; enlace y QR de perfil; y publicaciones
+  de texto. Lo que la visibilidad no alcanza **no se manda**: se comprobó que la biografía de un
+  perfil restringido no aparece **ni en el HTML de la web ni en la jerarquía de vistas de Android**
+
 ### Próximo paso
 
-**Fase 8 — Social: perfiles y contactos**: perfil público, búsqueda por `@usuario`, solicitudes de
-contacto, aceptación y bloqueo. Es la primera fase que necesita `expo-router` de verdad, porque
-comparte perfiles por enlace.
+**Fase 9 — Offline y sincronización**: cache local del horario, la agenda y las faltas, cola de
+cambios hechos sin conexión y sincronización al recuperar red (FR-048 a FR-050).
 
 ---
 
@@ -97,7 +107,7 @@ comparte perfiles por enlace.
 | 5 | Calendario y recordatorios | P2 | ✅ | ✅ | ✅ | ✅ |
 | 6 | Compartir | P2 | ✅ | ✅ | ✅ | ✅ |
 | 7 | Semestres | P2 | ✅ | ✅ | ✅ | ✅ |
-| 8 | Social: perfiles y contactos | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 8 | Social: perfiles y contactos | P3 | ✅ | ✅ | ✅ | ✅ |
 | 9 | Offline y sincronización | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 10 | Mensajería | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 11 | Widget y pulido visual | P4 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -111,6 +121,134 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 8 — Social: perfiles y contactos · cerrada el 2026-08-17
+
+**Entregado**: búsqueda de usuarios por `@usuario` (FR-039); alta de contactos por búsqueda, por
+QR de perfil y por enlace (FR-040); solicitudes que **exigen aceptación** del destinatario
+(FR-041); eliminación y bloqueo (FR-042); y perfil visible por terceros limitado a lo que el
+usuario destina a ser público (FR-045).
+
+**Ampliación pedida por el usuario**: el perfil no se quedó en el `PublicUser` mínimo que la Fase
+1 previó. A petición explícita, es un perfil de red social —biografía, carrera, escuela y edad,
+**todo opcional**— con **publicaciones** en el muro. Se acordó dejar las publicaciones **en texto**
+y llevar las fotos y vídeos a una fase propia: los adjuntos exigen almacenamiento de archivos,
+límites de tamaño y tipo, servido y moderación, que es infraestructura que el proyecto no tiene y
+que ningún FR cubre todavía. La tabla `posts` queda lista para colgarlos sin rehacer lo escrito.
+
+**Una relación entre dos personas es una sola fila.** La decisión que gobierna la fase. No hay
+"mi contacto contigo" y "tu contacto conmigo" como filas espejo: hay una fila con un estado, que
+cada uno ve desde su lado. Guardarla dos veces es cómo se llega a que uno la tenga aceptada y el
+otro pendiente, y entonces *¿son contactos?* —la pregunta de la que cuelga FR-044 en la Fase 10—
+deja de tener respuesta.
+
+Para que sea **una sola**, el par va **ordenado**: `user_a_id` guarda siempre el identificador
+menor. Así la relación entre A y B ocupa la misma fila se mire desde donde se mire, y el índice
+único puede impedir la segunda. Sin el orden, dos personas que se agregan a la vez —el caso real
+de escanearse el QR mutuamente— crearían las filas (A,B) y (B,A), que ningún índice vería como
+duplicadas.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Una **sola fila por pareja**, con el par ordenado | Es lo que hace que la relación tenga un estado y no dos. El orden lo impone además un `CHECK` en la base de datos, no solo `orderedPair`: mientras la regla viviera solo en el código, un `insert` futuro que la olvidara crearía la fila espejo y el índice único no la rechazaría |
+| El **bloqueo es un estado de la relación**, no una tabla aparte | Con una tabla de bloqueos separada, cada lectura tendría que consultar dos sitios y reconciliarlos, y FR-044 —"¿pueden hablar?"— necesita responderse desde un solo lugar |
+| Se guarda **quién bloqueó** (`blocked_by_id`) | El bloqueo es asimétrico en lo que se cuenta: a quien bloqueó hay que ofrecerle desbloquear; a quien fue bloqueado **no se le dice nada**. Sin esta columna no se puede escribir ninguno de los dos mensajes |
+| Al bloqueado se le trata como a un desconocido, **nunca se le avisa** | Ver "te bloquearon" convierte el bloqueo en un mensaje dirigido justo a la persona de la que uno se quiere separar. Su etiqueta es idéntica a la de "no es tu contacto", y **ni siquiera se le ofrece bloquear**: ese botón, por descarte, delataría el bloqueo |
+| El perfil de un bloqueado responde **200 con el perfil cerrado**, no 404 | Un "no existe" para una cuenta que sí existe se nota en cuanto se compara con otra sesión, y confirmaría el bloqueo a quien no se le cuenta |
+| **Desbloquear no restaura la amistad** | Decisión del usuario. Quien desbloquea para poder buscar a alguien no está pidiendo volver a ser su contacto; resucitar una conexión cortada a propósito sorprendería en el peor momento. Volver a agregar cuesta un toque |
+| Lo que la visibilidad no alcanza **no se manda**, en vez de mandarse oculto | Es la diferencia entre proteger un dato y disimularlo: si viajara para que el cliente lo escondiera, bastaría abrir las herramientas del navegador. Se comprobó en el navegador real que la biografía **no aparece en el HTML** de un perfil restringido |
+| La visibilidad arranca en **"solo contactos"** | Publicar algo y descubrir después que era público no tiene arreglo —lo visto, visto está—, mientras que abrirlo cuando uno quiere es un toque. El valor prudente es el que se pone por defecto, y así FR-045 se cumple sin que el usuario configure nada |
+| El nombre y el `@usuario` **se ven siempre** | Son lo que FR-039 hace buscable; esconderlos haría imposible reconocer a quién se está mirando, y la búsqueda dejaría de servir |
+| El enlace de perfil lleva el **`@usuario`**, no un código aleatorio | Al revés que un compartido (Fase 6). Allí el código es la **credencial** que protege un contenido; aquí el `@usuario` ya es público por FR-039, así que un código aleatorio no añadiría protección —quien tenga el enlace puede buscar el usuario igual— y sí quitaría lo único bueno de este enlace: que se puede dictar |
+| Las **acciones las decide el servidor** y viajan en `actions` | Los clientes pintan botones a partir de lo mismo que la API comprueba. Derivarlos en cada cliente serían dos implementaciones de la misma regla, y la discrepancia se vería como un botón que existe en la pantalla y falla al tocarlo |
+| Agregar a quien ya te agregó **acepta**, no crea una segunda solicitud | Dos personas que se agregan a la vez es el caso real, y dejarlas con dos solicitudes cruzadas pendientes sería absurdo: ambas quieren lo mismo |
+| Rechazar, cancelar y eliminar **borran la fila** | No es historial que el Principio VI proteja: una solicitud rechazada es justo una relación que dejó de existir. Conservarla impediría además volver a solicitar, porque el índice único lo rechazaría. Lo que el principio protege es lo académico |
+| Las publicaciones **no llevan `semesterId`** | Una publicación es de la persona, no del periodo que cursa: cerrar un semestre no debe archivarlas ni esconderlas, al contrario que las materias o las faltas |
+| Los bloqueados **desaparecen de la búsqueda** en ambos sentidos | Un bloqueo que dejara a la persona saliendo en cada búsqueda sería una etiqueta, no una separación |
+| **Sin `expo-router` todavía**, y era la fase que lo había reservado | El enlace de perfil lo abre **la web**, que sí tiene rutas —igual que pasó en la Fase 6—. En el teléfono el perfil ajeno se alcanza escaneando el QR o tocando un resultado, y ambos abren un panel dentro de la pantalla social. Lo que sí lo justificaría es un **enlace profundo del sistema** (`notecore://u/ana` desde WhatsApp), que exige registrar un esquema en el manifiesto y un `prebuild`, y que ninguna fase ha pedido |
+
+**Verificación ejecutada** — 312 comprobaciones automáticas, todas en verde, más la pasada a mano
+en Android:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Par ordenado —incluidos 200 pares aleatorios exigiendo estabilidad—, punto de vista desde los dos lados, acciones por estado sin combinaciones contradictorias, **barrido exhaustivo de visibilidad × punto de vista exigiendo que ningún bloqueo deje ver nada**, enlace de perfil con ida y vuelta, textos con singular y plural, tiempo relativo sin números negativos, orden de listas y los esquemas | **106/106** |
+| API (`fetch` contra la API real) | Rutas protegidas, perfil y edición parcial sin borrar lo demás, búsqueda, solicitud y aceptación, solicitudes cruzadas, **visibilidad que no manda los campos ocultos**, publicaciones y su visibilidad, bloqueo y desbloqueo, eliminación y rechazo, aislamiento entre cuentas y validación | **139/139** |
+| Concurrencia (5 rondas) | Dos personas agregándose **en el mismo instante**, exigiendo una sola relación y el mismo estado en ambos lados | **20/20** |
+| Web (Playwright, navegador real) | Rutas protegidas, perfil y persistencia, publicaciones, **el HTML de un perfil privado sin la biografía, la carrera, la escuela ni las publicaciones**, búsqueda por nombre y por enlace pegado, solicitud y aceptación, el contacto viendo ya el perfil, cambio de visibilidad, bloqueo con sus dos lados, desbloqueo sin restaurar y ausencia de errores de JavaScript | **47/47** |
+
+Además se reejecutó una **regresión de las fases 1 a 7** (**60/60**), porque esta fase tocó
+`services/auth.ts` y `lib/errors.ts`, que son comunes a todas las rutas.
+
+**Corregido durante la fase**:
+
+1. **Dos solicitudes simultáneas respondían 500.** Lo destapó la suite de concurrencia: la relación
+   nunca se duplicaba —el índice único hacía su trabajo—, pero quien perdía la carrera recibía
+   "ocurrió un error inesperado" en vez de su relación. El `catch` comprobaba `error.code === '23505'`
+   y **Drizzle envuelve el error del driver** en un `DrizzleQueryError` propio, así que ese `code`
+   venía `undefined` y el `23505` quedaba un nivel más abajo, en `cause`.
+2. **El mismo fallo estaba en el registro desde la Fase 1.** Al corregir lo anterior se comprobó la
+   ruta equivalente: dos registros simultáneos con el mismo `@usuario` respondían **500** en lugar
+   de "ese nombre ya está tomado", porque `isUniqueViolation` de `services/auth.ts` miraba solo el
+   nivel superior del error. Estaba ahí desde la Fase 1 y ninguna suite lo cubría, porque solo
+   aparece en una carrera real. La comprobación vive ahora en `lib/errors.ts`, mira también en
+   `cause`, y la usan las dos rutas.
+
+**Migración**: `0008` crea `contacts` y `posts` y añade a `users` los cinco campos del perfil. Es
+**puramente aditiva** —las columnas nuevas son nulables o traen valor por defecto—, así que al
+revés que la de la Fase 7 no necesita relleno y no pudo romper ninguna fila existente. Se aplicó
+sobre la base real con **170 cuentas**: ninguna perdió nada y las 170 quedaron con la visibilidad
+en `contactos`, que es el valor prudente.
+
+Se añadieron **a mano tres `CHECK`** que el generador no puede expresar y sin los cuales el índice
+único no garantiza lo que dice: que el par vaya siempre ordenado —sin él, la fila espejo entraría
+sin que nada la rechazara—, que nadie se agregue a sí mismo, y que quien pide o bloquea sea una de
+las dos partes. **Se comprobaron los cinco casos contra PostgreSQL**: par desordenado, relación
+consigo mismo, solicitante ajeno a la pareja y pareja duplicada se rechazan; el par ordenado
+válido entra.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Tarjeta "Perfil y contactos" en el inicio | correcto |
+| Aviso de solicitudes pendientes (FR-041) | "Tienes **1 solicitud de contacto** esperando respuesta" —singular correcto— |
+| Perfil ampliado cargado de la API | biografía, carrera, escuela y edad, con su contador "41 de 300" |
+| Textos de visibilidad (FR-045) | los dos, **palabra por palabra idénticos a los de la web** |
+| Visibilidad por defecto | "Solo mis contactos" marcada |
+| Resumen de conteos | "0 contactos · 2 publicaciones" —plurales correctos— |
+| **El QR de la pantalla real, decodificado** | la captura del emulador devuelve `http://localhost:3000/u/anadroid` |
+| Búsqueda por `@usuario` (FR-039) | encuentra a la persona; a un contacto le muestra "Contacto" en vez de "Agregar" |
+| Solicitud recibida | ofrece **Aceptar / Rechazar / Bloquear**, y **no** "Cancelar" —que es del emisor— |
+| Aceptar (FR-041) | pasa a "Tus contactos (1)", estado "Contacto", acciones Eliminar/Bloquear, y el aviso desaparece |
+| Solicitud enviada desde el perfil (FR-040) | "Solicitud enviada" con "Cancelar solicitud" |
+| **Perfil restringido visto por una extraña (FR-045)** | solo nombre y `@usuario`, más "**Ana Android solo comparte su perfil con sus contactos**" |
+| **Nada privado llega al dispositivo** | biografía, carrera, escuela y las dos publicaciones **ausentes de la jerarquía de vistas**, no solo ocultas |
+| Una solicitud pendiente **no** abre el perfil | sigue privado mientras no se acepte |
+| El mismo perfil, ya como contacto | biografía, "Ingenieria en Sistemas · TecNM Morelia · 21 años", "2 contactos · 2 publicaciones" y las dos publicaciones con "Hace 8 minutos" |
+| Bloquear (FR-042) | pasa a "Bloqueado", solo ofrece "Desbloquear" y **el perfil se cierra al instante** |
+| **Lo que ve quien fue bloqueado** | HTTP **200** —no 404, que confirmaría el bloqueo—, punto de vista `bloqueada_por_otro`, **ninguna acción ofrecida** —ni siquiera bloquear, que lo delataría—, y desaparece de sus listas y de su búsqueda |
+| Desbloquear | vuelve a "No es tu contacto": **no restaura la amistad**, hay que volver a solicitar |
+| Publicar desde la app | "Publicado desde el telefono · Hace un momento" |
+| Permiso de cámara al escanear | `CAMERA: granted=true`; **`RECORD_AUDIO` sigue ausente** del manifiesto (Fase 6) |
+| **Aceptado en la web y leído en la app** | el perfil pasa a completo en el teléfono sin tocar nada más |
+| **Publicado en la app y leído desde la web** | "Publicado desde el telefono", `postCount: 1` |
+| Paridad bidireccional | **confirmada** |
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. **No se reejecutó `expo prebuild`**: esta fase no
+añade ningún módulo nativo —el QR y la cámara ya venían de la Fase 6—. La contraseña de las
+cuentas de prueba en dispositivo es ASCII, igual que en las fases 3 a 7, y los textos de varias
+palabras se teclean con `%s` como separador.
+
+**Sobre el entorno**: compilar el APK exigió instalar el **JDK 21** —en la máquina solo estaba el
+JRE, sin `javac`—. Una vez instalado, Gradle seguía rechazando el *toolchain* porque su **demonio
+tenía cacheada la comprobación anterior**; se resolvió con `./gradlew --stop`. Queda anotado
+porque volverá a aparecer en cualquier máquina nueva.
+
+---
 
 #### Fase 7 — Semestres · cerrada el 2026-08-17
 

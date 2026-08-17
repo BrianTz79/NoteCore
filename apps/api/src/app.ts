@@ -13,6 +13,7 @@ import { agendaRoutes } from './routes/agenda.js';
 import { calendarRoutes } from './routes/calendar.js';
 import { shareRoutes } from './routes/share.js';
 import { semesterRoutes } from './routes/semester.js';
+import { socialRoutes } from './routes/social.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -146,6 +147,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(calendarRoutes);
   await app.register(shareRoutes);
   await app.register(semesterRoutes);
+  await app.register(socialRoutes);
 
   return app;
 }

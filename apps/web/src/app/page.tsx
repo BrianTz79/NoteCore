@@ -115,6 +115,19 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Perfil y contactos">
+        <p className="text-slate-300">
+          Llena tu perfil, encuentra compañeros por su @usuario y agrégalos como contactos.
+          Tú decides quién ve lo que publicas.
+        </p>
+        <Link
+          href="/social"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mi perfil y mis contactos →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -130,7 +143,8 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· Archivar el semestre y empezar uno nuevo</li>
+          <li>· Consultar tu horario y tu agenda sin conexión</li>
+          <li>· Mensajes con tus contactos</li>
         </ul>
       </Card>
     </main>

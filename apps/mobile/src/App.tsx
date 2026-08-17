@@ -11,6 +11,7 @@ import { AgendaScreen } from './screens/AgendaScreen';
 import { CalendarioScreen } from './screens/CalendarioScreen';
 import { CompartirScreen } from './screens/CompartirScreen';
 import { SemestresScreen } from './screens/SemestresScreen';
+import { SocialScreen } from './screens/SocialScreen';
 import { colors } from './components/ui';
 
 /**
@@ -33,8 +34,17 @@ import { colors } from './components/ui';
  * teléfono, el compartido llega por la cámara o tecleando el código, y ambos caminos
  * desembocan en un panel dentro de la propia pantalla de compartir —no en una ruta—.
  *
- * Entra cuando exista un enlace profundo que deba abrir la app en una pantalla concreta:
- * la Fase 8 comparte perfiles por enlace y es la primera que lo pide de verdad.
+ * **La Fase 8 tampoco, y era la que lo había reservado.** Se preveía que compartir perfiles
+ * por enlace lo exigiría, y ha pasado exactamente lo mismo que en la Fase 6: el enlace de un
+ * perfil (`/u/@usuario`) lo abre **la web**, que sí tiene rutas. En el teléfono, el perfil
+ * ajeno se alcanza escaneando el QR o tocando un resultado de la búsqueda, y ambos caminos
+ * abren un panel dentro de la propia pantalla social —el mismo patrón que el detalle del día
+ * en el calendario—.
+ *
+ * Lo que de verdad haría falta para justificarlo es un **enlace profundo del sistema**: que
+ * tocar `notecore://u/ana` en WhatsApp abra la app directamente en ese perfil. Eso exige
+ * registrar un esquema en el manifiesto de Android y un `prebuild`, y ninguna fase lo ha
+ * pedido todavía. Entra cuando se pida, no antes: hasta entonces sería andamiaje sin uso.
  */
 export default function App() {
   return (
@@ -51,7 +61,14 @@ function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
   const [seccion, setSeccion] = useState<
-    'inicio' | 'horario' | 'faltas' | 'agenda' | 'calendario' | 'compartir' | 'semestres'
+    | 'inicio'
+    | 'horario'
+    | 'faltas'
+    | 'agenda'
+    | 'calendario'
+    | 'compartir'
+    | 'semestres'
+    | 'social'
   >('inicio');
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
@@ -82,6 +99,9 @@ function Root() {
     if (seccion === 'semestres') {
       return <SemestresScreen onVolver={() => setSeccion('inicio')} />;
     }
+    if (seccion === 'social') {
+      return <SocialScreen onVolver={() => setSeccion('inicio')} />;
+    }
     return (
       <InicioScreen
         onIrAHorario={() => setSeccion('horario')}
@@ -90,6 +110,7 @@ function Root() {
         onIrACalendario={() => setSeccion('calendario')}
         onIrACompartir={() => setSeccion('compartir')}
         onIrASemestres={() => setSeccion('semestres')}
+        onIrASocial={() => setSeccion('social')}
       />
     );
   }

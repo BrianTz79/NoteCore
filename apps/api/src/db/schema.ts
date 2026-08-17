@@ -30,6 +30,30 @@ export const users = pgTable('users', {
   displayName: text('display_name').notNull(),
   /** Hash bcrypt. Nunca sale de la API en ninguna respuesta. */
   passwordHash: text('password_hash').notNull(),
+  /**
+   * Campos del perfil ampliado (FR-045). Todos opcionales: el usuario llena lo que quiera.
+   *
+   * Viven en `users` y no en una tabla aparte porque son atributos de la persona, uno por
+   * cuenta, y siempre se leen junto al nombre. Una tabla `profiles` con relación 1:1 añadiría
+   * un JOIN a la consulta más frecuente de la sección social sin separar nada que se consulte
+   * por su cuenta.
+   *
+   * Son `null` cuando no se llenan, nunca cadena vacía: "no lo puse" y "lo puse vacío" no son
+   * cosas distintas para el usuario, y tener dos representaciones obliga a cada pantalla a
+   * comprobar las dos.
+   */
+  bio: text('bio'),
+  career: text('career'),
+  school: text('school'),
+  age: integer('age'),
+  /**
+   * Quién puede ver el perfil ampliado y las publicaciones (FR-045).
+   *
+   * Por defecto `contactos`, el valor prudente: publicar algo y descubrir después que era
+   * público no tiene arreglo, mientras que abrirlo cuando uno quiere es un toque. Es lo que
+   * hace que el requisito se cumpla por defecto y no solo si el usuario configura.
+   */
+  profileVisibility: text('profile_visibility').notNull().default('contactos'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -453,6 +477,110 @@ export const shares = pgTable(
   ],
 );
 
+/**
+ * Relaciones entre usuarios: solicitudes, contactos y bloqueos (FR-040 a FR-042).
+ *
+ * La decisión que define la tabla: **una relación entre dos personas es una sola fila**, no
+ * dos filas espejo. Guardarla dos veces —"mi contacto contigo" y "tu contacto conmigo"— es
+ * cómo se llega a que una esté aceptada y la otra pendiente, y entonces "¿son contactos?"
+ * —la pregunta de la que cuelga FR-044 en la Fase 10— deja de tener una respuesta única.
+ *
+ * Para que sea **una sola** fila hace falta que el par esté ordenado: `userAId` guarda
+ * siempre el identificador menor y `userBId` el mayor (`orderedPair` en `shared`). Así la
+ * relación entre A y B ocupa la misma fila se mire desde donde se mire, y el índice único
+ * puede impedir la segunda. Sin el orden, dos personas tocando "agregar" a la vez crearían
+ * dos filas —una en cada orden— que ningún índice rechazaría.
+ *
+ * Quién pidió y quién bloqueó se guardan aparte, en `requesterId` y `blockedById`, porque el
+ * par ordenado deliberadamente pierde esa información: el orden lo fija el identificador, no
+ * quién actuó.
+ */
+export const contacts = pgTable(
+  'contacts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** El menor de los dos identificadores. Lo impone `orderedPair`, no el orden de llegada. */
+    userAId: uuid('user_a_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** El mayor de los dos identificadores. */
+    userBId: uuid('user_b_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Quién envió la solicitud (FR-041).
+     *
+     * Es lo que distingue "la envié y espero" de "me la enviaron y puedo aceptar": el mismo
+     * estado `pendiente` significa cosas distintas —y ofrece botones distintos— según el
+     * lado. El par ordenado no lo puede decir porque su orden lo fija el identificador.
+     */
+    requesterId: uuid('requester_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** `pendiente`, `aceptada` o `bloqueada`, tal como los define `CONTACT_STATUSES`. */
+    status: text('status').notNull().default('pendiente'),
+    /**
+     * Quién bloqueó, cuando el estado es `bloqueada` (FR-042). `null` en cualquier otro caso.
+     *
+     * Se guarda porque el bloqueo es **asimétrico** en lo que se cuenta: a quien bloqueó hay
+     * que ofrecerle desbloquear, y a quien fue bloqueado no se le dice nada —ver "te
+     * bloquearon" convierte el bloqueo en un mensaje dirigido justo a la persona de la que
+     * uno se quiere separar—. Sin esta columna no se puede escribir ninguno de los dos
+     * mensajes correctamente.
+     */
+    blockedById: uuid('blocked_by_id').references(() => users.id, { onDelete: 'cascade' }),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Cuándo se aceptó (FR-041). `null` mientras siga pendiente. */
+    acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    /**
+     * Una sola relación por pareja.
+     *
+     * Lo impone la base de datos y no solo el servicio, por lo mismo que el índice de un solo
+     * semestre activo de la Fase 7: dos solicitudes simultáneas —A agrega a B mientras B
+     * agrega a A, que es el caso real cuando dos personas se escanean el QR a la vez— pasarían
+     * ambas la comprobación previa antes de que ninguna escribiera. El resultado serían dos
+     * relaciones entre las mismas dos personas, con la posibilidad de tener estados distintos.
+     *
+     * Funciona porque el par va ordenado: sin eso, las dos filas serían (A,B) y (B,A) y el
+     * índice las vería como parejas diferentes.
+     */
+    uniqueIndex('contacts_pair_unique').on(table.userAId, table.userBId),
+    // Las dos consultas de la pantalla de contactos: lo mío contigo y todo lo mío.
+    index('contacts_user_a_idx').on(table.userAId),
+    index('contacts_user_b_idx').on(table.userBId),
+  ],
+);
+
+/**
+ * Publicaciones del perfil.
+ *
+ * De momento son texto. Los adjuntos —fotos y vídeos— son una fase aparte: exigen
+ * almacenamiento de archivos, límites de tamaño y tipo y servido, que es infraestructura que
+ * el proyecto todavía no tiene. La tabla queda lista para colgarlos sin rehacer lo escrito.
+ *
+ * No llevan `semesterId`, a diferencia de todo lo académico: una publicación es de la persona
+ * y no del periodo que cursa, así que cerrar un semestre no la archiva ni la esconde.
+ */
+export const posts = pgTable(
+  'posts',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // El muro de alguien: sus publicaciones de la más reciente a la más antigua.
+    index('posts_user_created_idx').on(table.userId, table.createdAt),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   semesters: many(semesters),
@@ -462,6 +590,35 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   agendaItems: many(agendaItems),
   settings: one(userSettings),
   shares: many(shares),
+  posts: many(posts),
+}));
+
+export const postsRelations = relations(posts, ({ one }) => ({
+  user: one(users, { fields: [posts.userId], references: [users.id] }),
+}));
+
+/**
+ * Las tres referencias a `users` se nombran explícitamente.
+ *
+ * Drizzle no puede adivinar cuál de ellas es cuál cuando hay varias a la misma tabla, y sin
+ * los nombres la relación quedaría ambigua.
+ */
+export const contactsRelations = relations(contacts, ({ one }) => ({
+  userA: one(users, {
+    fields: [contacts.userAId],
+    references: [users.id],
+    relationName: 'contact_user_a',
+  }),
+  userB: one(users, {
+    fields: [contacts.userBId],
+    references: [users.id],
+    relationName: 'contact_user_b',
+  }),
+  requester: one(users, {
+    fields: [contacts.requesterId],
+    references: [users.id],
+    relationName: 'contact_requester',
+  }),
 }));
 
 export const semestersRelations = relations(semesters, ({ one, many }) => ({
@@ -540,3 +697,7 @@ export type SemesterRow = typeof semesters.$inferSelect;
 export type NewSemesterRow = typeof semesters.$inferInsert;
 export type ShareRow = typeof shares.$inferSelect;
 export type NewShareRow = typeof shares.$inferInsert;
+export type ContactRow = typeof contacts.$inferSelect;
+export type NewContactRow = typeof contacts.$inferInsert;
+export type PostRow = typeof posts.$inferSelect;
+export type NewPostRow = typeof posts.$inferInsert;

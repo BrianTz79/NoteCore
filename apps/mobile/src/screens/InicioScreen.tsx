@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatDateTime,
+  pendingRequestsSummary,
   toFormErrors,
   updateProfileSchema,
   type FormErrors,
   type SessionInfo,
 } from '@notecore/shared';
-import { authApi } from '../lib/api';
+import { authApi, socialApi } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { Button, Card, Field, FormError, colors } from '../components/ui';
 
@@ -25,6 +26,7 @@ export function InicioScreen({
   onIrACalendario,
   onIrACompartir,
   onIrASemestres,
+  onIrASocial,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
@@ -32,6 +34,7 @@ export function InicioScreen({
   onIrACalendario: () => void;
   onIrACompartir: () => void;
   onIrASemestres: () => void;
+  onIrASocial: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -91,15 +94,63 @@ export function InicioScreen({
         <Button title="Ver mis semestres" onPress={onIrASemestres} />
       </Card>
 
+      <Social onIrASocial={onIrASocial} />
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Perfiles, contactos y mensajes con tus compañeros</Text>
+        <Text style={styles.body}>· Consultar tu horario y tu agenda sin conexión</Text>
+        <Text style={styles.body}>· Mensajes con tus contactos</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />
     </ScrollView>
+  );
+}
+
+/**
+ * Tarjeta de la sección social, con el aviso de solicitudes pendientes (FR-041).
+ *
+ * El conteo se pide aparte y no se pasa desde arriba porque el inicio no carga nada más de
+ * la API: traerlo aquí deja la tarjeta autocontenida y no retrasa el resto de la pantalla si
+ * la petición tarda.
+ *
+ * Un fallo al pedirlo no se muestra: la tarjeta sigue llevando a la sección, que es lo que
+ * importa. Pintar un error en el inicio por no poder contar unas solicitudes sería peor que
+ * no enseñar el número.
+ */
+function Social({ onIrASocial }: { onIrASocial: () => void }) {
+  const [pendientes, setPendientes] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vigente = true;
+
+    void socialApi
+      .getProfile()
+      .then((perfil) => {
+        if (vigente) setPendientes(pendingRequestsSummary(perfil.pendingRequestCount));
+      })
+      .catch(() => {
+        // Silencio deliberado: ver el motivo de arriba.
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  return (
+    <Card title="Perfil y contactos">
+      <Text style={styles.body}>
+        Llena tu perfil, encuentra compañeros por su @usuario o su QR y agrégalos como
+        contactos. Tú decides quién ve lo que publicas.
+      </Text>
+      {pendientes ? (
+        <Text style={styles.pendientes}>Tienes {pendientes} esperando respuesta.</Text>
+      ) : null}
+      <Button title="Ver mi perfil y mis contactos" onPress={onIrASocial} />
+    </Card>
   );
 }
 
@@ -227,6 +278,7 @@ const styles = StyleSheet.create({
   title: { color: colors.textoFuerte, fontSize: 28, fontWeight: '700' },
   subtitle: { color: colors.textoSuave, fontSize: 15 },
   body: { color: colors.texto, fontSize: 15 },
+  pendientes: { color: colors.acentoClaro, fontSize: 14, fontWeight: '500' },
   muted: { color: colors.textoTenue, fontSize: 13 },
   ok: { color: colors.exito, fontSize: 14 },
   sessionRow: {

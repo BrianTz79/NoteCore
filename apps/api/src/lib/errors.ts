@@ -95,6 +95,29 @@ export const errors = {
     ),
 } as const;
 
+/**
+ * `true` si el error es una violación de restricción única de PostgreSQL (23505).
+ *
+ * Mira también en `cause`, y ahí está el motivo de que exista esta función: Drizzle envuelve
+ * el error del driver en un `DrizzleQueryError` propio, así que `error.code` viene
+ * **`undefined`** y el `23505` queda un nivel más abajo. Comprobar solo el nivel superior
+ * hace que el `catch` no reconozca la colisión y la deje escapar como 500 —que es justo lo
+ * que ocurría al enviar dos solicitudes de contacto simultáneas—.
+ *
+ * `constraint` acota la comprobación a una restricción concreta: sin ella, un `catch`
+ * pensado para una colisión de código trataría igual la de cualquier otra columna.
+ */
+export function isUniqueViolation(error: unknown, constraint?: string): boolean {
+  const candidates = [error, (error as { cause?: unknown })?.cause];
+
+  return candidates.some((candidate) => {
+    if (typeof candidate !== 'object' || candidate === null) return false;
+    const pg = candidate as { code?: unknown; constraint_name?: unknown };
+    if (pg.code !== '23505') return false;
+    return constraint === undefined || pg.constraint_name === constraint;
+  });
+}
+
 /** Escribe un `AppError` en la respuesta con el formato del contrato. */
 export function sendError(reply: FastifyReply, error: AppError): FastifyReply {
   return reply.code(error.status).send({
