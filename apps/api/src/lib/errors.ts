@@ -1,5 +1,6 @@
 import type { FastifyReply } from 'fastify';
 import {
+  SEMESTER_ARCHIVED_MESSAGE,
   SHARE_UNAVAILABLE_MESSAGES,
   type ApiErrorCode,
   type FieldError,
@@ -73,6 +74,18 @@ export const errors = {
     new AppError('compartido_no_disponible', SHARE_UNAVAILABLE_MESSAGES[reason], 404, [
       { field: 'code', message: SHARE_UNAVAILABLE_MESSAGES[reason] },
     ]),
+
+  /**
+   * Se intentó modificar algo de un semestre archivado (FR-037).
+   *
+   * 409 y no 403: no es una cuestión de permisos —el semestre es del propio usuario— sino de
+   * estado. El recurso existe y es suyo; lo que no procede es escribir en él.
+   *
+   * El mensaje sale de `shared` para que la app y la web expliquen lo mismo que ya escriben
+   * en sus propias pantallas de solo lectura.
+   */
+  semestreArchivado: () =>
+    new AppError('semestre_archivado', SEMESTER_ARCHIVED_MESSAGE, 409),
 
   demasiadosIntentos: () =>
     new AppError(

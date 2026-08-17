@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-17**
+> Última actualización: **2026-08-17** (Fase 7 cerrada)
 
 ---
 
@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda, calendario con recordatorios y compartición por QR, código y enlace funcionando en app y web |
-| **Fases completadas** | 7 de 12 |
-| **Fase actual** | Fase 7 — Semestres (no iniciada) |
+| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace y ciclo de semestres con archivo histórico, funcionando en app y web |
+| **Fases completadas** | 8 de 12 |
+| **Fase actual** | Fase 8 — Social: perfiles y contactos (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `███████░░░░░` 58%
+**Avance**: `████████░░░░` 67%
 
 ### Qué se ha hecho
 
@@ -70,11 +70,16 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   con un codificador propio en `shared` y se verificó **decodificando la pantalla real del
   emulador**; la independencia de la copia se comprobó editando y borrando el original mientras
   el receptor mantenía la suya intacta
+- **Fase 7 cerrada**: ciclo de semestres con archivo histórico. El semestre es el **ámbito** de lo
+  académico, no una copia: cerrar uno no borra ni duplica una sola fila, solo cambia su estado y
+  lo deja en solo lectura. Verificada cerrando desde el **emulador Android** y leyendo el archivo
+  desde el navegador, con las materias, faltas y actividades intactas en la base de datos
 
 ### Próximo paso
 
-**Fase 7 — Semestres**: iniciar un semestre nuevo archivando el anterior íntegro, consultable de
-forma indefinida y protegido contra modificación accidental.
+**Fase 8 — Social: perfiles y contactos**: perfil público, búsqueda por `@usuario`, solicitudes de
+contacto, aceptación y bloqueo. Es la primera fase que necesita `expo-router` de verdad, porque
+comparte perfiles por enlace.
 
 ---
 
@@ -91,7 +96,7 @@ forma indefinida y protegido contra modificación accidental.
 | 4 | Agenda | P1 | ✅ | ✅ | ✅ | ✅ |
 | 5 | Calendario y recordatorios | P2 | ✅ | ✅ | ✅ | ✅ |
 | 6 | Compartir | P2 | ✅ | ✅ | ✅ | ✅ |
-| 7 | Semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 7 | Semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 | 8 | Social: perfiles y contactos | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 9 | Offline y sincronización | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 10 | Mensajería | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -106,6 +111,120 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 7 — Semestres · cerrada el 2026-08-17
+
+**Entregado**: inicio de un semestre nuevo desde la propia pantalla de semestres (FR-034); archivo
+**íntegro** del anterior —horario, agenda, faltas y estadísticas— al iniciar el siguiente (FR-035);
+consulta indefinida de los archivados (FR-036); protección de lo archivado frente a cualquier
+modificación, verificada en el servidor (FR-037); y explicación del efecto **antes** de pedir la
+confirmación, con los conteos reales delante (FR-038).
+
+**El semestre es un ámbito, no una copia**. La decisión que gobierna toda la fase: `subjects`,
+`schedule_blocks`, `absence_records` y `agenda_items` llevan `semester_id` y **se quedan donde
+están** al archivarse; lo único que cambia al cerrar es el `status` del semestre. Se descartó la
+alternativa de copiar el contenido a una tabla de instantáneas —el patrón de `shares.payload` de
+la Fase 6— por dos motivos. El primero, que FR-036 pide consultarlos indefinidamente: si el archivo
+tuviera otra forma que lo vivo, cada pantalla necesitaría dos caminos de pintado y los dos se
+desincronizarían con el tiempo. El segundo, y decisivo, que vaciar las tablas al cerrar es
+exactamente la operación de rutina que destruye historial y que el Principio VI prohíbe. **Cerrar
+un semestre no borra ni copia una sola fila.**
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| El semestre **acota**, no archiva copiando | Cerrar cambia un estado, no mueve datos. Es lo que hace que el Principio VI se cumpla por construcción y no por cuidado: no hay ninguna ruta de código que borre historial porque ninguna lo toca |
+| **Índice único parcial** de un solo activo por usuario | Si dos quedaran activos, "el semestre en curso" dejaría de estar definido y las materias nuevas irían a uno u otro según el orden de la consulta. Dos cierres lanzados a la vez desde app y web son el caso real, y la comprobación previa de ambos pasaría antes de que ninguno escribiera. Se verificó lanzando los dos cierres en paralelo: solo prosperó uno |
+| El semestre en curso **se crea al vuelo** | Igual que los ajustes de la Fase 3: así las cuentas que ya existían no necesitan que nadie les inserte la fila, y ningún cliente maneja el caso de "todavía no hay semestre" |
+| Cerrar y abrir son **una sola operación transaccional** | Cerrar sin abrir dejaría la cuenta sin sitio donde escribir y el estudiante no podría capturar nada. O se hacen las dos o no se hace ninguna |
+| El cuerpo del cierre exige **`confirmed: true`** | FR-038 es un requisito, no una cortesía de la interfaz. Sin ese campo, una petición suelta —o un `curl` mal copiado— archivaría un semestre entero sin que nadie leyera nada |
+| El **efecto se consulta por `GET`** aparte | Pedirlo no compromete a nada, que es justo lo que lo convierte en una explicación *previa*. Los conteos los da el servidor porque es el único sitio donde se sabe de verdad cuánto se va a archivar |
+| El semestre nuevo arranca **vacío**, sin copiar el horario | Decisión del usuario. En el TecNM casi ninguna materia continúa entre semestres, así que copiar obligaría a borrar más de lo que ahorra; se recaptura o se importa con el flujo de la Fase 2 |
+| Las actividades **pendientes también se archivan** | Decisión del usuario, y lectura literal de FR-035: arrastrar una parte dejaría el archivo contando algo distinto de lo que hubo, y el semestre nuevo no arrancaría vacío |
+| El `WHERE` del cierre incluye `status = 'activo'` | Hace idempotente el doble toque: sin esa condición, la segunda petición archivaría de nuevo un semestre ya archivado —reescribiendo su fecha de cierre— y abriría un tercero |
+| El nombre propuesto solo interpreta **`AAAA-N`** | De "2026-1" sale "2026-2" y de "2026-2" sale "2027-1". Con cualquier otro nombre se devuelve tal cual: "Quinto semestre" tendría que convertirse en "Sexto", y una tabla de ordinales fallaría en cuanto alguien escriba "5º". Es una propuesta editable, no un dato que deba acertar |
+| El nombre del semestre **no se restringe** a esa convención | El estudiante etiqueta su semestre como le sirva; rechazar "Quinto" solo estorbaría |
+| `semestre_archivado` es un **código de error propio**, 409 | No es `validacion` porque no hay nada que corregir en el formulario, ni 403 porque el semestre sí es del usuario: el recurso existe y es suyo, lo que no procede es escribir en él. El cliente lo usa para explicar que está viendo historial en vez de marcar un campo en rojo |
+| La protección de FR-037 vive en el **servidor**, no en la interfaz | Los clientes esconden los botones de un semestre archivado, pero eso solo evita el error accidental. La garantía es `assertSemesterWritable`, y por eso se comprobó atacando la API directamente |
+| **Renombrar un archivado también se rechaza** | Parece inofensivo, pero es la excepción por la que empiezan todas: en cuanto una escritura se permite sobre el historial, la protección deja de ser una regla y pasa a ser una lista de casos |
+| Los nombres de materia y los solapes se comprueban **dentro del semestre** | Repetir "Cálculo" el semestre siguiente es el caso normal de una materia reprobada; una comprobación global lo rechazaría. Y el horario del semestre pasado ocupa esas mismas horas sin estorbar |
+| La rotación de color se cuenta **por semestre** | Si contara todas las materias históricas, el primer color de un semestre nuevo dependería de cuántos semestres lleve la cuenta |
+| El plan de recordatorios se acota al semestre en curso | Es lo que hace que cerrar cancele los avisos pendientes **sin código añadido**: el plan de la Fase 5 devuelve todos los vigentes y el cliente reprograma la lista entera, así que lo archivado deja de aparecer. Sin el filtro, el teléfono seguiría avisando de entregas de un semestre terminado |
+| Lo aceptado de un compartido entra en el semestre **del receptor** | El compartido es una fotografía sin semestre (Fase 6), y el del emisor no significa nada en la cuenta de quien lo acepta |
+| **Sin `expo-router` todavía** | La Fase 6 lo previó aquí y tampoco ha hecho falta: los semestres son una sección más que se abre desde el inicio, sin rutas anidadas ni enlaces profundos. Entra en la Fase 8, que comparte perfiles por enlace |
+
+**El riesgo real de la fase era el borrado en cascada, no el cierre.** Tres rutas ya existentes
+borraban por `userId` a secas: el modo "reemplazar" de la importación (Fase 2), el mismo modo al
+aceptar un horario compartido (Fase 6) y `clearSchedule`. Sin acotarlas por semestre, cualquiera de
+las tres habría arrasado el horario de **todos los semestres archivados** de la cuenta —el fallo más
+destructivo que esta fase podía introducir, y precisamente el que el Principio VI prohíbe—. Las tres
+llevan ahora `semester_id` en su `WHERE`.
+
+**Verificación ejecutada** — 308 comprobaciones, todas en verde:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Nombre propuesto en sus casos límite (cambio de año y de siglo, nombres libres, formatos parecidos), nombre por defecto y su encadenado sobre 5 semestres, editabilidad, resúmenes con singular y plural —exigiendo que ninguno enumere ceros—, avisos del cierre, periodo, orden de la lista y los esquemas | **90/90** |
+| API (`fetch` contra la API real) | Semestre creado al vuelo e idempotente, conteo del contenido, efecto del cierre sin efectos secundarios, rechazo sin confirmación, archivo íntegro, semestre nuevo vacío en las cuatro pantallas, consulta de lo archivado, **seis vías de escritura sobre un archivado rechazadas**, materia repetida entre semestres, faltas que no cruzan, aislamiento entre cuentas, rutas protegidas y **cierre doble simultáneo** | **80/80** |
+| Web (Playwright, navegador real) | Ruta protegida, enlace desde el inicio, semestre en curso con sus conteos, explicación previa completa, cancelar sin efectos, cierre, semestre nuevo vacío en horario/agenda/faltas, consulta de lo archivado, persistencia al recargar, segundo cierre y ausencia de errores de JavaScript | **43/43** |
+
+Además se reejecutó una **regresión de las fases 1 a 6** (**95/95**), porque esta fase tocó los
+cinco servicios: cada consulta lleva ahora un filtro por semestre y cada escritura una comprobación.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Tarjeta "Semestres" en el inicio y pantalla completa | correcto |
+| Semestre en curso con sus conteos | "2026-2 · Activo · Desde el 17/08/2026 · 2 materias · 1 falta · 1 actividad" |
+| Aviso de que no se puede deshacer | visible junto al botón |
+| **Explicación previa (FR-038)** | los cuatro avisos, **palabra por palabra idénticos a los de la web** |
+| Nombre propuesto con cambio de año | de `2026-2` propone **`2027-1`** |
+| Cierre desde la app (FR-034) | "Se archivó «2026-2» y empezó «2027-1», vacío." |
+| El archivado conserva todo (FR-035) | "2026-2 · Archivado · 2 materias · 1 falta · 1 actividad" |
+| Aviso de solo lectura (FR-037) | "Este semestre está archivado. No se puede modificar." |
+| El semestre nuevo, vacío en **horario** | "Todavía no has capturado tus clases" |
+| El semestre nuevo, vacío en **faltas** | "Todavía no tienes materias en tu horario" |
+| El semestre nuevo, vacío en **agenda** | "No tienes nada pendiente" |
+| **Nada se borró** (Principio VI) | en PostgreSQL, el archivado conserva sus 2 materias, 3 sesiones, 1 falta y 1 actividad |
+| **Cierre hecho en la app leído en la web** | idéntico: mismo nombre, periodo, contenido y aviso de solo lectura |
+| Paridad bidireccional | **confirmada** |
+
+**Migración**: `0007` crea `semesters` y añade `semester_id` a las cuatro tablas de dominio. **No es
+puramente aditiva**, y ahí estaba el riesgo: las columnas son `NOT NULL` sobre tablas que ya tenían
+filas, y no hay valor por defecto posible porque el semestre correcto depende del usuario dueño de
+cada fila. El generador de Drizzle producía `ADD COLUMN … NOT NULL` a secas, que habría fallado con
+la primera fila existente. Se reescribió a mano en tres pasos: crear un semestre activo por cada
+cuenta —con `started_at` tomado de la fecha de alta de la cuenta, no de hoy, porque lo capturado es
+de un semestre que empezó antes de la migración—, rellenar las cuatro tablas, y solo entonces
+imponer la restricción. **Se aplicó sobre la base real con 153 cuentas y 598 filas**: 153 semestres
+creados, cero filas huérfanas, cero filas asignadas al semestre de otro usuario y ningún conteo
+alterado.
+
+**Corregido durante la fase**:
+
+1. **El generador de migraciones habría roto la base con datos.** Descrito arriba: `drizzle-kit`
+   no puede saber que una columna nueva necesita un relleno derivado del dueño de cada fila. Se
+   detectó revisando el SQL generado antes de aplicarlo, y se comprobó ejecutando la migración
+   contra las 153 cuentas reales en lugar de sobre una base vacía —donde el fallo no se habría
+   manifestado nunca—.
+2. **Tres borrados en cascada alcanzaban los semestres archivados.** Descrito arriba: los dos modos
+   "reemplazar" y `clearSchedule` borraban por `userId` sin acotar. No lo habría detectado ninguna
+   prueba de la fase nueva, porque las tres rutas son de fases anteriores y sus suites pasaban;
+   apareció al revisar cada `delete` del proyecto buscando cuáles cruzaban el ámbito.
+3. **Las faltas del semestre pasado seguirían contra el límite del nuevo.** El panel de FR-012
+   contaba todas las faltas del usuario. Sin el filtro por semestre, el estudiante empezaría el
+   semestre nuevo con la alerta de FR-016 ya encendida y un margen consumido por materias que ya
+   no cursa. Se comprobó explícitamente: tras cerrar, una materia con el mismo nombre arranca en
+   0 faltas.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. **No se reejecutó `expo prebuild`**: esta fase no
+añade ningún módulo nativo. La contraseña de las cuentas de prueba en dispositivo es ASCII, igual
+que en las fases 3 a 6.
+
+---
 
 #### Fase 6 — Compartir · cerrada el 2026-08-17
 
@@ -694,7 +813,7 @@ Cambios que exigió la actualización:
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
 │   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance,
-│   │       │                agenda, calendar, share)
+│   │       │                agenda, calendar, share, semester)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
@@ -702,7 +821,8 @@ Cambios que exigió la actualización:
 │   ├── web/                 aplicación web — Next.js + Tailwind
 │   │   └── src/
 │   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas,
-│   │       │                /agenda, /calendario, /compartir, /compartido/[code])
+│   │       │                /agenda, /calendario, /compartir, /compartido/[code],
+│   │       │                /semestres)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
@@ -711,7 +831,7 @@ Cambios que exigió la actualización:
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
 │           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario,
-│           │                Compartir
+│           │                Compartir, Semestres
 │           ├── components/  componentes propios de la app (incluye QR y escáner de cámara)
 │           └── lib/         cliente de API, contexto de sesión y notificaciones locales
 │
@@ -724,7 +844,8 @@ Cambios que exigió la actualización:
 │           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
 │                            urgencia y orden de la agenda, rejilla mensual y momento de los
 │                            recordatorios, códigos y estado de los compartidos, codificador
-│                            de QR, errores de formulario, fechas)
+│                            de QR, ciclo y archivo de semestres, errores de
+│                            formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -858,10 +979,15 @@ emisor edite o borre el original, y la vista previa es fiel aunque se acepte una
 copiado en el emulador Android quedó intacto; el QR mostrado en la pantalla del emulador se
 decodificó y devolvió el enlace correcto. Detalle en el historial.
 
-#### Fase 7 — Semestres (P2)
-Iniciar semestre nuevo desde configuración. El anterior se archiva íntegro y queda consultable de
-forma indefinida, protegido contra modificación accidental.
-**Verificación**: el nuevo arranca vacío y el anterior conserva todo.
+#### Fase 7 — Semestres (P2) ✅
+Iniciar semestre nuevo explicando antes su efecto. El anterior se archiva íntegro y queda
+consultable de forma indefinida, protegido contra modificación en el servidor.
+**El semestre es el ámbito de lo académico, no una copia de ello**: cerrar uno no borra ni duplica
+una sola fila —solo cambia su estado—, así que el Principio VI se cumple por construcción.
+**Verificado el 2026-08-17**: el semestre se cerró desde el emulador Android y el archivo se leyó
+idéntico en el navegador; el nuevo arrancó vacío en horario, faltas y agenda mientras el anterior
+conservaba sus 2 materias, 3 sesiones, 1 falta y 1 actividad en PostgreSQL. Detalle en el
+historial.
 
 #### Fase 8 — Social: perfiles y contactos (P3)
 Perfil con nombre mostrado y `@usuario`. Búsqueda por nombre de usuario, agregado por QR o enlace.

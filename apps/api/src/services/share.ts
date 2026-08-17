@@ -32,6 +32,7 @@ import {
 } from '../db/schema.js';
 import { config } from '../config.js';
 import { errors } from '../lib/errors.js';
+import { getCurrentSemesterId } from './semester.js';
 
 /**
  * Lógica de la compartición (FR-028 a FR-033).
@@ -374,6 +375,15 @@ export async function acceptShare(
 
   const payload = row.payload as SharePayload;
 
+  /**
+   * Todo lo copiado entra en el semestre en curso del **receptor**.
+   *
+   * El compartido no lleva semestre: es una fotografía del contenido (Fase 6) y el semestre
+   * del emisor no significa nada en la cuenta de quien lo acepta. Lo que se recibe es para
+   * lo que se está cursando.
+   */
+  const semesterId = await getCurrentSemesterId(userId);
+
   const result = await db.transaction(async (tx) => {
     if (payload.kind === 'horario') {
       let subjectsRemoved = 0;
@@ -381,10 +391,19 @@ export async function acceptShare(
       if (input.mode === 'reemplazar') {
         // Las sesiones caen por la cascada de `subjects`, pero se borran explícitamente para
         // no depender de ella dentro de la transacción —igual que en la importación—.
-        await tx.delete(scheduleBlocks).where(eq(scheduleBlocks.userId, userId));
+        // Acotado al semestre en curso: sin el filtro, aceptar un horario en modo
+        // "reemplazar" borraría también el de todos los semestres archivados (Principio VI).
+        await tx
+          .delete(scheduleBlocks)
+          .where(
+            and(
+              eq(scheduleBlocks.userId, userId),
+              eq(scheduleBlocks.semesterId, semesterId),
+            ),
+          );
         const gone = await tx
           .delete(subjects)
-          .where(eq(subjects.userId, userId))
+          .where(and(eq(subjects.userId, userId), eq(subjects.semesterId, semesterId)))
           .returning({ id: subjects.id });
         subjectsRemoved = gone.length;
       }
@@ -392,7 +411,7 @@ export async function acceptShare(
       const remaining = await tx
         .select({ id: subjects.id, name: subjects.name })
         .from(subjects)
-        .where(eq(subjects.userId, userId));
+        .where(and(eq(subjects.userId, userId), eq(subjects.semesterId, semesterId)));
 
       const taken = new Set(remaining.map((subject) => normalizeName(subject.name)));
       // El color continúa la rotación desde lo que ya hay, para que al añadir no se repitan
@@ -408,6 +427,7 @@ export async function acceptShare(
           .insert(subjects)
           .values({
             userId,
+            semesterId,
             name,
             // El color del emisor se conserva si es válido, para que el horario copiado se
             // lea igual que el original; si no, sigue la rotación del receptor.
@@ -424,6 +444,7 @@ export async function acceptShare(
           await tx.insert(scheduleBlocks).values(
             shared.blocks.map((block) => ({
               userId,
+              semesterId,
               subjectId: created.id,
               weekday: block.weekday,
               startTime: block.startTime,
@@ -459,7 +480,7 @@ export async function acceptShare(
     const own = await tx
       .select({ id: subjects.id, name: subjects.name })
       .from(subjects)
-      .where(eq(subjects.userId, userId));
+      .where(and(eq(subjects.userId, userId), eq(subjects.semesterId, semesterId)));
 
     const byName = new Map(own.map((subject) => [normalizeName(subject.name), subject.id]));
     let itemsWithoutSubject = 0;
@@ -475,6 +496,7 @@ export async function acceptShare(
 
       return {
         userId,
+        semesterId,
         title: item.title,
         description: item.description,
         kind: item.kind,

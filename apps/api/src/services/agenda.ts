@@ -15,6 +15,7 @@ import {
 import { db } from '../db/client.js';
 import { agendaItems, subjects, type AgendaItemRow } from '../db/schema.js';
 import { errors } from '../lib/errors.js';
+import { assertSemesterWritable, getCurrentSemesterId } from './semester.js';
 
 /**
  * Lógica de la agenda (FR-018 a FR-022).
@@ -87,11 +88,24 @@ function toAgendaItem(
  * Principio III: sin esto se podría colgar una tarea de la materia de otra persona pasando
  * su identificador, y su nombre se filtraría en la respuesta.
  */
-async function assertSubjectOwned(userId: string, subjectId: string): Promise<void> {
+async function assertSubjectOwned(
+  userId: string,
+  semesterId: string,
+  subjectId: string,
+): Promise<void> {
+  // También se exige que la materia sea del mismo semestre: una actividad del semestre en
+  // curso colgada de una materia archivada aparecería en la agenda de hoy con el color y el
+  // nombre de un semestre terminado.
   const rows = await db
     .select({ id: subjects.id })
     .from(subjects)
-    .where(and(eq(subjects.id, subjectId), eq(subjects.userId, userId)))
+    .where(
+      and(
+        eq(subjects.id, subjectId),
+        eq(subjects.userId, userId),
+        eq(subjects.semesterId, semesterId),
+      ),
+    )
     .limit(1);
 
   if (rows.length === 0) {
@@ -110,10 +124,12 @@ async function assertSubjectOwned(userId: string, subjectId: string): Promise<vo
 export async function listAgenda(
   userId: string,
   query: AgendaQueryParsed,
+  semesterId?: string,
 ): Promise<AgendaList> {
   const today = todayCalendarDate();
+  const scope = semesterId ?? (await getCurrentSemesterId(userId));
 
-  const filters = [eq(agendaItems.userId, userId)];
+  const filters = [eq(agendaItems.userId, userId), eq(agendaItems.semesterId, scope)];
   if (query.subjectId) filters.push(eq(agendaItems.subjectId, query.subjectId));
   if (query.kind) filters.push(eq(agendaItems.kind, query.kind));
   if (!query.includeCompleted) filters.push(eq(agendaItems.completed, false));
@@ -177,6 +193,28 @@ export async function getAgendaItem(userId: string, itemId: string): Promise<Age
 }
 
 /**
+ * Comprueba que la actividad sea del usuario y de un semestre abierto (FR-037).
+ *
+ * Devuelve su `semesterId` porque la edición lo necesita después para validar la materia
+ * contra el mismo semestre.
+ */
+async function assertAgendaItemWritable(
+  userId: string,
+  itemId: string,
+): Promise<string> {
+  const row = await db.query.agendaItems.findFirst({
+    columns: { semesterId: true },
+    where: and(eq(agendaItems.id, itemId), eq(agendaItems.userId, userId)),
+  });
+
+  if (!row) throw errors.noEncontrado('Esa actividad no existe.');
+
+  await assertSemesterWritable(userId, row.semesterId);
+
+  return row.semesterId;
+}
+
+/**
  * Crea una actividad (FR-018).
  *
  * Solo el título es obligatorio: materia y fecha límite son opcionales por requisito, y de
@@ -186,14 +224,19 @@ export async function createAgendaItem(
   userId: string,
   input: CreateAgendaItemParsed,
 ): Promise<AgendaItem> {
+  // Siempre en el semestre en curso: una actividad nueva pertenece a lo que se está
+  // cursando, y el archivado no admite escritura (FR-037).
+  const semesterId = await getCurrentSemesterId(userId);
+
   if (input.subjectId !== null) {
-    await assertSubjectOwned(userId, input.subjectId);
+    await assertSubjectOwned(userId, semesterId, input.subjectId);
   }
 
   const inserted = await db
     .insert(agendaItems)
     .values({
       userId,
+      semesterId,
       title: input.title,
       description: input.description,
       kind: input.kind,
@@ -220,11 +263,14 @@ export async function updateAgendaItem(
   itemId: string,
   input: UpdateAgendaItemParsed,
 ): Promise<AgendaItem> {
-  // Confirma que la actividad es del usuario antes de tocar nada (Principio III).
+  // Confirma que la actividad es del usuario antes de tocar nada (Principio III) y que su
+  // semestre siga abierto (FR-037): completar o reabrir una tarea archivada cambiaría lo que
+  // quedó registrado del semestre pasado.
   const current = await getAgendaItem(userId, itemId);
+  const semesterId = await assertAgendaItemWritable(userId, itemId);
 
   if (input.subjectId !== undefined && input.subjectId !== null) {
-    await assertSubjectOwned(userId, input.subjectId);
+    await assertSubjectOwned(userId, semesterId, input.subjectId);
   }
 
   /**
@@ -262,6 +308,8 @@ export async function updateAgendaItem(
  * que FR-021 exige, para lo anotado por error o lo que dejó de aplicar.
  */
 export async function deleteAgendaItem(userId: string, itemId: string): Promise<void> {
+  await assertAgendaItemWritable(userId, itemId);
+
   const deleted = await db
     .delete(agendaItems)
     .where(and(eq(agendaItems.id, itemId), eq(agendaItems.userId, userId)))

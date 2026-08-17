@@ -24,6 +24,7 @@ import {
   type Weekday,
 } from '@notecore/shared';
 import { db } from '../db/client.js';
+import { getCurrentSemesterId } from './semester.js';
 import {
   absenceRecords,
   agendaItems,
@@ -74,6 +75,10 @@ export async function getRange(
   to: CalendarDate,
 ): Promise<CalendarRange> {
   const today = todayCalendarDate();
+  // El calendario muestra el semestre en curso: las clases de uno archivado seguirían
+  // pintándose cada semana en las fechas de hoy, porque una sesión es un día de la semana
+  // recurrente y no tiene fecha propia.
+  const semesterId = await getCurrentSemesterId(userId);
 
   // El horario entero: son pocas filas y hay que cruzarlas contra cada día del rango.
   const blockRows = await db
@@ -89,7 +94,9 @@ export async function getRange(
     })
     .from(scheduleBlocks)
     .innerJoin(subjects, eq(scheduleBlocks.subjectId, subjects.id))
-    .where(eq(scheduleBlocks.userId, userId))
+    .where(
+      and(eq(scheduleBlocks.userId, userId), eq(scheduleBlocks.semesterId, semesterId)),
+    )
     .orderBy(asc(scheduleBlocks.startTime));
 
   // Las clases se agrupan por día de la semana: cada fecha del rango toma las de su día.
@@ -113,6 +120,7 @@ export async function getRange(
     .where(
       and(
         eq(absenceRecords.userId, userId),
+        eq(absenceRecords.semesterId, semesterId),
         gte(absenceRecords.date, from),
         lte(absenceRecords.date, to),
       ),
@@ -145,6 +153,7 @@ export async function getRange(
     .where(
       and(
         eq(agendaItems.userId, userId),
+        eq(agendaItems.semesterId, semesterId),
         isNotNull(agendaItems.dueDate),
         gte(agendaItems.dueDate, from),
         lte(agendaItems.dueDate, to),
@@ -310,6 +319,8 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
     return { settings, reminders: [], today };
   }
 
+  const semesterId = await getCurrentSemesterId(userId);
+
   const rows = await db
     .select({
       itemId: agendaItems.id,
@@ -323,6 +334,16 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
     .where(
       and(
         eq(agendaItems.userId, userId),
+        /**
+         * Solo el semestre en curso.
+         *
+         * Es lo que hace que cerrar un semestre cancele sus avisos pendientes sin código
+         * añadido: el plan de la Fase 5 devuelve **todos** los recordatorios vigentes y el
+         * cliente cancela y reprograma la lista entera, así que lo archivado simplemente deja
+         * de aparecer. Sin este filtro, el teléfono seguiría avisando de entregas de un
+         * semestre terminado.
+         */
+        eq(agendaItems.semesterId, semesterId),
         // Sin fecha límite no hay momento que recordar (FR-018 la hace opcional).
         isNotNull(agendaItems.dueDate),
         // Completada: ya no se recuerda (FR-027).

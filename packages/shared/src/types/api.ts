@@ -23,6 +23,15 @@ export const API_ERROR_CODES = [
    * sí existe. El motivo concreto viaja en `fields` bajo `code`.
    */
   'compartido_no_disponible',
+  /**
+   * Se intentó modificar algo de un semestre archivado (FR-037).
+   *
+   * Es un código propio y no `validacion` porque no hay nada que el usuario pueda corregir en
+   * el formulario: el dato es correcto, lo que no procede es escribir ahí. El cliente lo usa
+   * para explicar que está viendo historial —y ofrecer volver al semestre en curso— en lugar
+   * de marcar un campo en rojo.
+   */
+  'semestre_archivado',
   'error_interno',
 ] as const;
 

@@ -24,12 +24,14 @@ export function InicioScreen({
   onIrAAgenda,
   onIrACalendario,
   onIrACompartir,
+  onIrASemestres,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
   onIrAAgenda: () => void;
   onIrACalendario: () => void;
   onIrACompartir: () => void;
+  onIrASemestres: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -81,11 +83,19 @@ export function InicioScreen({
         <Button title="Compartir o recibir" onPress={onIrACompartir} />
       </Card>
 
+      <Card title="Semestres">
+        <Text style={styles.body}>
+          Cuando termine el semestre, ciérralo: se archiva completo —horario, faltas y agenda—
+          y lo puedes consultar siempre. El nuevo empieza vacío.
+        </Text>
+        <Button title="Ver mis semestres" onPress={onIrASemestres} />
+      </Card>
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Archivar el semestre y empezar uno nuevo</Text>
+        <Text style={styles.body}>· Perfiles, contactos y mensajes con tus compañeros</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />

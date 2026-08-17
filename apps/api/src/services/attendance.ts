@@ -26,6 +26,7 @@ import {
   type AbsenceRecordRow,
 } from '../db/schema.js';
 import { errors } from '../lib/errors.js';
+import { assertSemesterWritable, getCurrentSemesterId } from './semester.js';
 
 /**
  * Lógica del control de faltas (FR-011 a FR-017).
@@ -108,13 +109,17 @@ export async function setSemesterWeeks(userId: string, weeks: number): Promise<v
  * Todo se resuelve en el servidor —incluido el estado de alerta— para que app y web
  * muestren exactamente lo mismo sin reimplementar la regla (Principio II).
  */
-export async function getSummary(userId: string): Promise<AttendanceSummary> {
+export async function getSummary(
+  userId: string,
+  semesterId?: string,
+): Promise<AttendanceSummary> {
   const semesterWeeks = await getSemesterWeeks(userId);
+  const scope = semesterId ?? (await getCurrentSemesterId(userId));
 
   const subjectRows = await db
     .select()
     .from(subjects)
-    .where(eq(subjects.userId, userId))
+    .where(and(eq(subjects.userId, userId), eq(subjects.semesterId, scope)))
     .orderBy(asc(subjects.name));
 
   if (subjectRows.length === 0) {
@@ -125,18 +130,24 @@ export async function getSummary(userId: string): Promise<AttendanceSummary> {
   const blockRows = await db
     .select({ subjectId: scheduleBlocks.subjectId })
     .from(scheduleBlocks)
-    .where(eq(scheduleBlocks.userId, userId));
+    .where(and(eq(scheduleBlocks.userId, userId), eq(scheduleBlocks.semesterId, scope)));
 
   const sessionsPerWeek = new Map<string, number>();
   for (const block of blockRows) {
     sessionsPerWeek.set(block.subjectId, (sessionsPerWeek.get(block.subjectId) ?? 0) + 1);
   }
 
-  // Faltas por materia, separando las justificadas: no cuentan para el límite (FR-017).
+  /**
+   * Faltas por materia, separando las justificadas: no cuentan para el límite (FR-017).
+   *
+   * El filtro por semestre es lo que hace que el conteo de FR-012 signifique algo: sin él,
+   * las faltas de los semestres pasados seguirían sumando contra el límite del actual y el
+   * estudiante empezaría el semestre nuevo con la alerta ya encendida.
+   */
   const absenceRows = await db
     .select({ subjectId: absenceRecords.subjectId, justified: absenceRecords.justified })
     .from(absenceRecords)
-    .where(eq(absenceRecords.userId, userId));
+    .where(and(eq(absenceRecords.userId, userId), eq(absenceRecords.semesterId, scope)));
 
   const counted = new Map<string, number>();
   const justified = new Map<string, number>();
@@ -182,6 +193,7 @@ export async function getSummary(userId: string): Promise<AttendanceSummary> {
  * lo ya registrado señalado para no marcarlo dos veces.
  */
 export async function getDay(userId: string, date: CalendarDate): Promise<DayAttendance> {
+  const semesterId = await getCurrentSemesterId(userId);
   const weekday = weekdayOf(date);
 
   // El domingo no es día de clase: se responde con la lista vacía en lugar de un error,
@@ -202,7 +214,13 @@ export async function getDay(userId: string, date: CalendarDate): Promise<DayAtt
     })
     .from(scheduleBlocks)
     .innerJoin(subjects, eq(scheduleBlocks.subjectId, subjects.id))
-    .where(and(eq(scheduleBlocks.userId, userId), eq(scheduleBlocks.weekday, weekday)))
+    .where(
+      and(
+        eq(scheduleBlocks.userId, userId),
+        eq(scheduleBlocks.semesterId, semesterId),
+        eq(scheduleBlocks.weekday, weekday),
+      ),
+    )
     .orderBy(asc(scheduleBlocks.startTime));
 
   const existing = await db
@@ -212,7 +230,13 @@ export async function getDay(userId: string, date: CalendarDate): Promise<DayAtt
       justified: absenceRecords.justified,
     })
     .from(absenceRecords)
-    .where(and(eq(absenceRecords.userId, userId), eq(absenceRecords.date, date)));
+    .where(
+      and(
+        eq(absenceRecords.userId, userId),
+        eq(absenceRecords.semesterId, semesterId),
+        eq(absenceRecords.date, date),
+      ),
+    );
 
   const byBlock = new Map(existing.map((row) => [row.blockId, row]));
 
@@ -251,6 +275,9 @@ export async function markAbsences(
   userId: string,
   input: MarkAbsencesParsed,
 ): Promise<readonly AbsenceRecord[]> {
+  // Las faltas se marcan siempre en el semestre en curso: el archivado no admite escritura
+  // (FR-037) y las sesiones que se filtran abajo son las suyas.
+  const semesterId = await getCurrentSemesterId(userId);
   const weekday = weekdayOf(input.date);
   if (weekday === null) {
     throw errors.validacion('El domingo no tiene clases.', [
@@ -270,7 +297,11 @@ export async function markAbsences(
     })
     .from(scheduleBlocks)
     .where(
-      and(eq(scheduleBlocks.userId, userId), inArray(scheduleBlocks.id, input.blockIds)),
+      and(
+        eq(scheduleBlocks.userId, userId),
+        eq(scheduleBlocks.semesterId, semesterId),
+        inArray(scheduleBlocks.id, input.blockIds),
+      ),
     );
 
   const byId = new Map(blocks.map((block) => [block.id, block]));
@@ -293,7 +324,13 @@ export async function markAbsences(
   const already = await db
     .select({ blockId: absenceRecords.blockId })
     .from(absenceRecords)
-    .where(and(eq(absenceRecords.userId, userId), eq(absenceRecords.date, input.date)));
+    .where(
+      and(
+        eq(absenceRecords.userId, userId),
+        eq(absenceRecords.semesterId, semesterId),
+        eq(absenceRecords.date, input.date),
+      ),
+    );
 
   const marked = new Set(already.map((row) => row.blockId));
   const pending = input.blockIds.filter((id) => !marked.has(id));
@@ -305,6 +342,7 @@ export async function markAbsences(
         if (!block) throw new Error('Bloque desaparecido entre la validación y la escritura');
         return {
           userId,
+          semesterId,
           subjectId: block.subjectId,
           blockId,
           date: input.date,
@@ -317,15 +355,26 @@ export async function markAbsences(
 
   // Se devuelven todas las faltas del día, no solo las nuevas: es lo que el cliente pinta
   // después, y evita una segunda petición.
-  return listAbsences(userId, { from: input.date, to: input.date });
+  return listAbsences(userId, { from: input.date, to: input.date }, semesterId);
 }
 
-/** Historial de faltas, opcionalmente acotado por fechas o materia. */
+/**
+ * Historial de faltas de un semestre, opcionalmente acotado por fechas o materia.
+ *
+ * Sin `semesterId` se consulta el que está en curso; con él se lee el de un archivado
+ * (FR-036).
+ */
 export async function listAbsences(
   userId: string,
   query: AbsenceHistoryQuery = {},
+  semesterId?: string,
 ): Promise<readonly AbsenceRecord[]> {
-  const filters = [eq(absenceRecords.userId, userId)];
+  const scope = semesterId ?? (await getCurrentSemesterId(userId));
+
+  const filters = [
+    eq(absenceRecords.userId, userId),
+    eq(absenceRecords.semesterId, scope),
+  ];
   if (query.from) filters.push(gte(absenceRecords.date, query.from));
   if (query.to) filters.push(lte(absenceRecords.date, query.to));
   if (query.subjectId) filters.push(eq(absenceRecords.subjectId, query.subjectId));
@@ -367,6 +416,23 @@ async function getAbsence(userId: string, absenceId: string): Promise<AbsenceRec
 }
 
 /**
+ * Comprueba que la falta sea del usuario y de un semestre abierto (FR-037).
+ *
+ * Se consulta solo el `semesterId` en lugar de reutilizar `getAbsence`: aquí no hacen falta
+ * el JOIN con la sesión ni la composición del registro, que es lo que esa función hace.
+ */
+async function assertAbsenceWritable(userId: string, absenceId: string): Promise<void> {
+  const row = await db.query.absenceRecords.findFirst({
+    columns: { semesterId: true },
+    where: and(eq(absenceRecords.id, absenceId), eq(absenceRecords.userId, userId)),
+  });
+
+  if (!row) throw errors.noEncontrado('Esa falta no existe.');
+
+  await assertSemesterWritable(userId, row.semesterId);
+}
+
+/**
  * Justifica una falta o cambia su nota (FR-017).
  *
  * Justificar no borra el registro: se conserva y deja de contar para el límite. Perder la
@@ -377,8 +443,10 @@ export async function updateAbsence(
   absenceId: string,
   input: UpdateAbsenceParsed,
 ): Promise<AbsenceRecord> {
-  // Confirma que la falta es del usuario antes de tocar nada (Principio III).
-  await getAbsence(userId, absenceId);
+  // Confirma que la falta es del usuario antes de tocar nada (Principio III) y que su
+  // semestre siga abierto (FR-037): justificar una falta de un semestre cerrado cambiaría
+  // las estadísticas archivadas.
+  await assertAbsenceWritable(userId, absenceId);
 
   await db
     .update(absenceRecords)
@@ -398,6 +466,8 @@ export async function updateAbsence(
  * —el estudiante marcó la clase equivocada o sí asistió—, así que se borra de verdad.
  */
 export async function deleteAbsence(userId: string, absenceId: string): Promise<void> {
+  await assertAbsenceWritable(userId, absenceId);
+
   const deleted = await db
     .delete(absenceRecords)
     .where(and(eq(absenceRecords.id, absenceId), eq(absenceRecords.userId, userId)))
@@ -417,6 +487,16 @@ export async function setAbsenceLimit(
   subjectId: string,
   input: SetAbsenceLimitInput,
 ): Promise<AttendanceSummary> {
+  // El límite es un atributo de la materia, así que cambiarlo en un semestre archivado
+  // reescribiría su historial de faltas (FR-037).
+  const owner = await db.query.subjects.findFirst({
+    columns: { semesterId: true },
+    where: and(eq(subjects.id, subjectId), eq(subjects.userId, userId)),
+  });
+
+  if (!owner) throw errors.noEncontrado('Esa materia no existe.');
+  await assertSemesterWritable(userId, owner.semesterId);
+
   const updated = await db
     .update(subjects)
     .set({ absenceLimit: input.limit, updatedAt: new Date() })

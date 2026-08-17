@@ -1,4 +1,4 @@
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
   date,
@@ -10,6 +10,7 @@ import {
   time,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -66,6 +67,63 @@ export const sessions = pgTable(
 );
 
 /**
+ * Semestres del estudiante (FR-034 a FR-038).
+ *
+ * Un semestre es el **ámbito** de lo académico, no una copia de ello: las materias, las
+ * faltas y las actividades llevan `semester_id` y se quedan donde están cuando el semestre se
+ * archiva. Lo único que cambia al cerrarlo es su `status`.
+ *
+ * Se descartó archivar copiando el contenido a una tabla de instantáneas —como hace
+ * `shares.payload`— porque vaciar las tablas al cerrar es justo la operación de rutina que
+ * destruye historial y que el Principio VI prohíbe, y porque un archivo con otra forma que lo
+ * vivo obligaría a cada pantalla a tener dos caminos de pintado (FR-036).
+ *
+ * Las fechas son `date` y no `timestamp`, por lo mismo que la fecha de una falta: "el
+ * semestre empezó el 17 de agosto" es un día de calendario, no un instante.
+ */
+export const semesters = pgTable(
+  'semesters',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** Nombre que le puso el estudiante: "2026-1", "Quinto semestre". */
+    name: text('name').notNull(),
+    /**
+     * `activo` o `archivado`, tal como los define `SEMESTER_STATUSES` en `shared`.
+     *
+     * A diferencia de la caducidad de un compartido, este estado sí se guarda: no se deriva
+     * de ninguna fecha sino de un acto explícito del estudiante al cerrar el semestre.
+     */
+    status: text('status').notNull().default('activo'),
+    startedAt: date('started_at').notNull(),
+    /** Día en que se cerró. `null` mientras siga activo. */
+    closedAt: date('closed_at'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('semesters_user_id_idx').on(table.userId),
+    /**
+     * Un solo semestre activo por usuario.
+     *
+     * Lo impone la base de datos y no solo el servicio porque es el invariante del que
+     * cuelga todo lo demás: si dos quedaran activos, "el semestre en curso" dejaría de estar
+     * definido y las materias nuevas irían a uno u otro según el orden de la consulta. Dos
+     * cierres lanzados a la vez desde app y web son exactamente el caso que lo provocaría, y
+     * la comprobación previa de ambos pasaría antes de que ninguno escribiera.
+     *
+     * Es un índice único parcial: solo restringe las filas activas, así que un usuario puede
+     * acumular todos los archivados que quiera (FR-036).
+     */
+    uniqueIndex('semesters_one_active_per_user')
+      .on(table.userId)
+      .where(sql`${table.status} = 'activo'`),
+  ],
+);
+
+/**
  * Materias del horario (FR-005).
  *
  * Lleva `userId` directo, no heredado de otra tabla: así toda consulta filtra por el
@@ -78,6 +136,15 @@ export const subjects = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Semestre al que pertenece la materia (FR-035).
+     *
+     * `cascade` sigue a la cuenta, no al semestre: un semestre no se borra nunca —se archiva
+     * (Principio VI)—, así que esta cascada solo se dispara al eliminar el usuario entero.
+     */
+    semesterId: uuid('semester_id')
+      .notNull()
+      .references(() => semesters.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     /** Color con el que se distingue en la vista semanal (FR-010). Formato `#rrggbb`. */
     color: text('color').notNull(),
@@ -94,8 +161,9 @@ export const subjects = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    // Listar el horario del usuario es, con diferencia, la consulta más frecuente.
-    index('subjects_user_id_idx').on(table.userId),
+    // Listar el horario del semestre en curso es, con diferencia, la consulta más frecuente:
+    // va sobre las dos columnas porque desde la Fase 7 siempre se piden juntas.
+    index('subjects_user_semester_idx').on(table.userId, table.semesterId),
   ],
 );
 
@@ -117,6 +185,16 @@ export const scheduleBlocks = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Semestre al que pertenece la sesión.
+     *
+     * Se repite aquí aunque se deduzca de `subjects` por lo mismo que `userId`: permite
+     * filtrar la rejilla del semestre en curso sin JOIN, y deja el ámbito explícito en cada
+     * fila.
+     */
+    semesterId: uuid('semester_id')
+      .notNull()
+      .references(() => semesters.id, { onDelete: 'cascade' }),
     subjectId: uuid('subject_id')
       .notNull()
       // Borrar una materia se lleva sus sesiones: no tienen sentido por separado.
@@ -128,7 +206,7 @@ export const scheduleBlocks = pgTable(
     room: text('room'),
   },
   (table) => [
-    index('schedule_blocks_user_id_idx').on(table.userId),
+    index('schedule_blocks_user_semester_idx').on(table.userId, table.semesterId),
     index('schedule_blocks_subject_id_idx').on(table.subjectId),
   ],
 );
@@ -151,6 +229,15 @@ export const absenceRecords = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Semestre en el que se registró la falta (FR-035).
+     *
+     * Es lo que permite que el conteo de FR-012 se limite al semestre en curso: sin él, las
+     * faltas de semestres pasados seguirían sumando contra el límite del actual.
+     */
+    semesterId: uuid('semester_id')
+      .notNull()
+      .references(() => semesters.id, { onDelete: 'cascade' }),
     subjectId: uuid('subject_id')
       .notNull()
       .references(() => subjects.id, { onDelete: 'cascade' }),
@@ -159,8 +246,8 @@ export const absenceRecords = pgTable(
      *
      * Si el estudiante reorganiza su horario y borra la sesión, la falta se va con ella:
      * una inasistencia a una clase que ya no existe en el horario no se puede contar contra
-     * ningún límite. No es historial archivable (Principio VI), es un registro del semestre
-     * en curso que la Fase 7 archivará como parte del semestre entero.
+     * ningún límite. Eso solo ocurre en el semestre en curso: en uno archivado no se puede
+     * borrar ninguna sesión (FR-037), así que la cascada no toca historial (Principio VI).
      */
     blockId: uuid('block_id')
       .notNull()
@@ -172,7 +259,7 @@ export const absenceRecords = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('absence_records_user_id_idx').on(table.userId),
+    index('absence_records_user_semester_idx').on(table.userId, table.semesterId),
     index('absence_records_subject_id_idx').on(table.subjectId),
     // El panel de faltas cuenta por materia y la pantalla de marcar consulta por fecha.
     index('absence_records_user_date_idx').on(table.userId, table.date),
@@ -205,6 +292,16 @@ export const agendaItems = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Semestre al que pertenece la actividad (FR-035).
+     *
+     * Al cerrar, las pendientes se archivan con todo lo demás en lugar de arrastrarse al
+     * semestre nuevo: FR-035 archiva el semestre "íntegro", y mover una parte dejaría el
+     * archivo contando algo distinto de lo que hubo.
+     */
+    semesterId: uuid('semester_id')
+      .notNull()
+      .references(() => semesters.id, { onDelete: 'cascade' }),
     title: text('title').notNull(),
     description: text('description'),
     /** `tarea`, `proyecto`, `examen` o `actividad`, tal como los define `AGENDA_KINDS`. */
@@ -227,16 +324,21 @@ export const agendaItems = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index('agenda_items_user_id_idx').on(table.userId),
+    index('agenda_items_user_semester_idx').on(table.userId, table.semesterId),
     index('agenda_items_subject_id_idx').on(table.subjectId),
     /**
-     * La consulta de FR-022: los pendientes del usuario ordenados por vencimiento.
+     * La consulta de FR-022: los pendientes del semestre ordenados por vencimiento.
      *
-     * Va sobre las tres columnas juntas porque es como se pide siempre —filtrar por usuario,
-     * separar completadas y ordenar por fecha—, y así el índice resuelve la ordenación sin
-     * pasar por un sort aparte.
+     * Va sobre las cuatro columnas juntas porque es como se pide siempre —filtrar por usuario
+     * y semestre, separar completadas y ordenar por fecha—, y así el índice resuelve la
+     * ordenación sin pasar por un sort aparte.
      */
-    index('agenda_items_user_due_idx').on(table.userId, table.completed, table.dueDate),
+    index('agenda_items_user_due_idx').on(
+      table.userId,
+      table.semesterId,
+      table.completed,
+      table.dueDate,
+    ),
   ],
 );
 
@@ -353,6 +455,7 @@ export const shares = pgTable(
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
+  semesters: many(semesters),
   subjects: many(subjects),
   scheduleBlocks: many(scheduleBlocks),
   absenceRecords: many(absenceRecords),
@@ -361,17 +464,33 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   shares: many(shares),
 }));
 
+export const semestersRelations = relations(semesters, ({ one, many }) => ({
+  user: one(users, { fields: [semesters.userId], references: [users.id] }),
+  subjects: many(subjects),
+  scheduleBlocks: many(scheduleBlocks),
+  absenceRecords: many(absenceRecords),
+  agendaItems: many(agendaItems),
+}));
+
 export const sharesRelations = relations(shares, ({ one }) => ({
   user: one(users, { fields: [shares.userId], references: [users.id] }),
 }));
 
 export const agendaItemsRelations = relations(agendaItems, ({ one }) => ({
   user: one(users, { fields: [agendaItems.userId], references: [users.id] }),
+  semester: one(semesters, {
+    fields: [agendaItems.semesterId],
+    references: [semesters.id],
+  }),
   subject: one(subjects, { fields: [agendaItems.subjectId], references: [subjects.id] }),
 }));
 
 export const absenceRecordsRelations = relations(absenceRecords, ({ one }) => ({
   user: one(users, { fields: [absenceRecords.userId], references: [users.id] }),
+  semester: one(semesters, {
+    fields: [absenceRecords.semesterId],
+    references: [semesters.id],
+  }),
   subject: one(subjects, { fields: [absenceRecords.subjectId], references: [subjects.id] }),
   block: one(scheduleBlocks, {
     fields: [absenceRecords.blockId],
@@ -389,6 +508,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 
 export const subjectsRelations = relations(subjects, ({ one, many }) => ({
   user: one(users, { fields: [subjects.userId], references: [users.id] }),
+  semester: one(semesters, { fields: [subjects.semesterId], references: [semesters.id] }),
   blocks: many(scheduleBlocks),
   absences: many(absenceRecords),
   agendaItems: many(agendaItems),
@@ -396,6 +516,10 @@ export const subjectsRelations = relations(subjects, ({ one, many }) => ({
 
 export const scheduleBlocksRelations = relations(scheduleBlocks, ({ one }) => ({
   user: one(users, { fields: [scheduleBlocks.userId], references: [users.id] }),
+  semester: one(semesters, {
+    fields: [scheduleBlocks.semesterId],
+    references: [semesters.id],
+  }),
   subject: one(subjects, { fields: [scheduleBlocks.subjectId], references: [subjects.id] }),
 }));
 
@@ -412,5 +536,7 @@ export type NewAbsenceRecordRow = typeof absenceRecords.$inferInsert;
 export type AgendaItemRow = typeof agendaItems.$inferSelect;
 export type NewAgendaItemRow = typeof agendaItems.$inferInsert;
 export type UserSettingsRow = typeof userSettings.$inferSelect;
+export type SemesterRow = typeof semesters.$inferSelect;
+export type NewSemesterRow = typeof semesters.$inferInsert;
 export type ShareRow = typeof shares.$inferSelect;
 export type NewShareRow = typeof shares.$inferInsert;

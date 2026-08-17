@@ -10,6 +10,7 @@ import { FaltasScreen } from './screens/FaltasScreen';
 import { AgendaScreen } from './screens/AgendaScreen';
 import { CalendarioScreen } from './screens/CalendarioScreen';
 import { CompartirScreen } from './screens/CompartirScreen';
+import { SemestresScreen } from './screens/SemestresScreen';
 import { colors } from './components/ui';
 
 /**
@@ -50,7 +51,7 @@ function Root() {
   const { user, loading } = useAuth();
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
   const [seccion, setSeccion] = useState<
-    'inicio' | 'horario' | 'faltas' | 'agenda' | 'calendario' | 'compartir'
+    'inicio' | 'horario' | 'faltas' | 'agenda' | 'calendario' | 'compartir' | 'semestres'
   >('inicio');
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
@@ -78,6 +79,9 @@ function Root() {
     if (seccion === 'compartir') {
       return <CompartirScreen onVolver={() => setSeccion('inicio')} />;
     }
+    if (seccion === 'semestres') {
+      return <SemestresScreen onVolver={() => setSeccion('inicio')} />;
+    }
     return (
       <InicioScreen
         onIrAHorario={() => setSeccion('horario')}
@@ -85,6 +89,7 @@ function Root() {
         onIrAAgenda={() => setSeccion('agenda')}
         onIrACalendario={() => setSeccion('calendario')}
         onIrACompartir={() => setSeccion('compartir')}
+        onIrASemestres={() => setSeccion('semestres')}
       />
     );
   }

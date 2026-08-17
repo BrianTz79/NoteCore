@@ -102,6 +102,19 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Semestres">
+        <p className="text-slate-300">
+          Cuando termine el semestre, ciérralo: se archiva completo —horario, faltas y
+          agenda— y lo puedes consultar siempre. El nuevo empieza vacío.
+        </p>
+        <Link
+          href="/semestres"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mis semestres →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su

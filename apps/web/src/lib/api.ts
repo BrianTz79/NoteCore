@@ -5,6 +5,7 @@ import {
   createAuthApi,
   createCalendarApi,
   createScheduleApi,
+  createSemesterApi,
   createShareApi,
 } from '@notecore/shared';
 
@@ -38,3 +39,4 @@ export const attendanceApi = createAttendanceApi(apiClient);
 export const agendaApi = createAgendaApi(apiClient);
 export const calendarApi = createCalendarApi(apiClient);
 export const shareApi = createShareApi(apiClient);
+export const semesterApi = createSemesterApi(apiClient);
