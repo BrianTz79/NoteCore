@@ -1,6 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { unreadSummary, type UnreadSummary } from '@notecore/shared';
+import { messagingApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { RequireSession } from '@/components/require-session';
 import { Button, Card } from '@/components/ui';
@@ -9,7 +12,7 @@ import { Button, Card } from '@/components/ui';
  * Inicio, ya con sesión.
  *
  * Enlaza a lo que hay disponible: el horario (Fase 2), las faltas (Fase 3), la agenda
- * (Fase 4), el calendario (Fase 5) y el perfil.
+ * (Fase 4), el calendario (Fase 5), el perfil (Fase 8) y los mensajes (Fase 10).
  */
 export default function HomePage() {
   return (
@@ -21,7 +24,32 @@ export default function HomePage() {
 
 function Inicio() {
   const { user, logout } = useAuth();
+  const [sinLeer, setSinLeer] = useState<UnreadSummary | null>(null);
+
+  /**
+   * El número de mensajes sin leer, para el aviso (FR-043).
+   *
+   * Se pide su propia ruta en lugar de la bandeja entera: el inicio solo necesita el número,
+   * y traer todas las conversaciones con su último mensaje para contarlo sería trabajo de más
+   * en la pantalla que más se abre. Es el mismo criterio del conteo de solicitudes.
+   */
+  useEffect(() => {
+    let vigente = true;
+    void messagingApi
+      .unread()
+      .then((resumen) => {
+        if (vigente) setSinLeer(resumen);
+      })
+      // Un fallo aquí no debe romper el inicio: es un aviso, no el contenido de la pantalla.
+      .catch(() => undefined);
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
   if (!user) return null;
+
+  const avisoMensajes = unreadSummary(sinLeer?.total ?? 0, sinLeer?.conversations ?? 0);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 px-6 py-16">
@@ -128,6 +156,27 @@ function Inicio() {
         </Link>
       </Card>
 
+      <Card title="Mensajes">
+        <p className="text-slate-300">
+          Escríbete con tus contactos. Los mensajes llegan al momento, y solo puedes hablar
+          con quienes ya aceptaron tu solicitud.
+        </p>
+        {avisoMensajes ? (
+          <p
+            data-testid="aviso-mensajes"
+            className="rounded-lg border border-sky-900/60 bg-sky-950/40 px-3.5 py-2.5 text-sm text-sky-300"
+          >
+            Tienes {avisoMensajes}.
+          </p>
+        ) : null}
+        <Link
+          href="/mensajes"
+          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+        >
+          Ver mis mensajes →
+        </Link>
+      </Card>
+
       <Card title="Tu cuenta está lista">
         <p className="text-slate-300">
           Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
@@ -143,8 +192,7 @@ function Inicio() {
 
       <Card title="Lo que viene">
         <ul className="space-y-2 text-slate-400">
-          <li>· Consultar tu horario y tu agenda sin conexión</li>
-          <li>· Mensajes con tus contactos</li>
+          <li>· Widget de pantalla principal con tu vista semanal</li>
         </ul>
       </Card>
     </main>

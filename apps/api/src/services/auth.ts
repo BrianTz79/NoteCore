@@ -14,6 +14,7 @@ import { errors, isUniqueViolation } from '../lib/errors.js';
 import { hashPassword, verifyPassword, wastePasswordComparison } from '../lib/passwords.js';
 import { generateRefreshToken, hashRefreshToken, signAccessToken } from '../lib/tokens.js';
 import { config } from '../config.js';
+import { disconnectUser } from './live.js';
 
 /**
  * Lógica de cuentas y sesión.
@@ -177,9 +178,22 @@ export async function refresh(
   };
 }
 
-/** Cierra una sesión concreta. Las demás del usuario siguen abiertas (FR-002). */
+/**
+ * Cierra una sesión concreta. Las demás del usuario siguen abiertas (FR-002).
+ *
+ * **También cierra sus canales en vivo** (Fase 10). Un canal WebSocket verifica la sesión una
+ * sola vez, en el handshake, y después no vuelve a comprobarla —esa es su naturaleza—, así
+ * que sin esto seguiría entregando mensajes a un dispositivo del que el usuario acaba de
+ * salir. Que el token caducara en quince minutos no sirve de consuelo: son quince minutos de
+ * conversación privada llegando a una sesión cerrada.
+ */
 export async function logout(sessionId: string): Promise<void> {
+  // Se lee antes de borrar: después ya no hay de dónde sacar de quién era la sesión.
+  const session = await db.query.sessions.findFirst({ where: eq(sessions.id, sessionId) });
+
   await db.delete(sessions).where(eq(sessions.id, sessionId));
+
+  if (session) disconnectUser(session.userId);
 }
 
 export async function getProfile(userId: string): Promise<AuthenticatedUser> {
@@ -284,6 +298,17 @@ export async function revokeSession(userId: string, sessionId: string): Promise<
     .returning({ id: sessions.id });
 
   if (deleted.length === 0) throw errors.noEncontrado('Esa sesión ya no existe.');
+
+  /**
+   * Se cortan **todos** los canales del usuario, no solo los de la sesión revocada.
+   *
+   * El registro de canales guarda a quién pertenece cada uno, no con qué sesión se abrió, así
+   * que no hay forma de cortar solo los de esa. Cerrar de más es la equivocación correcta: el
+   * resto de sus dispositivos reconecta solo en un segundo —la reconexión con espera creciente
+   * ya está escrita— mientras que cerrar de menos dejaría el dispositivo revocado recibiendo
+   * conversación privada, que es justo lo que el usuario acaba de pedir que no pase.
+   */
+  disconnectUser(userId);
 }
 
 /** Borra las sesiones caducadas. Se ejecuta periódicamente desde el arranque de la API. */

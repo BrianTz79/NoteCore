@@ -13,6 +13,7 @@ import { CalendarioScreen } from './screens/CalendarioScreen';
 import { CompartirScreen } from './screens/CompartirScreen';
 import { SemestresScreen } from './screens/SemestresScreen';
 import { SocialScreen } from './screens/SocialScreen';
+import { MensajesScreen } from './screens/MensajesScreen';
 import { colors } from './components/ui';
 
 /**
@@ -77,7 +78,16 @@ function Root() {
     | 'compartir'
     | 'semestres'
     | 'social'
+    | 'mensajes'
   >('inicio');
+
+  /**
+   * Con quién abrir el hilo, cuando se llega desde un perfil.
+   *
+   * Vive aquí y no dentro de la pantalla de mensajes porque quien lo decide es la sección
+   * social —«escribirle a esta persona»—, y la pantalla de destino solo lo recibe.
+   */
+  const [conversacionInicial, setConversacionInicial] = useState<string | undefined>();
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {
@@ -108,7 +118,28 @@ function Root() {
       return <SemestresScreen onVolver={() => setSeccion('inicio')} />;
     }
     if (seccion === 'social') {
-      return <SocialScreen onVolver={() => setSeccion('inicio')} />;
+      return (
+        <SocialScreen
+          onVolver={() => setSeccion('inicio')}
+          onEscribirA={(username) => {
+            setConversacionInicial(username);
+            setSeccion('mensajes');
+          }}
+        />
+      );
+    }
+    if (seccion === 'mensajes') {
+      return (
+        <MensajesScreen
+          conversacionInicial={conversacionInicial}
+          onVolver={() => {
+            // El hilo inicial se olvida al salir: volver a entrar por el menú debe abrir la
+            // bandeja, no el último hilo que se miró desde un perfil.
+            setConversacionInicial(undefined);
+            setSeccion('inicio');
+          }}
+        />
+      );
     }
     return (
       <InicioScreen
@@ -119,6 +150,10 @@ function Root() {
         onIrACompartir={() => setSeccion('compartir')}
         onIrASemestres={() => setSeccion('semestres')}
         onIrASocial={() => setSeccion('social')}
+        onIrAMensajes={() => {
+          setConversacionInicial(undefined);
+          setSeccion('mensajes');
+        }}
       />
     );
   }

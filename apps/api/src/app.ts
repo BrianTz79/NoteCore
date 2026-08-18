@@ -3,6 +3,7 @@ import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
+import websocket from '@fastify/websocket';
 import { config } from './config.js';
 import { AppError, errors, sendError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
@@ -14,6 +15,7 @@ import { calendarRoutes } from './routes/calendar.js';
 import { shareRoutes } from './routes/share.js';
 import { semesterRoutes } from './routes/semester.js';
 import { socialRoutes } from './routes/social.js';
+import { messagingRoutes } from './routes/messaging.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -44,6 +46,22 @@ export async function buildApp(): Promise<FastifyInstance> {
   });
 
   await app.register(cookie);
+
+  /**
+   * Canal WebSocket de la mensajería (FR-043).
+   *
+   * Va **después** de `cookie` a propósito: el canal de la web se autentica con la cookie de
+   * sesión que viaja en el handshake, y sin este orden `request.cookies` no estaría analizado
+   * cuando el manejador del socket la busca.
+   *
+   * El límite de tamaño acota lo que un cliente puede mandar por frame. Un mensaje son 2000
+   * caracteres como mucho (`MESSAGE_MAX_LENGTH`), así que 16 KB sobra para el JSON que lo
+   * envuelve y para el frame de autenticación, y a la vez impide que un socket abierto sirva
+   * para mandar megabytes a un servidor que no los espera.
+   */
+  await app.register(websocket, {
+    options: { maxPayload: 16 * 1024 },
+  });
 
   /**
    * Analizador de JSON que acepta el cuerpo vacío.
@@ -154,6 +172,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(shareRoutes);
   await app.register(semesterRoutes);
   await app.register(socialRoutes);
+  await app.register(messagingRoutes);
 
   return app;
 }

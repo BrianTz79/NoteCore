@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-17** (Fase 9 cerrada)
+> Última actualización: **2026-08-17** (Fase 10 cerrada)
 
 ---
 
@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social —perfil ampliado, contactos y publicaciones— y **consulta sin conexión con cola de cambios**, funcionando en app y web |
-| **Fases completadas** | 9 de 12 |
-| **Fase actual** | Fase 10 — Mensajería (no iniciada) |
+| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social —perfil ampliado, contactos y publicaciones—, consulta sin conexión con cola de cambios y **mensajería entre contactos con entrega en tiempo real**, funcionando en app y web |
+| **Fases completadas** | 10 de 12 |
+| **Fase actual** | Fase 11 — Widget y pulido visual (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `█████████░░░` 75%
+**Avance**: `██████████░░` 83%
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -92,11 +92,20 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   perdió no duplica la actividad. Se verificó el ciclo entero en el emulador —crear sin API,
   reiniciar la app, y ver la fila aparecer en PostgreSQL al volver la conexión—
 
+- **Fase 10 cerrada**: mensajería entre contactos aceptados, con entrega **en tiempo real** por
+  WebSocket y la restricción de FR-044 aplicada en cada envío. Poder escribir no se guarda en
+  ninguna columna: **es el estado de la relación**, consultado a `contacts` en el momento, y por
+  eso bloquear surte efecto en el acto sobre una pantalla ya abierta. Se verificó en el emulador
+  Android con la conversación abierta: el mensaje escrito desde fuera **apareció solo**, el acuse
+  pasó a «Leído» solo, y al bloquear **el campo de texto desapareció solo** dejando en su sitio
+  «Solo puedes escribir a tus contactos.» —la palabra «bloqueo» no aparece en ninguna parte de la
+  jerarquía de vistas de Android, porque a quien bloquean no se le dice—
+
 ### Próximo paso
 
-**Fase 10 — Mensajería**: conversaciones entre contactos aceptados, con entrega en tiempo real y
-la restricción de FR-044 (FR-043, FR-044). Es la fase más costosa y la que más superficie de
-privacidad abre; se aborda ahora sobre una base ya estable.
+**Fase 11 — Widget y pulido visual**: widget de pantalla principal con la vista semanal (FR-051) y
+pasada de diseño integral con **hallmark** sobre el producto ya funcional. Es la última fase del
+plan: cierra el producto en lugar de añadirle superficie.
 
 ---
 
@@ -116,7 +125,7 @@ privacidad abre; se aborda ahora sobre una base ya estable.
 | 7 | Semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 | 8 | Social: perfiles y contactos | P3 | ✅ | ✅ | ✅ | ✅ |
 | 9 | Offline y sincronización | P2 | ✅ | ✅ | ✅ | ✅ |
-| 10 | Mensajería | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 10 | Mensajería | P3 | ✅ | ✅ | ✅ | ✅ |
 | 11 | Widget y pulido visual | P4 | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ### Regla de cierre
@@ -128,6 +137,106 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 10 — Mensajería · cerrada el 2026-08-17
+
+**Entregado**: conversaciones de texto entre contactos aceptados, con entrega en tiempo real
+(FR-043); y la imposibilidad de escribirse entre quienes no son contactos o hay un bloqueo de por
+medio (FR-044). Con acuse de leído, conteo de no leídos, paginación del hilo y borrado de mensajes
+propios.
+
+**Poder escribir no es un dato: es el estado de una relación.** La decisión que gobierna la fase.
+No existe ninguna columna `permitida` en `conversations`; FR-044 se resuelve preguntando a
+`contacts` —la tabla de la Fase 8— **en cada envío**, con la misma `messagingBlockedReason` que los
+clientes usan para decidir si pintan el campo de texto. Guardar una copia de ese estado habría
+significado que un bloqueo puesto hace un segundo no surtiera efecto hasta que algo refrescara esa
+copia, y eso es exactamente el momento en que el requisito importa. Es también lo que hizo la fase
+mucho más barata de lo previsto: FR-044 cuelga entero de `contactViewpoint`, que la Fase 8 ya había
+dejado resuelto —y por escrito, anotado como «la pregunta de la que cuelga FR-044 en la Fase 10»—.
+
+**La conversación es un solo hecho, con el par ordenado.** Igual que la relación de la Fase 8, y
+con el mismo `orderedPair`: sin él, dos personas escribiéndose por primera vez en el mismo instante
+crearían dos hilos —uno en cada orden— que ningún índice único podría rechazar, y cada una vería la
+mitad de lo dicho.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| **No se guarda si se puede escribir**: se pregunta a `contacts` en cada envío | Una copia del estado de contacto quedaría vieja en cuanto alguien bloqueara, y el bloqueo dejaría de surtir efecto justo cuando más importa |
+| A quien **fue bloqueado** se le responde `no_contacto`, lo mismo que a un desconocido | Distinguirlo le diría que lo bloquearon, que es lo que empuja a buscar otra vía para insistir. Es la regla de la Fase 8, y aquí pesa más que en ninguna otra pantalla |
+| **Tiempo real por WebSocket**, con el protocolo tipado en `shared` | Un canal WebSocket no tiene rutas ni códigos de estado que obliguen a ponerse de acuerdo: sin un tipo común, el servidor emitiría `{tipo:'mensaje'}` y un cliente esperaría `{type:'message'}` **sin que nada fallara al compilar** |
+| El token del canal viaja en un **frame**, no en la query de la URL | El handshake del navegador no admite cabeceras. Una URL acaba en los registros del servidor, en el historial y en cualquier proxy; un frame no. La web ni siquiera lo manda: su cookie `httpOnly` viaja sola en el handshake |
+| El canal se da por vivo con el evento **`listo`**, no con el `onopen` | Entre abrir el socket y verificar la sesión hay un hueco en el que el servidor todavía puede cerrarlo por token inválido. Darlo por bueno antes dejaría el indicador diciendo «en vivo» justo antes de caerse |
+| El canal **acelera**, no es la fuente | Todo se lee por HTTP primero y lo del canal se mezcla encima. Un canal que fuera la única vía convertiría cualquier corte en mensajes que no aparecen nunca |
+| Los mensajes se **mezclan por identificador**, no se añaden | Hay dos caminos para el mismo mensaje —la respuesta del envío y el aviso del canal, que emite también al autor— y sin deduplicar el usuario vería el suyo dos veces |
+| Leer se guarda como **una marca por lado**, no una columna por mensaje | Leer es siempre «hasta aquí»: abrir un hilo de mil mensajes pasa de ser una escritura de mil filas a una de una |
+| El acuse solo viaja en los mensajes **propios** | De los ajenos, quien leyó es uno mismo, y el momento en que uno lee su propio hilo no es información para nadie |
+| Cambiar de relación **avisa por el canal**, con una versión por lado | Sin ese aviso, quien tuviera el hilo abierto seguiría viendo el campo de texto tras el bloqueo y se enteraría al fallar el envío. A quien bloquea le llega `bloqueada_por_mi`; al bloqueado, `no_contacto` |
+| El identificador del mensaje lo puede **proponer el cliente** | La mecánica de la Fase 9: reenviar un mensaje cuya respuesta se perdió encuentra el que ya existe. Un mensaje duplicado en un hilo es de los errores más visibles que hay |
+| Borrar **deja el hueco** y vacía el texto | Un hilo del que desaparecen renglones se lee mal —las respuestas quedan colgando de nada— y quien ya lo leyó no puede desleerlo. Lo que el autor retiró sí deja de estar guardado |
+| Las conversaciones con **ex contactos siguen listadas**, cerradas | Eliminar un contacto no debe borrar de la vista lo que dos personas se dijeron: eso es historial, y no le toca destruirlo a una operación de rutina |
+| La conversación **no se crea al abrirla**, solo al enviar | Escribir una fila por mirar dejaría un hilo vacío por cada visita a un perfil |
+| Se pagina por **cursor**, no por número de página | El hilo crece por abajo mientras se lee: «la página 2» significa cosas distintas entre una petición y la siguiente, y se repetirían o se saltarían mensajes |
+| Se pide **uno más** de los que caben, para responder `hasMore` | Una página exactamente llena y el final del hilo son indistinguibles desde fuera, y el cliente pintaría «cargar anteriores» sobre un hilo entero |
+| Cerrar sesión **corta los canales** de esa cuenta | El canal verifica la sesión una sola vez, en el handshake, y no vuelve a comprobarla: sin esto seguiría entregando conversación privada a un dispositivo del que el usuario acaba de salir |
+| `en_vivo` **no dice nada** en el indicador | Una etiqueta permanente de «conectado» es ruido que se deja de leer, y entonces tampoco se lee el aviso que sí importa. Misma decisión que el indicador de la Fase 9 |
+
+**El límite conocido, dicho claro**: el registro de canales vive **en el proceso**. Con dos
+instancias de la API detrás de un balanceador, un usuario conectado a una no recibiría lo que
+publica la otra. La salida es un canal externo (`LISTEN/NOTIFY` de PostgreSQL, que ya está en el
+proyecto, o Redis). No se hizo porque el despliegue es **una sola instancia** detrás de un túnel de
+Cloudflare, y coordinar entre procesos antes de tener dos procesos sería infraestructura sin uso.
+Queda anotado en `services/live.ts`, que es donde se buscará: `publish` es el único punto que
+cambiaría, y su firma no.
+
+**Verificación ejecutada** — 191 comprobaciones automáticas, todas en verde, más la pasada a mano
+en Android:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | La **tabla de FR-044 entera**, recorriendo `CONTACT_VIEWPOINTS` en lugar de una lista escrita a mano —si algún día se añade un punto de vista, la prueba falla en vez de ignorarlo—; que a quien bloquean se le dé el **mismo motivo y el mismo texto** que a un desconocido; deduplicado de mensajes por los dos caminos; acuse por fecha; agrupado; un **barrido de 900 combinaciones** de conteos exigiendo que ninguna diga «1 mensajes»; espera creciente con su tope y su jitter; y validación de **todos** los eventos del canal, incluidos los malformados | **60/60** |
+| API (`fetch` contra la API real) | Envío entre contactos; rechazo a desconocidos, a solicitudes pendientes y a bloqueados, **cada uno con su motivo**; que al bloqueado se le diga `no_contacto`; reenvío idempotente que no duplica; **secuestro del identificador de otra cuenta rechazado**; aislamiento de hilos entre tres cuentas; acuse; borrado con el texto **comprobado vacío en PostgreSQL**; paginación por cursor sin solapes; y que eliminar un contacto conserve el hilo | **82/82** |
+| Canal en vivo (WebSockets reales) | Autenticación por frame, y que un token inválido o ausente **no reciba `listo`**; entrega en **6 ms**; que una tercera cuenta con el canal abierto **no reciba nada** de una conversación ajena; que el autor reciba lo suyo para mantener sus otras sesiones; acuse y borrado en vivo; el bloqueo llegando a **los dos lados con su propia versión**; y el canal cerrándose al cerrar sesión | **23/23** |
+| Web (Playwright, dos navegadores reales) | Dos personas de verdad con su sesión: el mensaje de una **aparece en la pantalla de la otra en 33 ms sin recargar**; acuse que pasa a «Leído»; y el bloqueo haciendo **desaparecer solo** el campo de texto de quien fue bloqueada, con un texto que **no menciona el bloqueo** y es byte a byte el de `shared`. Sin un solo error de JavaScript | **26/26** |
+
+Además se reejecutó una **regresión de las fases 1 a 9** (**40/40**), porque esta fase tocó
+`services/auth.ts` —cerrar sesión ahora corta canales—, `services/social.ts` —las cuatro
+operaciones de relación avisan a la mensajería—, `lib/errors.ts`, `types/api.ts` y `app.ts`.
+
+**Verificación en Android real** (emulador Pixel, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Aviso en el inicio | «Tienes **1 mensaje sin leer**» —singular correcto— |
+| Bandeja | la conversación, con la vista previa del último mensaje y la insignia «1» |
+| Hilo | los dos mensajes, con «Enviado» **solo** en el propio |
+| **Mensaje escrito desde fuera, con el hilo abierto** | **apareció solo**, sin tocar el teléfono |
+| **Enviar desde el teléfono** | llegó al servidor y se leyó desde el otro lado |
+| **Acuse en vivo** | pasó de «Enviado» a «**Leído**» solo, al leer el otro |
+| **Bloqueo en vivo (FR-044)** | el campo de texto y el botón **desaparecieron solos** |
+| Lo que se le dice a la bloqueada | «Solo puedes escribir a tus contactos.» |
+| **La palabra «bloqueo» en la jerarquía de vistas** | **no aparece**: 0 coincidencias |
+| El historial tras el bloqueo | **intacto**: sigue viendo lo que se dijeron |
+| Paridad de textos con la web | **idénticos palabra por palabra**, los dos salen de `shared` |
+| Permisos del APK | **sin cambios** respecto a la Fase 9: ni almacenamiento ni micrófono |
+| Paridad bidireccional | **confirmada** |
+
+**Migración**: `0009_clean_mephisto.sql`, dos tablas nuevas —`conversations` y `messages`— con el
+índice único sobre el par ordenado y el índice del hilo por conversación y fecha, que es del que
+cuelga la paginación. **Ninguna tabla existente se tocó.**
+
+**Dependencia nueva**: `@fastify/websocket` en la API, la única de la fase. Los clientes usan el
+`WebSocket` global —React Native trae el suyo y todo navegador tiene el estándar—, así que **la app
+no añade ningún módulo nativo** y no hizo falta reejecutar `expo prebuild`.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101`. Un detalle del guionaje, no del producto: el teclado
+de Android se superpone al botón de enviar sin desplazar el diseño, así que automatizar el envío
+exige cerrarlo antes con `input keyevent 111` (ESC) —`keyevent 4` (atrás) también lo cierra, pero
+además saca de la app—.
+
+---
 
 #### Fase 9 — Offline y sincronización · cerrada el 2026-08-17
 
@@ -1076,7 +1185,7 @@ Cambios que exigió la actualización:
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
 │   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance,
-│   │       │                agenda, calendar, share, semester)
+│   │       │                agenda, calendar, share, semester, social, messaging)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
@@ -1094,7 +1203,7 @@ Cambios que exigió la actualización:
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
 │           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario,
-│           │                Compartir, Semestres
+│           │                Compartir, Semestres, Social, Mensajes
 │           ├── components/  componentes propios de la app (incluye QR y escáner de cámara)
 │           └── lib/         cliente de API, contexto de sesión y notificaciones locales
 │
@@ -1103,12 +1212,13 @@ Cambios que exigió la actualización:
 │       └── src/
 │           ├── types/       entidades (Usuario, Sesión, Materia, Falta, Actividad…)
 │           ├── schemas/     validaciones compartidas
-│           ├── api/         cliente HTTP y llamadas tipadas, para web y app
+│           ├── api/         cliente HTTP, llamadas tipadas y canal en vivo, para web y app
 │           └── logic/       reglas puras (límite y alerta de faltas, horario, importación,
 │                            urgencia y orden de la agenda, rejilla mensual y momento de los
 │                            recordatorios, códigos y estado de los compartidos, codificador
-│                            de QR, ciclo y archivo de semestres, errores de
-│                            formulario, fechas)
+│                            de QR, ciclo y archivo de semestres, relación entre personas y
+│                            visibilidad del perfil, cache y cola sin conexión, quién puede
+│                            escribir a quién, errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
 │
@@ -1262,10 +1372,19 @@ Cache local de horario, agenda y faltas. Cola de cambios sin conexión, sincroni
 red, con indicador de pendientes.
 **Verificación**: en modo avión se consulta todo lo cargado y los cambios suben al reconectar.
 
-#### Fase 10 — Mensajería (P3)
-Conversaciones de texto entre contactos aceptados. Bloqueo efectivo.
-**Nota**: la fase más costosa y la que más superficie de privacidad abre. Deliberadamente al final.
-**Verificación**: mensajes entre contactos se entregan; entre no contactos se rechazan.
+#### Fase 10 — Mensajería (P3) ✅
+Conversaciones de texto entre contactos aceptados, con entrega en tiempo real por WebSocket.
+Bloqueo efectivo. Acuse de leído, conteo de no leídos y borrado de mensajes propios.
+**Poder escribir no se guarda: es el estado de la relación**, consultado a `contacts` en cada
+envío. Por eso un bloqueo surte efecto en el acto sobre una conversación ya abierta, en lugar de
+esperar a que algo refresque una copia. FR-044 cuelga entero de `contactViewpoint`, que la Fase 8
+dejó resuelto.
+**A quien bloquean se le dice lo mismo que a un desconocido**: distinguirlo sería anunciarle el
+bloqueo, que es justo lo que empuja a insistir por otra vía.
+**Verificado el 2026-08-17**: con el hilo abierto en el emulador Android, un mensaje escrito desde
+fuera apareció solo y el acuse pasó a «Leído» solo; al bloquear, el campo de texto desapareció solo
+y la palabra «bloqueo» no aparece en ninguna parte de la jerarquía de vistas. Detalle en el
+historial.
 
 #### Fase 11 — Widget y pulido visual (P4)
 Widget de pantalla principal con la vista semanal. Pasada de diseño integral con **hallmark** sobre

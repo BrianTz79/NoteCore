@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ApiError,
+  areConnected,
   CONTACT_VIEWPOINT_COLORS,
   CONTACT_VIEWPOINT_LABELS,
   profileCountsSummary,
@@ -182,6 +183,23 @@ function PerfilPublico() {
         <FormError message={error} />
 
         <div className="flex flex-wrap gap-2">
+          {/*
+            Escribir se ofrece **solo a los contactos aceptados** (FR-043, FR-044).
+            
+            Se decide con `areConnected` sobre el punto de vista que el servidor ya resolvió,
+            no con una comprobación propia: pintar el botón ante quien no puede recibir
+            mensajes llevaría al usuario a una pantalla que solo sabe explicarle que no puede
+            escribir, que es peor que no ofrecerlo.
+          */}
+          {areConnected(profile.viewpoint) ? (
+            <Link
+              href={`/mensajes?con=${profile.username}`}
+              data-testid="boton-mensaje"
+              className="rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500"
+            >
+              Enviar mensaje
+            </Link>
+          ) : null}
           {profile.actions.puedeSolicitar ? (
             <Button onClick={() => void solicitar()} disabled={ocupado} data-testid="boton-agregar">
               Agregar a contactos

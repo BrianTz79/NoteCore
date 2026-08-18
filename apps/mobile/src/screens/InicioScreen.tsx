@@ -4,12 +4,13 @@ import {
   formatDateTime,
   pendingRequestsSummary,
   pendingSummary,
+  unreadSummary,
   toFormErrors,
   updateProfileSchema,
   type FormErrors,
   type SessionInfo,
 } from '@notecore/shared';
-import { authApi, socialApi } from '../lib/api';
+import { authApi, messagingApi, socialApi } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
 import { useSync } from '../lib/sync-context';
 import { Button, Card, Field, FormError, colors } from '../components/ui';
@@ -19,8 +20,8 @@ import { SyncIndicator, SyncQueuePanel } from '../components/sync-indicator';
  * Inicio con sesión abierta.
  *
  * Enlaza a lo que ya está disponible —el horario de la Fase 2, las faltas de la Fase 3, la
- * agenda de la Fase 4 y el calendario de la Fase 5— y muestra el perfil y los dispositivos de
- * la Fase 1.
+ * agenda de la Fase 4, el calendario de la Fase 5 y los mensajes de la Fase 10— y muestra el
+ * perfil y los dispositivos de la Fase 1.
  */
 export function InicioScreen({
   onIrAHorario,
@@ -30,6 +31,7 @@ export function InicioScreen({
   onIrACompartir,
   onIrASemestres,
   onIrASocial,
+  onIrAMensajes,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
@@ -38,6 +40,7 @@ export function InicioScreen({
   onIrACompartir: () => void;
   onIrASemestres: () => void;
   onIrASocial: () => void;
+  onIrAMensajes: () => void;
 }) {
   const { user, logout } = useAuth();
   if (!user) return null;
@@ -104,11 +107,12 @@ export function InicioScreen({
 
       <Social onIrASocial={onIrASocial} />
 
+      <Mensajes onIrAMensajes={onIrAMensajes} />
+
       <DatosDelPerfil />
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Mensajes con tus contactos</Text>
         <Text style={styles.body}>· Widget con tu semana en la pantalla de inicio</Text>
       </Card>
 
@@ -192,6 +196,47 @@ function Social({ onIrASocial }: { onIrASocial: () => void }) {
         <Text style={styles.pendientes}>Tienes {pendientes} esperando respuesta.</Text>
       ) : null}
       <Button title="Ver mi perfil y mis contactos" onPress={onIrASocial} />
+    </Card>
+  );
+}
+
+/**
+ * Tarjeta de mensajes, con el aviso de lo que está sin leer (FR-043).
+ *
+ * El conteo se pide a su propia ruta y no a la bandeja entera, por lo mismo que el de
+ * solicitudes: el inicio solo necesita el número, y traer todas las conversaciones con su
+ * último mensaje para contarlo sería trabajo de más en la pantalla que más se abre.
+ *
+ * Un fallo al pedirlo tampoco se muestra: la tarjeta sigue llevando a los mensajes.
+ */
+function Mensajes({ onIrAMensajes }: { onIrAMensajes: () => void }) {
+  const [sinLeer, setSinLeer] = useState<string | null>(null);
+
+  useEffect(() => {
+    let vigente = true;
+
+    void messagingApi
+      .unread()
+      .then((resumen) => {
+        if (vigente) setSinLeer(unreadSummary(resumen.total, resumen.conversations));
+      })
+      .catch(() => {
+        // Silencio deliberado, igual que en la tarjeta social.
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  return (
+    <Card title="Mensajes">
+      <Text style={styles.body}>
+        Escríbete con tus contactos. Los mensajes llegan al momento, y solo puedes hablar con
+        quienes ya aceptaron tu solicitud.
+      </Text>
+      {sinLeer ? <Text style={styles.pendientes}>Tienes {sinLeer}.</Text> : null}
+      <Button title="Ver mis mensajes" onPress={onIrAMensajes} />
     </Card>
   );
 }

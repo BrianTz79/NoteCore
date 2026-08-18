@@ -4,6 +4,7 @@ import {
   createAttendanceApi,
   createAuthApi,
   createCalendarApi,
+  createMessagingApi,
   createScheduleApi,
   createSemesterApi,
   createShareApi,
@@ -42,3 +43,12 @@ export const calendarApi = createCalendarApi(apiClient);
 export const shareApi = createShareApi(apiClient);
 export const semesterApi = createSemesterApi(apiClient);
 export const socialApi = createSocialApi(apiClient);
+export const messagingApi = createMessagingApi(apiClient);
+
+/**
+ * URL base de la API, para el canal en vivo de la mensajería (Fase 10).
+ *
+ * Se exporta porque `LiveChannel` la necesita para derivar su `ws://`, y componerla otra vez
+ * en la pantalla dejaría dos sitios donde cambiar el entorno de la API.
+ */
+export const apiBaseUrl = baseUrl;

@@ -1,9 +1,11 @@
 import type { FastifyReply } from 'fastify';
 import {
+  MESSAGING_BLOCKED_MESSAGES,
   SEMESTER_ARCHIVED_MESSAGE,
   SHARE_UNAVAILABLE_MESSAGES,
   type ApiErrorCode,
   type FieldError,
+  type MessagingBlockedReason,
   type ShareUnavailableReason,
 } from '@notecore/shared';
 
@@ -86,6 +88,26 @@ export const errors = {
    */
   semestreArchivado: () =>
     new AppError('semestre_archivado', SEMESTER_ARCHIVED_MESSAGE, 409),
+
+  /**
+   * Se intentó escribir a quien no se puede (FR-044).
+   *
+   * **403 y no 400**: el mensaje está bien formado, lo que falta es el permiso. Tampoco 404,
+   * porque la persona existe y el cliente lo sabe —viene de su propia lista de contactos o de
+   * un perfil que acaba de ver—.
+   *
+   * El motivo viaja en `fields` bajo `relacion` para que el cliente lo lea sin analizar el
+   * texto, igual que el de un compartido no disponible: esperar, agregar y desbloquear son
+   * tres acciones distintas.
+   *
+   * El mensaje sale de `shared`, así que es **el mismo** que la pantalla ya pinta cuando el
+   * servidor le dijo de antemano que no se podía escribir. Si difirieran, el usuario leería
+   * una explicación al abrir el hilo y otra al intentar enviar.
+   */
+  mensajeNoPermitido: (reason: MessagingBlockedReason) =>
+    new AppError('mensaje_no_permitido', MESSAGING_BLOCKED_MESSAGES[reason], 403, [
+      { field: 'relacion', message: reason },
+    ]),
 
   demasiadosIntentos: () =>
     new AppError(

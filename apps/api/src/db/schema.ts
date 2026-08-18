@@ -581,6 +581,116 @@ export const posts = pgTable(
   ],
 );
 
+/**
+ * Conversaciones entre dos personas (FR-043).
+ *
+ * **El par va ordenado**, con el mismo `orderedPair` que los contactos de la Fase 8, y por el
+ * mismo motivo: una conversación entre A y B es un solo hecho, y sin el orden dos personas
+ * escribiéndose a la vez crearían dos hilos —uno en cada orden— que ningún índice único
+ * podría rechazar. Cada uno vería la mitad de lo dicho, que es el fallo que no se descubre
+ * hasta que alguien pregunta por qué no le contestan.
+ *
+ * **No guarda si se puede escribir.** Eso se pregunta a `contacts` en cada envío (FR-044).
+ * Copiarlo aquí sería un estado que queda viejo en cuanto alguien bloquea, y el bloqueo
+ * dejaría de surtir efecto justo en el momento en que más importa.
+ *
+ * `updatedAt` es la fecha del último mensaje y es por lo que se ordena la bandeja. Se guarda
+ * en vez de derivarse con un `MAX(sent_at)` por conversación, porque esa derivación es
+ * exactamente la consulta que se hace en cada carga de la lista.
+ */
+export const conversations = pgTable(
+  'conversations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** El menor de los dos identificadores. Lo impone `orderedPair`, no el orden de llegada. */
+    userAId: uuid('user_a_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** El mayor de los dos identificadores. */
+    userBId: uuid('user_b_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Hasta cuándo ha leído cada uno.
+     *
+     * Se guarda una marca por lado y no una columna `leido` por mensaje: leer es siempre
+     * "hasta aquí", así que una fecha dice lo mismo que marcar cincuenta filas, y abrir un
+     * hilo largo pasa de ser una escritura de cincuenta filas a una de una.
+     *
+     * `null` significa que esa persona no ha leído nada todavía.
+     */
+    readByAAt: timestamp('read_by_a_at', { withTimezone: true }),
+    readByBAt: timestamp('read_by_b_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Fecha del último mensaje. Es el orden de la bandeja. */
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    /**
+     * Una sola conversación por pareja.
+     *
+     * Lo impone la base de datos y no solo el servicio, por lo mismo que el índice de los
+     * contactos: dos personas escribiéndose por primera vez en el mismo instante pasarían
+     * ambas la comprobación previa antes de que ninguna escribiera, y quedarían dos hilos
+     * entre las mismas dos personas.
+     */
+    uniqueIndex('conversations_pair_unique').on(table.userAId, table.userBId),
+    // Las bandejas: todas las conversaciones de uno, por fecha del último mensaje.
+    index('conversations_user_a_idx').on(table.userAId, table.updatedAt),
+    index('conversations_user_b_idx').on(table.userBId, table.updatedAt),
+  ],
+);
+
+/**
+ * Los mensajes (FR-043).
+ *
+ * No llevan `semesterId`, igual que las publicaciones de la Fase 8: una conversación es de
+ * las personas, no del periodo que cursan, así que cerrar un semestre no la archiva ni la
+ * esconde.
+ *
+ * `id` puede venir propuesto por el cliente, con la mecánica de la Fase 9: es lo que hace el
+ * envío idempotente cuando la señal se cae con el mensaje ya escrito. Un mensaje duplicado en
+ * un hilo es de los errores más visibles que existen.
+ */
+export const messages = pgTable(
+  'messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => conversations.id, { onDelete: 'cascade' }),
+    /**
+     * Quién lo escribió.
+     *
+     * Hace falta pese a que la conversación ya tiene sus dos personas: el par de la
+     * conversación va ordenado por identificador y deliberadamente pierde quién es quién,
+     * exactamente igual que `requesterId` en los contactos.
+     */
+    senderId: uuid('sender_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    /**
+     * Cuándo lo borró su autor. `null` si sigue vigente.
+     *
+     * Se marca en lugar de borrar la fila: un hilo del que desaparecen renglones se lee mal
+     * —las respuestas quedan colgando de nada— y quien ya lo leyó no puede desleerlo. El
+     * texto **sí** se vacía al borrar, para que no quede guardado lo que el autor retiró.
+     */
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    sentAt: timestamp('sent_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    /**
+     * El hilo: los mensajes de una conversación por orden de envío.
+     *
+     * Es el índice del que cuelga la paginación por cursor, que es la consulta más frecuente
+     * de la fase —se ejecuta cada vez que alguien abre un hilo o sube a por lo anterior—.
+     */
+    index('messages_conversation_sent_idx').on(table.conversationId, table.sentAt),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   semesters: many(semesters),
@@ -591,10 +701,37 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   settings: one(userSettings),
   shares: many(shares),
   posts: many(posts),
+  messages: many(messages),
 }));
 
 export const postsRelations = relations(posts, ({ one }) => ({
   user: one(users, { fields: [posts.userId], references: [users.id] }),
+}));
+
+/**
+ * Las dos referencias a `users` se nombran, por lo mismo que en `contacts`: Drizzle no puede
+ * adivinar cuál es cuál cuando hay varias a la misma tabla.
+ */
+export const conversationsRelations = relations(conversations, ({ one, many }) => ({
+  userA: one(users, {
+    fields: [conversations.userAId],
+    references: [users.id],
+    relationName: 'conversation_user_a',
+  }),
+  userB: one(users, {
+    fields: [conversations.userBId],
+    references: [users.id],
+    relationName: 'conversation_user_b',
+  }),
+  messages: many(messages),
+}));
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  conversation: one(conversations, {
+    fields: [messages.conversationId],
+    references: [conversations.id],
+  }),
+  sender: one(users, { fields: [messages.senderId], references: [users.id] }),
 }));
 
 /**
@@ -701,3 +838,7 @@ export type ContactRow = typeof contacts.$inferSelect;
 export type NewContactRow = typeof contacts.$inferInsert;
 export type PostRow = typeof posts.$inferSelect;
 export type NewPostRow = typeof posts.$inferInsert;
+export type ConversationRow = typeof conversations.$inferSelect;
+export type NewConversationRow = typeof conversations.$inferInsert;
+export type MessageRow = typeof messages.$inferSelect;
+export type NewMessageRow = typeof messages.$inferInsert;

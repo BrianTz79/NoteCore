@@ -24,6 +24,7 @@ import { db } from '../db/client.js';
 import { contacts, posts, users, type ContactRow, type UserRow } from '../db/schema.js';
 import { config } from '../config.js';
 import { errors, isUniqueViolation } from '../lib/errors.js';
+import { notifyRelationChanged } from './messaging.js';
 
 /**
  * Lógica de la sección social (FR-039 a FR-042, FR-045).
@@ -395,6 +396,11 @@ export async function requestContact(userId: string, username: string): Promise<
       .returning();
 
     if (!accepted) throw errors.noEncontrado('Esa solicitud ya no existe.');
+
+    // Ahora son contactos: si ya tenían una conversación de antes —de cuando lo fueron—, sus
+    // pantallas abiertas deben dejar de decir que no se puede escribir (FR-044).
+    await notifyRelationChanged(userId, other.id);
+
     return toContact(accepted, other, userId);
   }
 
@@ -487,6 +493,16 @@ export async function actOnContact(
   if (action === 'rechazar' || action === 'cancelar' || action === 'eliminar') {
     await db.delete(contacts).where(eq(contacts.id, relation.id));
 
+    /**
+     * Eliminar un contacto **cierra** la conversación que tuvieran abierta (FR-044).
+     *
+     * El hilo sigue existiendo y ambos lo siguen leyendo —eso es historial y no le toca
+     * destruirlo a una operación de rutina—, pero deja de admitir mensajes. Sin este aviso,
+     * quien lo tuviera abierto seguiría viendo el campo de texto y se enteraría al fallar el
+     * envío, que es el peor camino para descubrirlo.
+     */
+    await notifyRelationChanged(userId, otherId);
+
     return {
       id: relation.id,
       user: toSearchResult(other, 'ninguna'),
@@ -507,6 +523,11 @@ export async function actOnContact(
    */
   if (action === 'desbloquear') {
     await db.delete(contacts).where(eq(contacts.id, relation.id));
+
+    // Desbloquear no restaura la amistad, así que la conversación sigue cerrada: lo que
+    // cambia es el motivo —de "bloqueaste a esta persona" a "solo puedes escribir a tus
+    // contactos"— y por tanto la acción que se le ofrece.
+    await notifyRelationChanged(userId, otherId);
 
     return {
       id: relation.id,
@@ -536,6 +557,15 @@ export async function actOnContact(
     .returning();
 
   if (!updated) throw errors.noEncontrado('Esa relación ya no existe.');
+
+  /**
+   * Aceptar abre la conversación y bloquear la cierra, **en el acto** (FR-043, FR-044).
+   *
+   * Es el caso que más importa de los cuatro: bloquear a alguien que está escribiendo ahora
+   * mismo tiene que surtir efecto en su pantalla sin que recargue nada. A cada lado le llega
+   * su propia versión del motivo, así que el bloqueo sigue sin anunciarse.
+   */
+  await notifyRelationChanged(userId, otherId);
 
   return toContact(updated, other, userId);
 }
@@ -574,6 +604,11 @@ export async function blockUser(userId: string, username: string): Promise<Conta
     .returning();
 
   if (!created) throw new Error('No se pudo bloquear');
+
+  // Bloquear sin relación previa: si ya se habían escrito alguna vez, la conversación se
+  // cierra igual que en cualquier otro bloqueo.
+  await notifyRelationChanged(userId, other.id);
+
   return toContact(created, other, userId);
 }
 

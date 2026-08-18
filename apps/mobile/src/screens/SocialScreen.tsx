@@ -10,6 +10,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import {
   ApiError,
+  areConnected,
   BIO_MAX_LENGTH,
   CONTACT_VIEWPOINT_COLORS,
   CONTACT_VIEWPOINT_LABELS,
@@ -51,7 +52,14 @@ import { QrScanner } from '../components/qr-scanner';
 
 type Pestana = 'perfil' | 'buscar' | 'contactos' | 'publicaciones';
 
-export function SocialScreen({ onVolver }: { onVolver: () => void }) {
+export function SocialScreen({
+  onVolver,
+  onEscribirA,
+}: {
+  onVolver: () => void;
+  /** Abre la conversación con esta persona (Fase 10). */
+  onEscribirA: (username: string) => void;
+}) {
   const [pestana, setPestana] = useState<Pestana>('perfil');
   const [profile, setProfile] = useState<OwnProfile | null>(null);
   const [listas, setListas] = useState<ContactLists | null>(null);
@@ -82,6 +90,7 @@ export function SocialScreen({ onVolver }: { onVolver: () => void }) {
     return (
       <PerfilAjeno
         username={verPerfil}
+        onEscribirA={onEscribirA}
         onVolver={() => {
           setVerPerfil(null);
           void cargar();
@@ -571,9 +580,11 @@ function FilaContacto({
 function PerfilAjeno({
   username,
   onVolver,
+  onEscribirA,
 }: {
   username: string;
   onVolver: () => void;
+  onEscribirA: (username: string) => void;
 }) {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [posts, setPosts] = useState<readonly Post[]>([]);
@@ -694,6 +705,16 @@ function PerfilAjeno({
 
         <FormError message={error} />
 
+        {/*
+          Escribir se ofrece **solo a los contactos aceptados** (FR-043, FR-044).
+
+          Se decide con `areConnected` sobre el punto de vista que el servidor ya resolvió, no
+          con una comprobación propia. Ofrecerlo ante quien no puede recibir mensajes llevaría
+          a una pantalla que solo sabe explicar que no se puede escribir.
+        */}
+        {areConnected(profile.viewpoint) ? (
+          <Button title="Enviar mensaje" onPress={() => onEscribirA(profile.username)} />
+        ) : null}
         {profile.actions.puedeSolicitar ? (
           <Button title="Agregar a contactos" onPress={() => void solicitar()} disabled={ocupado} />
         ) : null}

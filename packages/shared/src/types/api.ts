@@ -32,6 +32,18 @@ export const API_ERROR_CODES = [
    * de marcar un campo en rojo.
    */
   'semestre_archivado',
+  /**
+   * Se intentó escribir a alguien que no es contacto, o a quien uno bloqueó (FR-044).
+   *
+   * Es un código propio y no `validacion` porque el mensaje está bien: lo que falta es el
+   * permiso para mandarlo, y no hay campo que corregir. El cliente lo usa para explicar la
+   * situación y ofrecer la acción que corresponde —agregar, esperar o desbloquear— en lugar
+   * de marcar el campo de texto en rojo.
+   *
+   * El motivo concreto viaja en `fields` bajo `relacion`, igual que el de un compartido no
+   * disponible: cada uno lleva a una acción distinta.
+   */
+  'mensaje_no_permitido',
   'error_interno',
 ] as const;
 
