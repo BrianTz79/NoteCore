@@ -4,20 +4,25 @@ import {
   ABSENCE_LIMIT_DISCLAIMER,
   ABSENCE_STATUS_COLORS,
   ABSENCE_STATUS_LABELS,
+  CACHE_KEYS,
   MAX_SEMESTER_WEEKS,
   MIN_SEMESTER_WEEKS,
   absenceStatusMessage,
   addDays,
+  cacheAgeMessage,
   formatCalendarDate,
   toFormErrors,
   todayCalendarDate,
   type AttendanceSummary,
   type CalendarDate,
   type DayAttendance,
+  type Instant,
   type SubjectAttendance,
 } from '@notecore/shared';
 import { attendanceApi } from '../lib/api';
 import { Button, Card, FormError, colors } from '../components/ui';
+import { SyncIndicator } from '../components/sync-indicator';
+import { loadWithCache, useSyncActions } from '../lib/sync-context';
 
 /**
  * Control de faltas en la app (FR-011 a FR-017).
@@ -37,15 +42,29 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es el panel que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
 
+  const sync = useSyncActions();
+
+  /**
+   * El panel de faltas, cayendo a lo guardado si no hay red (FR-048).
+   *
+   * Es la pantalla que más importa sin conexión: el estudiante la consulta dentro del aula,
+   * que es justo donde falla la señal.
+   */
   const loadSummary = useCallback(async () => {
     try {
-      setSummary(await attendanceApi.summary());
+      const result = await loadWithCache(sync, CACHE_KEYS.attendance, () =>
+        attendanceApi.summary(),
+      );
+      setSummary(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }
-  }, []);
+  }, [sync]);
 
   const loadDay = useCallback(async (target: CalendarDate) => {
     try {
@@ -70,14 +89,40 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
     await loadDay(nueva);
   }
 
+  /**
+   * Registra faltas en la fecha elegida (FR-011), encolándolas si no hay red (FR-049).
+   *
+   * Marcar es **idempotente en el servidor desde la Fase 3** —las faltas que ya estaban se
+   * omiten en lugar de duplicarse—, así que el reintento de la cola es seguro sin necesidad
+   * de identificador propuesto: la pareja fecha + sesión ya identifica la falta.
+   *
+   * La entidad de la cola es la fecha y no una falta concreta porque la falta todavía no
+   * tiene identificador: lo asigna el servidor al escribirla.
+   */
   async function marcar(blockIds: readonly string[], etiqueta: string) {
     if (blockIds.length === 0) return;
 
     setBusy(true);
     try {
-      await attendanceApi.mark({ date, blockIds: [...blockIds] });
-      await Promise.all([loadSummary(), loadDay(date)]);
-      setNotice(etiqueta);
+      const payload = { date, blockIds: [...blockIds] };
+
+      const { queued } = await sync.write({
+        operation: 'falta_marcar',
+        entityId: date,
+        payload,
+        label: `${etiquetaDeMaterias(blockIds, day)} · ${formatCalendarDate(date)}`,
+        send: () => attendanceApi.mark(payload).then(() => undefined),
+      });
+
+      if (queued) {
+        // Sin red no se puede recalcular el panel —el conteo y el límite los decide el
+        // servidor (Principio II)—, así que se avisa de que subirá en lugar de enseñar un
+        // número que podría no coincidir.
+        setNotice(`${etiqueta} Se subirá cuando vuelva la conexión.`);
+      } else {
+        await Promise.all([loadSummary(), loadDay(date)]);
+        setNotice(etiqueta);
+      }
     } catch (caught) {
       setError(toFormErrors(caught).general);
     } finally {
@@ -150,6 +195,12 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
             : 'Registra tus inasistencias y vigila tu margen'}
         </Text>
       </View>
+
+      {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
+      <SyncIndicator />
+
+      {/* De cuándo es el panel que se está viendo, cuando viene del cache (FR-048). */}
+      {cachedAt ? <Text style={styles.muted}>{cacheAgeMessage(cachedAt)}</Text> : null}
 
       <FormError message={error} />
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -471,6 +522,29 @@ function SemesterWeeks({
       ) : null}
     </View>
   );
+}
+
+/**
+ * Nombre de las materias de una falta encolada, para la lista de pendientes (FR-050).
+ *
+ * "Cálculo · 17 de agosto" le dice al usuario qué falta le falta por subir; "1 cambio" no.
+ * Cuando son varias sesiones del mismo día se resumen, que es el caso del día completo.
+ */
+function etiquetaDeMaterias(
+  blockIds: readonly string[],
+  day: DayAttendance | undefined,
+): string {
+  const nombres = [
+    ...new Set(
+      blockIds
+        .map((id) => day?.sessions.find((session) => session.blockId === id)?.subjectName)
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ];
+
+  if (nombres.length === 0) return 'Falta';
+  if (nombres.length === 1) return nombres[0]!;
+  return `${nombres.length} materias`;
 }
 
 const styles = StyleSheet.create({

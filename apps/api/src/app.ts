@@ -86,9 +86,15 @@ export async function buildApp(): Promise<FastifyInstance> {
    *
    * Global y holgado; las rutas de contraseña lo restringen mucho más por su cuenta.
    * Sin esto, `/auth/login` sería un objetivo gratuito para probar contraseñas en masa.
+   *
+   * **En producción no cambia.** Fuera de ella el tope es mayor porque las suites de
+   * verificación —que abren varias cuentas y recorren las pantallas en segundos— lo agotaban
+   * y empezaban a recibir 429 a mitad, que se leía como un fallo de la funcionalidad cuando
+   * era el propio límite defendiéndose. Bajarlo en producción es lo que protege el login; la
+   * máquina de desarrollo no está expuesta.
    */
   await app.register(rateLimit, {
-    max: 300,
+    max: config.isProduction ? 300 : 3000,
     timeWindow: '1 minute',
     /**
      * El límite se comunica con el mismo formato de error que el resto de la API.

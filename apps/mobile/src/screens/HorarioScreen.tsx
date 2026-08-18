@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  CACHE_KEYS,
   WEEKDAY_SHORT_LABELS,
+  cacheAgeMessage,
   toFormErrors,
   toScheduleEntries,
+  type Instant,
   type ScheduleBlockInput,
   type Subject,
 } from '@notecore/shared';
@@ -12,6 +15,8 @@ import { ScheduleGrid } from '../components/schedule-grid';
 import { SubjectForm } from '../components/subject-form';
 import { ImportDialog } from '../components/import-dialog';
 import { Button, Card, FormError, colors } from '../components/ui';
+import { SyncIndicator } from '../components/sync-indicator';
+import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
 
 /**
  * Horario semanal en la app (FR-005 a FR-010).
@@ -33,17 +38,33 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es el horario que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
 
+  const sync = useSyncActions();
+  const { state: syncState } = useSync();
+
+  /**
+   * El horario, cayendo a lo guardado si no hay red (FR-048).
+   *
+   * Es lo que más se consulta sin conexión —"¿en qué aula toca ahora?"— y por eso se cachea
+   * aunque su **edición** siga exigiendo red: capturar el horario es una sesión larga que se
+   * hace una vez y en casa, mientras que consultarlo ocurre a diario dentro del edificio.
+   */
   const load = useCallback(async () => {
     try {
-      setSubjects(await scheduleApi.subjects());
+      const result = await loadWithCache(sync, CACHE_KEYS.schedule, () =>
+        scheduleApi.subjects(),
+      );
+      setSubjects(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sync]);
 
   useEffect(() => {
     void load();
@@ -153,27 +174,45 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
         </Text>
       </View>
 
+      {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
+      <SyncIndicator />
+
+      {/* De cuándo es el horario que se está viendo, cuando viene del cache (FR-048). */}
+      {cachedAt ? <Text style={styles.muted}>{cacheAgeMessage(cachedAt)}</Text> : null}
+
       <FormError message={error} />
 
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
-      <View style={styles.actions}>
-        <Button
-          title="Añadir materia"
-          onPress={() => {
-            setNotice(undefined);
-            setPanel({ kind: 'nueva' });
-          }}
-        />
-        <Button
-          title="Importar desde una IA"
-          variant="secondary"
-          onPress={() => {
-            setNotice(undefined);
-            setPanel({ kind: 'importar' });
-          }}
-        />
-      </View>
+      {/*
+       * Capturar el horario exige conexión, y se dice **antes** de tocar el botón en lugar
+       * de dejar que el formulario falle al guardar: el estudiante habría escrito la materia
+       * y sus sesiones para perderlas al enviar.
+       */}
+      {!syncState.online ? (
+        <Text style={styles.muted}>
+          Sin conexión puedes consultar tu horario, pero para capturarlo o importarlo hace
+          falta red.
+        </Text>
+      ) : (
+        <View style={styles.actions}>
+          <Button
+            title="Añadir materia"
+            onPress={() => {
+              setNotice(undefined);
+              setPanel({ kind: 'nueva' });
+            }}
+          />
+          <Button
+            title="Importar desde una IA"
+            variant="secondary"
+            onPress={() => {
+              setNotice(undefined);
+              setPanel({ kind: 'importar' });
+            }}
+          />
+        </View>
+      )}
 
       {loading ? (
         <Text style={styles.muted}>Cargando tu horario…</Text>

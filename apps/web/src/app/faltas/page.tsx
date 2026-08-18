@@ -6,6 +6,7 @@ import {
   ABSENCE_LIMIT_DISCLAIMER,
   ABSENCE_STATUS_COLORS,
   ABSENCE_STATUS_LABELS,
+  CACHE_KEYS,
   MAX_SEMESTER_WEEKS,
   MIN_SEMESTER_WEEKS,
   absenceStatusMessage,
@@ -15,11 +16,14 @@ import {
   type AttendanceSummary,
   type CalendarDate,
   type DayAttendance,
+  type Instant,
   type SubjectAttendance,
 } from '@notecore/shared';
 import { attendanceApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
 import { Button, Card, FormError } from '@/components/ui';
+import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
+import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
 /**
  * Control de faltas (FR-011 a FR-017).
@@ -44,15 +48,24 @@ function Faltas() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es el panel que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
 
+  const sync = useSyncActions();
+
+  /** El panel de faltas, cayendo a lo guardado si no hay red (FR-048). */
   const loadSummary = useCallback(async () => {
     try {
-      setSummary(await attendanceApi.summary());
+      const result = await loadWithCache(sync, CACHE_KEYS.attendance, () =>
+        attendanceApi.summary(),
+      );
+      setSummary(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }
-  }, []);
+  }, [sync]);
 
   const loadDay = useCallback(async (target: CalendarDate) => {
     try {
@@ -137,6 +150,10 @@ function Faltas() {
           ← Volver al inicio
         </Link>
       </header>
+
+      {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
+      <SyncIndicator />
+      <CacheNotice cachedAt={cachedAt} />
 
       <FormError message={error} />
 

@@ -34,6 +34,38 @@ export class ApiError extends Error {
 }
 
 /**
+ * Si un error es un fallo de red y no una respuesta del servidor (FR-048, FR-049).
+ *
+ * **No se usa `instanceof`**, y es deliberado. Metro empaqueta `@notecore/shared` para la app
+ * de una forma que puede dejar **dos copias** de este módulo en el bundle —una alcanzada por
+ * el cliente de API y otra por la pantalla que captura el error—, y entonces `error
+ * instanceof ApiError` es `false` aunque el error sea exactamente un `ApiError`. Se detectó
+ * en el emulador: crear una actividad sin conexión respondía "Ocurrió un error inesperado" en
+ * lugar de encolarse, porque la comprobación fallaba y el fallo de red se trataba como un
+ * error cualquiera.
+ *
+ * Comprobar la **forma** —el `status` 0 que este cliente pone cuando `fetch` ni siquiera sale
+ * del dispositivo— funciona con cualquier número de copias del módulo, que es justo la
+ * propiedad que hace falta aquí.
+ */
+export function isNetworkError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false;
+  const candidate = error as { status?: unknown; code?: unknown };
+
+  /**
+   * Se mira **solo** el `status` 0, no el nombre de la clase.
+   *
+   * `status` es la marca que este cliente pone cuando `fetch` ni siquiera llega a hablar con
+   * el servidor, y una respuesta HTTP real nunca vale 0 —el 0 no es un código de estado—.
+   * Comprobar además `name === 'ApiError'` parecía más estricto pero era frágil: el APK de
+   * release **minifica** el bundle, y ahí no se puede dar por hecho que el nombre de la clase
+   * sobreviva. Es un caso que no aparece en desarrollo ni en las suites de Node, solo en el
+   * teléfono con la app compilada, que es donde se detectó.
+   */
+  return candidate.status === 0;
+}
+
+/**
  * Dónde viven los tokens.
  *
  * En web devuelve siempre `null`: los tokens van en cookies `httpOnly` que el navegador

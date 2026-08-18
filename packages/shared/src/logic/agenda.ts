@@ -5,7 +5,7 @@
  * reimplementan en web ni en mobile.
  */
 
-import type { AgendaItem, AgendaUrgency } from '../types/agenda.js';
+import type { AgendaItem, AgendaList, AgendaUrgency } from '../types/agenda.js';
 import type { CalendarDate } from '../types/attendance.js';
 import { calendarDateToLocal } from './dates.js';
 
@@ -143,4 +143,49 @@ export function sortByDueDate<T extends Pick<AgendaItem, 'dueDate' | 'createdAt'
     // Mismo día: primero lo que se anotó antes, que es el orden en que se fue enterando.
     return String(a.createdAt).localeCompare(String(b.createdAt));
   });
+}
+
+/**
+ * Rehace la agenda con los cambios hechos sin conexión (FR-048, FR-049).
+ *
+ * Cuando una escritura se encola en vez de ejecutarse, el servidor no puede devolver la
+ * lista nueva, y sin embargo el usuario tiene que ver su cambio **al instante**: es lo que
+ * distingue una app que funciona sin red de una que solo avisa de que no la hay.
+ *
+ * Vive aquí y no en la pantalla porque reparte pendientes y completadas, recalcula la
+ * urgencia y reordena por FR-022 —las mismas reglas que aplica el servidor—. Escrito en el
+ * cliente, sería una segunda implementación del orden de la agenda, y bastaría que
+ * difirieran en el desempate para que la misma lista se viera distinta según hubiera red o
+ * no.
+ *
+ * `today` se pasa desde fuera para que toda la lista se evalúe contra la misma fecha.
+ */
+export function rebuildAgendaList(
+  items: readonly AgendaItem[],
+  today: CalendarDate,
+): AgendaList {
+  const recalculadas = items.map((item) => ({
+    ...item,
+    urgency: agendaUrgency(item.dueDate, today, item.completed),
+    daysUntilDue: item.dueDate === null ? null : daysBetween(today, item.dueDate),
+  }));
+
+  const pending = sortByDueDate(recalculadas.filter((item) => !item.completed));
+
+  // Las completadas van por lo más recientemente terminado, igual que en el servidor.
+  const completed = [...recalculadas.filter((item) => item.completed)].sort((a, b) =>
+    String(b.completedAt ?? b.updatedAt).localeCompare(String(a.completedAt ?? a.updatedAt)),
+  );
+
+  return {
+    pending,
+    completed,
+    overdueCount: pending.filter((item) => item.urgency === 'vencida').length,
+    dueTodayCount: pending.filter((item) => item.urgency === 'hoy').length,
+  };
+}
+
+/** Todas las actividades de la agenda, pendientes y completadas, en una sola lista. */
+export function allAgendaItems(list: AgendaList): readonly AgendaItem[] {
+  return [...list.pending, ...list.completed];
 }

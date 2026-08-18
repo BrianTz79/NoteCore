@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from './lib/auth-context';
+import { SyncProvider } from './lib/sync-context';
 import { EntrarScreen } from './screens/EntrarScreen';
 import { RegistroScreen } from './screens/RegistroScreen';
 import { InicioScreen } from './screens/InicioScreen';
@@ -49,10 +50,17 @@ import { colors } from './components/ui';
 export default function App() {
   return (
     <AuthProvider>
-      <SafeAreaView style={styles.safe}>
-        <StatusBar style="light" />
-        <Root />
-      </SafeAreaView>
+      {/*
+       * El proveedor de sincronización va **dentro** del de sesión y no al revés: el motor
+       * se construye con el identificador del usuario, porque sus claves lo llevan dentro
+       * y así ninguna cuenta ve el cache ni la cola de otra en el mismo teléfono.
+       */}
+      <SyncProvider>
+        <SafeAreaView style={styles.safe}>
+          <StatusBar style="light" />
+          <Root />
+        </SafeAreaView>
+      </SyncProvider>
     </AuthProvider>
   );
 }

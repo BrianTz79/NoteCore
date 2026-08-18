@@ -232,9 +232,38 @@ export async function createAgendaItem(
     await assertSubjectOwned(userId, semesterId, input.subjectId);
   }
 
+  /**
+   * Creación idempotente cuando el cliente propone el identificador (FR-049).
+   *
+   * La app genera el identificador al crear la actividad sin conexión, así que una creación
+   * reenviada —la respuesta que se pierde con la fila ya escrita, que es el caso real de la
+   * señal intermitente— llega con el mismo. `onConflictDoNothing` la reconoce en lugar de
+   * duplicarla: la cola puede reintentar sin miedo, que es justo lo que la hace segura.
+   *
+   * Se comprueba **antes** que la actividad no sea de otra persona. Sin esa comprobación,
+   * reenviar un identificador ajeno no crearía nada —el conflicto lo absorbe— pero la
+   * lectura de después devolvería la actividad de esa persona, y el Principio III se
+   * rompería por una ruta que ni siquiera escribe.
+   */
+  if (input.id !== undefined) {
+    const existing = await db
+      .select({ userId: agendaItems.userId })
+      .from(agendaItems)
+      .where(eq(agendaItems.id, input.id))
+      .limit(1);
+
+    const owner = existing[0];
+    if (owner && owner.userId !== userId) {
+      throw errors.validacion('Ese identificador ya está en uso.', [
+        { field: 'id', message: 'Identificador no disponible' },
+      ]);
+    }
+  }
+
   const inserted = await db
     .insert(agendaItems)
     .values({
+      ...(input.id !== undefined && { id: input.id }),
       userId,
       semesterId,
       title: input.title,
@@ -243,10 +272,18 @@ export async function createAgendaItem(
       subjectId: input.subjectId,
       dueDate: input.dueDate,
     })
+    .onConflictDoNothing({ target: agendaItems.id })
     .returning({ id: agendaItems.id });
 
   const created = inserted[0];
-  if (!created) throw new Error('La actividad no se insertó');
+
+  // Sin fila devuelta, la creación ya se había ejecutado en un intento anterior: se lee la
+  // que existe. Solo puede ocurrir con identificador propuesto, y ya se comprobó que es del
+  // usuario.
+  if (!created) {
+    if (input.id === undefined) throw new Error('La actividad no se insertó');
+    return getAgendaItem(userId, input.id);
+  }
 
   return getAgendaItem(userId, created.id);
 }

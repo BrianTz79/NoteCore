@@ -3,16 +3,25 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import {
   AGENDA_KIND_LABELS,
   AGENDA_URGENCY_COLORS,
+  CACHE_KEYS,
+  allAgendaItems,
+  cacheAgeMessage,
   dueDateLine,
   formatCalendarDateShort,
+  generateEntityId,
+  rebuildAgendaList,
+  todayCalendarDate,
   toFormErrors,
   type AgendaItem,
   type AgendaList,
+  type Instant,
   type Subject,
 } from '@notecore/shared';
 import { agendaApi, scheduleApi } from '../lib/api';
 import { AgendaForm } from '../components/agenda-form';
 import { Button, Card, FormError, colors } from '../components/ui';
+import { SyncIndicator } from '../components/sync-indicator';
+import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
 
 /**
  * Agenda en la app (FR-018 a FR-022).
@@ -32,15 +41,28 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es lo que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
 
+  const sync = useSyncActions();
+  const { state: syncState } = useSync();
+
+  /**
+   * Carga la agenda, cayendo a lo guardado si no hay red (FR-048).
+   *
+   * `loadWithCache` guarda lo leído en cada carga con éxito, así que consultar la agenda con
+   * conexión es justo lo que la deja disponible para cuando no la haya.
+   */
   const load = useCallback(async () => {
     try {
-      setAgenda(await agendaApi.list());
+      const result = await loadWithCache(sync, CACHE_KEYS.agenda, () => agendaApi.list());
+      setAgenda(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }
-  }, []);
+  }, [sync]);
 
   useEffect(() => {
     void (async () => {
@@ -59,12 +81,40 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
     })();
   }, [load]);
 
-  /** Completa o reabre una actividad (FR-020). El registro se conserva en ambos sentidos. */
+  /**
+   * Completa o reabre una actividad (FR-020). El registro se conserva en ambos sentidos.
+   *
+   * Sin conexión el cambio se encola y la lista se refresca desde el cache ya modificado:
+   * el usuario ve la casilla marcada al instante, que es lo que FR-049 pide de una escritura
+   * hecha sin red.
+   */
   async function alternarCompletada(item: AgendaItem) {
     setBusy(true);
     try {
-      await agendaApi.update(item.id, { completed: !item.completed });
-      await load();
+      const { queued } = await sync.write({
+        operation: 'agenda_editar',
+        entityId: item.id,
+        payload: { completed: !item.completed },
+        label: item.title,
+        send: () => agendaApi.update(item.id, { completed: !item.completed }).then(() => undefined),
+      });
+
+      if (queued) {
+        aplicarLocal((items) =>
+          items.map((actual) =>
+            actual.id === item.id
+              ? {
+                  ...actual,
+                  completed: !item.completed,
+                  completedAt: item.completed ? null : new Date().toISOString(),
+                }
+              : actual,
+          ),
+        );
+      } else {
+        await load();
+      }
+
       setNotice(
         item.completed
           ? `"${item.title}" vuelve a pendientes.`
@@ -75,6 +125,24 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
     } finally {
       setBusy(false);
     }
+  }
+
+  /**
+   * Aplica un cambio sobre la agenda que se está viendo y lo guarda en el cache.
+   *
+   * Es lo que hace que un cambio sin conexión se **vea** y que siga ahí al cerrar y abrir la
+   * app: sin guardarlo en el cache, la actividad creada sin red desaparecería de la pantalla
+   * en cuanto se recargara desde lo guardado.
+   */
+  function aplicarLocal(cambio: (items: readonly AgendaItem[]) => readonly AgendaItem[]) {
+    setAgenda((actual) => {
+      if (!actual) return actual;
+      // `rebuildAgendaList` reparte, recalcula la urgencia y reordena con las mismas reglas
+      // que el servidor (FR-022): la lista sin conexión se ve igual que con ella.
+      const siguiente = rebuildAgendaList(cambio(allAgendaItems(actual)), todayCalendarDate());
+      void sync.cache(CACHE_KEYS.agenda, siguiente);
+      return siguiente;
+    });
   }
 
   /** Elimina una actividad (FR-021). Se confirma porque, a diferencia de completar, se pierde. */
@@ -88,8 +156,20 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
           void (async () => {
             setBusy(true);
             try {
-              await agendaApi.delete(item.id);
-              await load();
+              const { queued } = await sync.write({
+                operation: 'agenda_borrar',
+                entityId: item.id,
+                payload: null,
+                label: item.title,
+                send: () => agendaApi.delete(item.id),
+              });
+
+              if (queued) {
+                aplicarLocal((items) => items.filter((actual) => actual.id !== item.id));
+              } else {
+                await load();
+              }
+
               setNotice(`Se eliminó "${item.title}".`);
             } catch (caught) {
               setError(toFormErrors(caught).general);
@@ -114,6 +194,12 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
             : 'Tus tareas, proyectos y actividades'}
         </Text>
       </View>
+
+      {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
+      <SyncIndicator />
+
+      {/* De cuándo es lo que se está viendo, cuando viene del cache (FR-048). */}
+      {cachedAt ? <Text style={styles.muted}>{cacheAgeMessage(cachedAt)}</Text> : null}
 
       <FormError message={error} />
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -146,13 +232,53 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
                 onCancel={() => setPanel({ kind: 'ninguno' })}
                 onSubmit={async (input) => {
                   if (panel.kind === 'editar') {
-                    await agendaApi.update(panel.item.id, input);
+                    const item = panel.item;
+                    const { queued } = await sync.write({
+                      operation: 'agenda_editar',
+                      entityId: item.id,
+                      payload: input,
+                      label: input.title,
+                      send: () => agendaApi.update(item.id, input).then(() => undefined),
+                    });
+
+                    if (queued) {
+                      aplicarLocal((items) =>
+                        items.map((actual) =>
+                          actual.id === item.id
+                            ? { ...actual, ...conMateria(input, subjects) }
+                            : actual,
+                        ),
+                      );
+                    }
                     setNotice(`Se guardó "${input.title}".`);
                   } else {
-                    await agendaApi.create(input);
+                    /**
+                     * El identificador se genera **aquí**, antes de saber si hay red.
+                     *
+                     * Es lo que permite que la actividad exista para el usuario al
+                     * instante: si la creación se encola, completarla o editarla acto
+                     * seguido ya apunta a este mismo identificador, y cuando la cola suba
+                     * no habrá nada que reescribir.
+                     */
+                    const id = generateEntityId();
+                    const payload = { ...input, id };
+
+                    const { queued } = await sync.write({
+                      operation: 'agenda_crear',
+                      entityId: id,
+                      payload,
+                      label: input.title,
+                      send: () => agendaApi.create(payload).then(() => undefined),
+                    });
+
+                    if (queued) {
+                      aplicarLocal((items) => [...items, nuevaActividadLocal(id, input, subjects)]);
+                    }
                     setNotice(`Se añadió "${input.title}".`);
                   }
-                  await load();
+
+                  // Con red se recarga del servidor; sin ella, la lista local ya está al día.
+                  if (syncState.online) await load();
                   setPanel({ kind: 'ninguno' });
                 }}
               />
@@ -202,6 +328,58 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
       <Button title="Volver al inicio" variant="secondary" onPress={onVolver} />
     </ScrollView>
   );
+}
+
+/**
+ * Resuelve el nombre y el color de la materia para pintar sin conexión.
+ *
+ * Con red los manda el servidor ya resueltos, para que la lista no tenga que cruzarlos. Sin
+ * red hay que hacerlo aquí, porque el cliente sí tiene las materias cacheadas y sin ellas la
+ * actividad recién creada saldría sin su color mientras no hubiera conexión.
+ */
+function conMateria(
+  input: { subjectId?: string | null; [key: string]: unknown },
+  subjects: readonly Subject[],
+): Record<string, unknown> {
+  const subject = subjects.find((candidate) => candidate.id === input.subjectId);
+  return {
+    ...input,
+    subjectName: subject?.name ?? null,
+    subjectColor: subject?.color ?? null,
+  };
+}
+
+/**
+ * La actividad tal como se ve mientras espera a subir.
+ *
+ * Los campos que normalmente calcula el servidor —urgencia y días que faltan— se dejan en su
+ * valor neutro porque `rebuildAgendaList` los recalcula acto seguido con las reglas
+ * compartidas. Se rellenan aquí solo para satisfacer el tipo.
+ */
+function nuevaActividadLocal(
+  id: string,
+  input: { title: string; description?: string | null; kind?: string; subjectId?: string | null; dueDate?: string | null },
+  subjects: readonly Subject[],
+): AgendaItem {
+  const ahora = new Date().toISOString();
+  const subject = subjects.find((candidate) => candidate.id === input.subjectId);
+
+  return {
+    id,
+    title: input.title,
+    description: input.description ?? null,
+    kind: (input.kind ?? 'tarea') as AgendaItem['kind'],
+    subjectId: input.subjectId ?? null,
+    subjectName: subject?.name ?? null,
+    subjectColor: subject?.color ?? null,
+    dueDate: (input.dueDate ?? null) as AgendaItem['dueDate'],
+    completed: false,
+    completedAt: null,
+    urgency: 'sin_fecha',
+    daysUntilDue: null,
+    createdAt: ahora,
+    updatedAt: ahora,
+  };
 }
 
 /** Una actividad de la lista, con sus acciones. */

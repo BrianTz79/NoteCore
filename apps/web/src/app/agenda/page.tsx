@@ -5,17 +5,21 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   AGENDA_KIND_LABELS,
   AGENDA_URGENCY_COLORS,
+  CACHE_KEYS,
   dueDateLine,
   formatCalendarDateShort,
   toFormErrors,
   type AgendaItem,
   type AgendaList,
+  type Instant,
   type Subject,
 } from '@notecore/shared';
 import { agendaApi, scheduleApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
 import { AgendaForm } from '@/components/agenda-form';
 import { Button, Card, FormError } from '@/components/ui';
+import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
+import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
 /**
  * Agenda de tareas y actividades (FR-018 a FR-022).
@@ -42,15 +46,22 @@ function Agenda() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es la agenda que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
 
+  const sync = useSyncActions();
+
+  /** La agenda, cayendo a lo guardado si no hay red (FR-048). */
   const load = useCallback(async () => {
     try {
-      setAgenda(await agendaApi.list());
+      const result = await loadWithCache(sync, CACHE_KEYS.agenda, () => agendaApi.list());
+      setAgenda(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }
-  }, []);
+  }, [sync]);
 
   useEffect(() => {
     void (async () => {
@@ -120,6 +131,10 @@ function Agenda() {
           ← Volver al inicio
         </Link>
       </header>
+
+      {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
+      <SyncIndicator />
+      <CacheNotice cachedAt={cachedAt} />
 
       <FormError message={error} />
 

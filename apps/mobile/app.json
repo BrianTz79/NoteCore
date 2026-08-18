@@ -30,7 +30,8 @@
           "recordAudioAndroid": false
         }
       ],
-      "./plugins/with-dev-cleartext.js"
+      "./plugins/with-dev-cleartext.js",
+      "./plugins/with-sin-permisos-de-almacenamiento.js"
     ]
   }
 }

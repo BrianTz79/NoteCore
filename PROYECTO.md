@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-17** (Fase 8 cerrada)
+> Última actualización: **2026-08-17** (Fase 9 cerrada)
 
 ---
 
@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico y sección social —perfil ampliado, contactos y publicaciones—, funcionando en app y web |
-| **Fases completadas** | 8 de 12 |
-| **Fase actual** | Fase 9 — Offline y sincronización (no iniciada) |
+| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social —perfil ampliado, contactos y publicaciones— y **consulta sin conexión con cola de cambios**, funcionando en app y web |
+| **Fases completadas** | 9 de 12 |
+| **Fase actual** | Fase 10 — Mensajería (no iniciada) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `████████░░░░` 67%
+**Avance**: `█████████░░░` 75%
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -86,10 +86,17 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   de texto. Lo que la visibilidad no alcanza **no se manda**: se comprobó que la biografía de un
   perfil restringido no aparece **ni en el HTML de la web ni en la jerarquía de vistas de Android**
 
+- **Fase 9 cerrada**: consulta sin conexión del horario, la agenda y las faltas, cola de cambios
+  hechos sin red y sincronización automática al recuperarla. El identificador lo **genera el
+  cliente**, que es lo que hace la creación idempotente: reenviar una petición cuya respuesta se
+  perdió no duplica la actividad. Se verificó el ciclo entero en el emulador —crear sin API,
+  reiniciar la app, y ver la fila aparecer en PostgreSQL al volver la conexión—
+
 ### Próximo paso
 
-**Fase 9 — Offline y sincronización**: cache local del horario, la agenda y las faltas, cola de
-cambios hechos sin conexión y sincronización al recuperar red (FR-048 a FR-050).
+**Fase 10 — Mensajería**: conversaciones entre contactos aceptados, con entrega en tiempo real y
+la restricción de FR-044 (FR-043, FR-044). Es la fase más costosa y la que más superficie de
+privacidad abre; se aborda ahora sobre una base ya estable.
 
 ---
 
@@ -108,7 +115,7 @@ cambios hechos sin conexión y sincronización al recuperar red (FR-048 a FR-050
 | 6 | Compartir | P2 | ✅ | ✅ | ✅ | ✅ |
 | 7 | Semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 | 8 | Social: perfiles y contactos | P3 | ✅ | ✅ | ✅ | ✅ |
-| 9 | Offline y sincronización | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 9 | Offline y sincronización | P2 | ✅ | ✅ | ✅ | ✅ |
 | 10 | Mensajería | P3 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 11 | Widget y pulido visual | P4 | ⬜ | ⬜ | ⬜ | ⬜ |
 
@@ -121,6 +128,124 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 9 — Offline y sincronización · cerrada el 2026-08-17
+
+**Entregado**: consulta sin conexión de lo previamente cargado —horario, agenda y faltas—
+(FR-048); cola de las escrituras hechas sin red, sincronizada sola al recuperarla (FR-049); e
+indicador de qué está pendiente de subir, con su detalle (FR-050).
+
+**El identificador lo genera el cliente.** La decisión que gobierna la fase, y de la que cuelga
+todo lo demás. Una actividad creada en modo avión necesita identidad **antes** de que el servidor
+sepa de ella: sin eso, completarla o borrarla acto seguido no tendría a qué referirse, y habría
+que reescribir la cola entera cuando la creación subiera —que es exactamente donde las colas se
+corrompen—. Con el identificador puesto en el teléfono, la creación es además **idempotente**:
+reenviarla tras perder la respuesta encuentra la fila que ya se escribió en vez de crear una
+segunda. Es el caso real de la señal que cae a mitad de la petición.
+
+**Las faltas no lo necesitaron**: `markAbsences` ya era idempotente desde la Fase 3 —las faltas
+ya marcadas se omiten en lugar de duplicarse—, así que la pareja fecha + sesión las identifica sin
+ayuda. Se comprobó antes de añadir nada.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| El **identificador lo genera el cliente**, y el servidor lo acepta | Es lo que da identidad a lo creado sin red y lo que hace la creación reintentable. `onConflictDoNothing` sobre el identificador convierte el reenvío en una lectura de lo ya escrito |
+| Antes de insertar se comprueba que el identificador **no sea de otra cuenta** | Sin esa comprobación, reenviar un identificador ajeno no escribiría nada —el conflicto lo absorbe— pero la lectura posterior devolvería la actividad de esa persona. El Principio III se rompería por una ruta que ni siquiera escribe |
+| El alcance de la escritura offline es **agenda y faltas** | Es lo que se hace dentro del aula, que es donde falla la señal. Capturar el horario es una sesión larga que se hace una vez y en casa, y su validación de solapes solo la conoce el servidor: un bloque aceptado en local podría rechazarse al subir, y habría que explicar ese conflicto |
+| El horario **se consulta** sin conexión aunque no se edite | "¿En qué aula toca ahora?" es la pregunta más frecuente dentro del edificio |
+| La **cola se pliega** antes de enviar | Marcar y desmarcar una tarea cinco veces sin red mandaría cinco peticiones que se pisan. Crear+editar viaja como una sola creación con el valor final, y **lo creado y borrado sin conexión no se manda**: pedirle al servidor que cree una fila para borrarla acto seguido no tiene sentido |
+| Conflicto y fallo de red **se distinguen por el código HTTP** | Un 4xx es una respuesta deliberada que daría lo mismo al reintentar: necesita al usuario. Un 0 o un 5xx se arreglan solos. Confundirlos tiene las dos consecuencias malas: reintentar un conflicto para siempre, o pedirle al usuario que resuelva algo que se habría resuelto solo |
+| El 401 se reintenta pese a ser 4xx | `ApiClient` renueva el token y reintenta; si llega aquí, lo que toca es volver a entrar, no resolver un conflicto |
+| Un fallo de red **corta la pasada** | Lo que viene detrás fallaría igual; seguir solo sumaría intentos. Lo pendiente se conserva **en orden** |
+| La conexión se detecta **intentando**, no preguntando al sistema | El wifi del campus con portal cautivo dice que hay red mientras ninguna petición llega. La única señal honesta de "hay servidor" es haber hablado con él |
+| Lo nuevo se encola **sin intentarlo** si ya hay cola | Mandarlo directo lo adelantaría a lo que espera desde antes, y completar una actividad cuya creación sigue en la cola llegaría antes que la actividad misma —404 y conflicto sobre algo que estaba bien— |
+| El cache y la cola llevan el **usuario en la clave** | Es el Principio III aplicado al dispositivo, donde no hay ningún `WHERE` que lo garantice: sin eso, cerrar sesión y entrar con otra cuenta enseñaría el horario del anterior mientras no hubiera red para refrescarlo |
+| Cerrar sesión borra el cache pero **no la cola** | Los cambios sin subir no son del dispositivo, son de la cuenta: se suben cuando esa cuenta vuelva a entrar |
+| El indicador **se esconde** cuando no hay nada que decir | Una barra permanente de "todo bien" es ruido que se deja de leer, y entonces tampoco se lee el aviso que sí importa |
+| La lista de pendientes dice **qué** está pendiente, no solo cuántos | "3 cambios" no distingue la falta de hoy de la tarea de ayer. La etiqueta se guarda al encolar porque la entidad de un borrado ya no está para derivarla |
+| La **web cachea pero no encola** | La constitución le pide offline "en la medida que la plataforma lo permita" y FR-049 habla de la app. Encolar en el navegador exige un *service worker* con su ciclo de vida —caché vieja servida tras un despliegue es el fallo clásico— a cambio de una capacidad que el teléfono ya cubre mejor |
+| El **almacenamiento es el sistema de archivos**, no `SecureStore` | Sus entradas están limitadas a 2048 bytes en Android y un horario completo los pasa. Además, el cifrado por hardware no aporta nada aquí: esto es material que el usuario ya tiene delante, no credenciales. Los tokens siguen en `SecureStore` |
+| `expo-file-system` en vez de `AsyncStorage` | Ya viene con el SDK de Expo que la app usa, así que la fase **no añade ningún módulo nativo nuevo** |
+
+**Verificación ejecutada** — 107 comprobaciones automáticas, todas en verde, más la pasada a mano
+en Android:
+
+| Suite | Qué prueba | Resultado |
+|---|---|---|
+| Lógica compartida (Node) | Identificadores válidos para el esquema del servidor —20 000 sin repetir, y **generándolos sin `crypto`, como en React Native**—, plegado de la cola con sus tres reglas y un **barrido aleatorio de 300 rondas** exigiendo que no invente ni duplique entidades, idempotencia del plegado, conflicto contra reintento en todos los códigos, y los textos del indicador **en todas las combinaciones** de estado exigiendo que ninguno diga "1 cambios" | **39/39** |
+| Motor de sincronización (Node) | Cache con su fecha, aislamiento entre cuentas en el mismo dispositivo, cola que sobrevive al reinicio, plegado antes de enviar, fallo de red que conserva el orden, conflicto que deja de reintentarse, descarte y reintento manual, **dos sincronizaciones a la vez compartiendo una sola pasada**, el **punto muerto de "sin conexión" que impedía volver a probar la red**, y el indicador que deja de decir "subiendo" al terminar | **25/25** |
+| API (`fetch` contra la API real) | Creación con identificador propuesto, **reenvío que no duplica**, reenvío que no pisa lo editado entre medias, alta sin identificador como antes de la fase, **secuestro del identificador de otra cuenta rechazado**, marcado doble de la misma falta sin duplicar, y rutas protegidas | **11/11** |
+| Web (Playwright, navegador real) | Captura con conexión, **reconstrucción de agenda, horario y faltas desde el cache con la API interceptada**, aviso de antigüedad, texto del indicador **idéntico al de la app**, aislamiento del cache entre dos cuentas en el mismo navegador, olvido del perfil al cerrar sesión y ausencia de errores de JavaScript | **13/13** |
+
+Además se reejecutó una **regresión de las fases 1 a 8** (**19/19**), porque esta fase tocó
+`services/agenda.ts`, `logic/agenda.ts` y el esquema de alta, comunes a fases anteriores. Incluye
+una comprobación nueva que exige que `rebuildAgendaList` —el orden que la app aplica sin conexión—
+produzca **exactamente el mismo reparto y orden que el servidor**: es lo que garantiza que la lista
+no se vea distinta según haya red o no.
+
+**Verificación en Android real** (emulador Pixel 6, Android 15, APK de release instalado):
+
+| Comprobación | Resultado |
+|---|---|
+| Agenda con conexión | carga y queda cacheada |
+| **Crear una actividad con la API caída** | "Tarea sin red" aparece **al instante** en pendientes |
+| **Reiniciar la app sin conexión** | la actividad **sigue ahí**: el cache sobrevivió al disco |
+| La sesión **no se cierra** sin red | sigue dentro; antes echaba al usuario a la pantalla de entrada |
+| Indicador sin nada pendiente (FR-050) | "Sin conexión · todo guardado" |
+| Antigüedad de lo cacheado (FR-048) | "Actualizado hace 1 minuto" |
+| Indicador con un cambio en cola | "Sin conexión · **1 cambio por subir**" —singular correcto— |
+| Tarjeta del inicio (FR-050) | "Cambios sin subir · **1 actividad por subir**" |
+| **Detalle de la cola** (FR-050) | "Segunda sin red · **Actividad creada**" y "Se subirán solos cuando vuelva la conexión." |
+| **Sincronización al recuperar la red** | "Subiendo cambios…" sin que el usuario toque nada |
+| **Las tres actividades creadas sin red, en PostgreSQL** | `Tarea sin red`, `Segunda sin red` y `Ciclo completo` |
+| El indicador desaparece al terminar | correcto: sin nada que decir, no ocupa sitio |
+| Textos del indicador | **palabra por palabra idénticos a los de la web** |
+| Permisos del APK instalado | **sin `READ_EXTERNAL_STORAGE` ni `WRITE_EXTERNAL_STORAGE`**, y `RECORD_AUDIO` sigue ausente |
+| Paridad bidireccional | **confirmada** |
+
+**Corregido durante la fase** — cinco fallos, y **cuatro solo se veían en el APK de release**:
+
+1. **`crypto.getRandomValues` no existe en React Native.** El más grave: el identificador se
+   generaba antes de encolar nada, así que crear una actividad sin conexión lanzaba en la primera
+   línea y la app respondía "Ocurrió un error inesperado" —justo la funcionalidad que la fase
+   entrega—. No aparecía en Node ni en el navegador, donde `crypto` sí está, así que ninguna suite
+   lo cubría. Ahora hay respaldo con `Math.random()`, aceptable **solo aquí** porque estos
+   identificadores no protegen nada —lo contrario que el código de un compartido (Fase 6), que es
+   la credencial—, y una prueba que **borra `crypto` del entorno** para reproducir Hermes.
+2. **La sesión se cerraba al abrir sin conexión.** `authApi.me()` fallando por red se trataba
+   igual que un 401, así que el usuario acababa en la pantalla de entrada y no podía consultar
+   nada de lo guardado. Estaba en **los dos clientes** desde la Fase 1, pero solo importaba ahora.
+   Se recuerda el perfil —nombre e identificador, **nunca credenciales**— para poder abrir sin red.
+3. **Punto muerto: marcado "sin conexión", el motor no volvía a probar la red.** Al fallar una
+   escritura se marcaba sin conexión, y como se negaba a enviar mientras lo estuviera, nada volvía
+   a tocar la red: la cola se quedaba con "1 cambio por subir" para siempre aunque la conexión
+   hubiera vuelto. El intento **es** la comprobación.
+4. **El indicador se quedaba en "Subiendo cambios…" para siempre.** El último aviso de la pasada
+   se emitía todavía dentro de ella, cuando `syncing` seguía activo, y la interfaz se quedaba con
+   ese valor pese a tener la cola vacía.
+5. **Bucle de peticiones: siete lecturas idénticas por pantalla.** Informar de si la API respondió
+   cambiaba el estado, que recreaba la función de carga, que disparaba el efecto, que volvía a
+   leer. Agotaba el límite del servidor y se leía como un fallo de la funcionalidad. Las acciones
+   viven ahora en un contexto **estable**, separado del estado.
+
+**Sobre el límite de peticiones**: se subió de 300 a 3000 por minuto **fuera de producción**. Las
+suites abren varias cuentas y recorren las pantallas en segundos, y lo agotaban a mitad; en
+producción sigue en 300, que es lo que protege el login.
+
+**Migración**: **ninguna**. La fase no toca el esquema: el identificador propuesto usa la columna
+`id` que ya existía, y el cache y la cola viven en el dispositivo.
+
+**Nota de verificación**: el emulador se arrancó con `-no-window` (esta sesión no tiene display) y
+la API se alcanzó con `adb reverse tcp:3101` —quitarlo y volver a ponerlo es justo cómo se simuló
+la pérdida y la recuperación de la conexión—. **Sí se reejecutó `expo prebuild`**, porque
+`expo-file-system` es un módulo nativo; ya venía con el SDK de Expo, así que no se añadió ninguna
+dependencia nativa nueva al proyecto. Los permisos de almacenamiento que ese módulo declara por
+defecto se quitan con un plugin propio (`with-sin-permisos-de-almacenamiento.js`): el cache vive en
+el directorio privado de la app, que no exige ninguno.
+
+---
 
 #### Fase 8 — Social: perfiles y contactos · cerrada el 2026-08-17
 
@@ -1132,7 +1257,7 @@ Perfil con nombre mostrado y `@usuario`. Búsqueda por nombre de usuario, agrega
 Solicitudes con aceptación, eliminación y bloqueo.
 **Verificación**: dos cuentas se conectan por búsqueda y por QR.
 
-#### Fase 9 — Offline y sincronización (P2)
+#### Fase 9 — Offline y sincronización (P2) ✅
 Cache local de horario, agenda y faltas. Cola de cambios sin conexión, sincronizados al recuperar
 red, con indicador de pendientes.
 **Verificación**: en modo avión se consulta todo lo cargado y los cambios suben al reconectar.

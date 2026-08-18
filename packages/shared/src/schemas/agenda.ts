@@ -57,6 +57,20 @@ export const agendaDueDateSchema = calendarDateSchema
  * depende de que todo lo demás pueda omitirse.
  */
 export const createAgendaItemSchema = z.object({
+  /**
+   * Identificador propuesto por el cliente (FR-049).
+   *
+   * Opcional: la web y cualquier alta con conexión lo omiten y el servidor genera el suyo,
+   * igual que antes de la Fase 9. Lo manda la app cuando la actividad nace sin conexión,
+   * porque entonces necesita un identificador **antes** de que el servidor exista para ella:
+   * es lo que permite completarla o editarla acto seguido y que esas operaciones se encolen
+   * ya apuntando al identificador definitivo.
+   *
+   * Su segundo efecto es hacer idempotente la creación: si la respuesta se pierde con la
+   * fila ya escrita —la señal que cae a mitad—, el reintento manda el mismo identificador y
+   * el servidor reconoce lo que ya guardó en vez de crear una actividad repetida.
+   */
+  id: entityIdSchema.optional(),
   title: agendaTitleSchema,
   description: agendaDescriptionSchema,
   kind: agendaKindSchema.default('tarea'),

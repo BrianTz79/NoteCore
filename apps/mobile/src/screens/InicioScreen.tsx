@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   formatDateTime,
   pendingRequestsSummary,
+  pendingSummary,
   toFormErrors,
   updateProfileSchema,
   type FormErrors,
@@ -10,7 +11,9 @@ import {
 } from '@notecore/shared';
 import { authApi, socialApi } from '../lib/api';
 import { useAuth } from '../lib/auth-context';
+import { useSync } from '../lib/sync-context';
 import { Button, Card, Field, FormError, colors } from '../components/ui';
+import { SyncIndicator, SyncQueuePanel } from '../components/sync-indicator';
 
 /**
  * Inicio con sesión abierta.
@@ -45,6 +48,11 @@ export function InicioScreen({
         <Text style={styles.title}>Hola, {user.displayName}</Text>
         <Text style={styles.subtitle}>@{user.username}</Text>
       </View>
+
+      {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
+      <SyncIndicator />
+
+      <Sincronizacion />
 
       <Card title="Tu horario">
         <Text style={styles.body}>
@@ -100,12 +108,46 @@ export function InicioScreen({
       <Dispositivos />
 
       <Card title="Lo que viene">
-        <Text style={styles.body}>· Consultar tu horario y tu agenda sin conexión</Text>
         <Text style={styles.body}>· Mensajes con tus contactos</Text>
+        <Text style={styles.body}>· Widget con tu semana en la pantalla de inicio</Text>
       </Card>
 
       <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />
     </ScrollView>
+  );
+}
+
+/**
+ * Tarjeta de lo que está pendiente de subir (FR-050).
+ *
+ * Solo aparece cuando hay algo que contar. Con todo sincronizado no dice nada: una tarjeta
+ * permanente de "al día" ocuparía sitio en el inicio para no informar de nada, y el usuario
+ * dejaría de mirarla justo antes del día en que sí tuviera algo pendiente.
+ */
+function Sincronizacion() {
+  const { state, queue } = useSync();
+  const [abierto, setAbierto] = useState(false);
+
+  if (state.pending === 0 && state.conflicts === 0) return null;
+
+  return (
+    <Card title="Cambios sin subir">
+      <Text style={styles.body}>{pendingSummary(queue)}</Text>
+
+      {state.conflicts > 0 ? (
+        <Text style={styles.body}>
+          Algunos no se pudieron subir y necesitan que decidas qué hacer.
+        </Text>
+      ) : null}
+
+      <Button
+        title={abierto ? 'Ocultar detalle' : 'Ver qué está pendiente'}
+        variant="secondary"
+        onPress={() => setAbierto((valor) => !valor)}
+      />
+
+      {abierto ? <SyncQueuePanel /> : null}
+    </Card>
   );
 }
 

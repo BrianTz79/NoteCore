@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  CACHE_KEYS,
   WEEKDAY_LABELS,
   toFormErrors,
   toScheduleEntries,
+  type Instant,
   type ScheduleBlockInput,
   type Subject,
 } from '@notecore/shared';
@@ -15,6 +17,8 @@ import { ScheduleGrid } from '@/components/schedule-grid';
 import { SubjectForm } from '@/components/subject-form';
 import { ImportDialog } from '@/components/import-dialog';
 import { Button, Card, FormError } from '@/components/ui';
+import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
+import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
 /**
  * Horario semanal (FR-005 a FR-010).
@@ -43,17 +47,25 @@ function Horario() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+  /** De cuándo es el horario que se está viendo, si viene del cache (FR-048). */
+  const [cachedAt, setCachedAt] = useState<Instant | null>(null);
+
+  const sync = useSyncActions();
 
   const load = useCallback(async () => {
     try {
-      setSubjects(await scheduleApi.subjects());
+      const result = await loadWithCache(sync, CACHE_KEYS.schedule, () =>
+        scheduleApi.subjects(),
+      );
+      setSubjects(result.data);
+      setCachedAt(result.cachedAt);
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [sync]);
 
   useEffect(() => {
     void load();
@@ -110,6 +122,10 @@ function Horario() {
           ← Volver al inicio
         </Link>
       </header>
+
+      {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
+      <SyncIndicator />
+      <CacheNotice cachedAt={cachedAt} />
 
       <FormError message={error} />
 
