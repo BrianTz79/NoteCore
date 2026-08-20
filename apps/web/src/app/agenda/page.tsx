@@ -114,7 +114,7 @@ function Agenda() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl lg:max-w-6xl lg:px-nc-2xl">
       <ScreenHeader
         title="Mi agenda"
         subtitle={agenda

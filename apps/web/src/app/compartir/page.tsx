@@ -109,14 +109,14 @@ function Compartir() {
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-nc-lg py-nc-3xl">
+      <main className="mx-auto w-full max-w-3xl px-nc-lg py-nc-3xl lg:max-w-5xl lg:px-nc-2xl">
         <p className="text-tinta3">Cargando…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl lg:max-w-5xl lg:px-nc-2xl">
       <ScreenHeader
         title="Compartir"
         subtitle="Pasa tu horario o tus actividades a un compañero. Recibe una copia suya, que puede editar sin afectar a la tuya."

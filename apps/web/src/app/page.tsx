@@ -19,6 +19,7 @@ import { agendaApi, attendanceApi, messagingApi, scheduleApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 import { RequireSession } from '@/components/require-session';
+import { SECCIONES } from '@/lib/navigation';
 import { Button, EmptyState, NavLink, Rule, Tag } from '@/components/ui';
 import { SyncIndicator } from '@/components/sync-indicator';
 
@@ -105,8 +106,14 @@ function Inicio() {
   if (!user) return null;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-nc-md pb-nc-3xl">
-      <header className="flex flex-wrap items-center justify-between gap-nc-sm py-nc-lg">
+    <main className="mx-auto w-full max-w-3xl px-nc-md pb-nc-3xl lg:max-w-4xl lg:px-nc-xl lg:pt-nc-xl">
+      {/*
+       * En escritorio la barra lateral ya identifica a quien tiene la sesión y ya lleva el
+       * botón de salir (`AppShell`); repetirlos aquí sería la misma información dos veces en
+       * la misma pantalla. `lg:hidden` deja esta cabecera solo para el móvil, que no tiene
+       * barra.
+       */}
+      <header className="flex flex-wrap items-center justify-between gap-nc-sm py-nc-lg lg:hidden">
         <div className="min-w-0">
           <h1 className="text-2xl font-medium">{user.displayName}</h1>
           <p className="font-mono text-sm text-tinta3">@{user.username}</p>
@@ -310,22 +317,16 @@ function Avisos({ resumen }: { resumen: Resumen | null }) {
  * Sin párrafo explicativo debajo de cada una: «Faltas» y «Agenda» se entienden por su
  * nombre, y quien ya usó la aplicación una vez no vuelve a leer la explicación. La
  * descripción de una línea se queda solo donde el nombre no basta.
+ *
+ * **Fase 14**: `lg:hidden`. En escritorio la barra lateral de `AppShell` ya lista las mismas
+ * nueve secciones de forma permanente; repetirlas aquí sería la misma navegación dos veces
+ * en la misma pantalla. En móvil, que no tiene barra, esta rejilla sigue siendo la única
+ * forma de moverse — la lista viene de `@/lib/navigation`, compartida con la barra, para que
+ * las dos no puedan divergir.
  */
-const SECCIONES = [
-  { href: '/horario', nombre: 'Horario', nota: 'Tu semana' },
-  { href: '/faltas', nombre: 'Faltas', nota: 'Conteo y límites' },
-  { href: '/agenda', nombre: 'Agenda', nota: 'Tareas y entregas' },
-  { href: '/calendario', nombre: 'Calendario', nota: 'Clases y vencimientos' },
-  { href: '/compartir', nombre: 'Compartir', nota: 'Por QR, código o enlace' },
-  { href: '/semestres', nombre: 'Semestres', nota: 'Archivo histórico' },
-  { href: '/social', nombre: 'Contactos', nota: 'Perfil y compañeros' },
-  { href: '/mensajes', nombre: 'Mensajes', nota: 'Con tus contactos' },
-  { href: '/perfil', nombre: 'Mi cuenta', nota: 'Perfil y dispositivos' },
-] as const;
-
 function Navegacion() {
   return (
-    <nav aria-label="Secciones" className="space-y-nc-2xs">
+    <nav aria-label="Secciones" className="space-y-nc-2xs lg:hidden">
       <h2 className="text-xs font-medium tracking-wide text-tinta3 uppercase">Ir a</h2>
       <Rule />
       {/*

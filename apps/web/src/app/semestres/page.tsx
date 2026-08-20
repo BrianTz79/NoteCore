@@ -110,7 +110,11 @@ function Semestres() {
   }
 
   if (loading) {
-    return <p className="text-tinta2">Cargando…</p>;
+    return (
+      <main className="mx-auto w-full max-w-5xl px-nc-lg py-nc-2xl lg:max-w-6xl lg:px-nc-2xl">
+        <p className="text-tinta2">Cargando…</p>
+      </main>
+    );
   }
 
   const ordered = sortSemesters(semesters);
@@ -118,12 +122,17 @@ function Semestres() {
   const archived = ordered.filter((semester) => semester.status === 'archivado');
 
   return (
-    <div className="space-y-nc-lg">
-      <ScreenHeader
-        title="Semestres"
-        subtitle="Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta."
-        back={{ href: '/', label: 'Inicio' }}
-      />
+    // Antes de esta fase, esta pantalla no tenía ningún contenedor con ancho máximo: el
+    // contenido se estiraba a todo el ancho disponible, sin notarse porque nunca había más
+    // de 768px disponibles. Con el ancho de escritorio de la Fase 14 sí se nota, así que
+    // entra aquí el mismo `<main>` que ya usan `horario`, `faltas`, `agenda` y `calendario`.
+    <main className="mx-auto w-full max-w-5xl px-nc-lg py-nc-2xl lg:max-w-6xl lg:px-nc-2xl">
+      <div className="space-y-nc-lg">
+        <ScreenHeader
+          title="Semestres"
+          subtitle="Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta."
+          back={{ href: '/', label: 'Inicio' }}
+        />
 
       <FormError message={error} />
       {notice ? (
@@ -174,7 +183,8 @@ function Semestres() {
           </ul>
         )}
       </Card>
-    </div>
+      </div>
+    </main>
   );
 }
 

@@ -59,7 +59,7 @@ export default function MensajesPage() {
 
 function Cargando() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl lg:max-w-6xl lg:px-nc-2xl">
       <p className="text-tinta2">Cargando tus mensajes…</p>
     </main>
   );
@@ -133,7 +133,7 @@ function Mensajes() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl lg:max-w-6xl lg:px-nc-2xl">
       <ScreenHeader
         title="Mensajes"
         back={{ href: '/', label: 'Inicio' }}

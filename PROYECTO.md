@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 13 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 14 cerrada y verificada)
 
 ---
 
@@ -34,12 +34,12 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 13 cerrada** el 2026-08-20. Quedan **cinco fases** (14 a 18); la siguiente por prioridad es la [14](#fase-14--la-web-en-pantalla-grande--p1) (P1) |
+| **Fase actual** | Ninguna en curso. **Fase 14 cerrada** el 2026-08-20. Quedan **cuatro fases** (15 a 18); la siguiente por prioridad es la [15](#fase-15--social-en-secciones-propias--p2) (P2), o la [18](#fase-18--cuatrimestres-además-de-semestres--p2) si pesa más el cuatrimestre |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `██░░░░░` 2 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███░░░░` 3 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -119,6 +119,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   lienzo** para no perder el borde en el recorte circular, verificado instalando el APK y abriendo
   el cajón de aplicaciones del emulador real
 
+- **Fase 14 cerrada**: barra lateral fija de escritorio en la web, y las doce pantallas
+  ensanchadas para aprovecharla —la app no se tocó, el síntoma era solo suyo—. La barra entra en
+  un único punto, `RequireSession`, que ya envuelve a las doce pantallas más las dos de perfil y
+  compartido ajenos: una pantalla nueva la hereda por estar ahí, no por acordarse de importarla.
+  No aparece hasta los 1024px —por debajo de eso el árbol es idéntico al de antes de la fase—, y
+  la lista de nueve secciones pasó a un solo archivo compartido entre la barra y la rejilla del
+  inicio, para que las dos no puedan divergir
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -129,17 +137,18 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
 escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-**Las fases 12 y 13 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
+**Las fases 12, 13 y 14 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
 `WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
-formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada. El APK se
-recompiló, se firmó con la clave de siempre y quedó en `_apk/`. El detalle de cada una está en el
-historial: [Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
-[Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20).
+formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada; la 14 le dio
+a la web una barra lateral de escritorio y ensanchó las doce pantallas. El APK de la 13 se
+recompiló, se firmó con la clave de siempre y quedó en `_apk/` —la 14 no toca la app, así que no
+generó un APK nuevo—. El detalle de cada una está en el historial:
+[Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
+[Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20),
+[Fase 14](#fase-14--la-web-en-pantalla-grande--cerrada-el-2026-08-20).
 
-**La siguiente por prioridad es la [Fase 14](#fase-14--la-web-en-pantalla-grande--p1)** (P1): la
-web se ve en una columna estrecha en cualquier laptop. Después, la 15, 16, 17 y 18 pueden ir en
-el orden que se prefiera —de ellas, la **18 (cuatrimestres)** es la que más se nota si quien usa
-NoteCore no cursa por semestres—.
+**Quedan cuatro fases, 15 a 18, y pueden ir en el orden que se prefiera** —de ellas, la
+**18 (cuatrimestres)** es la que más se nota si quien usa NoteCore no cursa por semestres—.
 
 ---
 
@@ -164,7 +173,7 @@ NoteCore no cursa por semestres—.
 | — | *Despliegue en producción (2026-08-20)* | — | ✅ | ✅ | ✅ | ✅ |
 | 12 | Arreglos de producción | **P0** | ✅ | ✅ | ✅ | ✅ |
 | 13 | Identidad visual: logo e iconos | P2 | ✅ | — | ✅ | ✅ |
-| 14 | La web en pantalla grande | P1 | ⬜ | — | ⬜ | — |
+| 14 | La web en pantalla grande | P1 | ✅ | — | ✅ | — |
 | 15 | Social en secciones propias | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
 | 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
@@ -186,6 +195,67 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 14 — La web en pantalla grande · cerrada el 2026-08-20
+
+**Entregado**: barra lateral fija de escritorio, y las doce pantallas ensanchadas para
+aprovecharla. La app no se tocó —el síntoma era solo de la web—.
+
+**La barra vive en un solo punto: `RequireSession`.** Las doce pantallas, más `u/[username]`
+y `compartido/[code]`, pasan todas por ahí para exigir sesión; envolver su resultado en
+`AppShell` en vez de tocar cada `page.tsx` es lo que hace que una pantalla nueva **herede** la
+barra por estar dentro de `RequireSession`, no por acordarse de importarla. Es la misma lógica
+que ya usó el `SyncProvider` de la Fase 9.
+
+**La barra no aparece hasta `lg` (1024px), no en `md` (768px).** Mide 256px; con el contenido
+Workbench ya en `max-w-5xl`/`max-w-6xl` (1024–1152px), activarla en `md` habría dejado menos de
+512px de contenido en una tableta en vertical —peor que sin barra—. En `lg` el contenido
+conserva un ancho útil incluso con la barra descontada. Por debajo de `lg` el árbol es
+exactamente el de antes: sin barra, con la cabecera de usuario y la rejilla "Ir a" del inicio,
+que es la única navegación que existía hasta esta fase.
+
+**La lista de nueve secciones se separó a `@/lib/navigation.ts`.** Antes vivía solo dentro de
+`page.tsx`, usada por la rejilla "Ir a"; ahora la comparten esa rejilla y la barra lateral, para
+que las dos no puedan divergir si algún día se añade o se renombra una sección —el mismo
+razonamiento que llevó la paleta a `tokens.ts` en la Fase 11.
+
+**La rejilla "Ir a" del inicio se oculta en escritorio (`lg:hidden`), no se borra.** Con la
+barra ya listando las mismas nueve secciones de forma permanente, mostrarla también en el
+cuerpo de la pantalla habría sido la misma navegación dos veces en la misma pantalla. En móvil,
+que no tiene barra, sigue siendo la única forma de moverse.
+
+**`semestres` no tenía ningún contenedor con ancho máximo.** No se notaba antes de esta fase
+porque nunca había más de 768px disponibles; con el ancho de escritorio nuevo sí se habría
+notado, así que entró el mismo `<main>` que ya usan `horario`, `faltas`, `agenda` y
+`calendario`. Es una inconsistencia previa a la Fase 14, no un efecto suyo, pero esta fase era
+el momento de arreglarla porque es exactamente el síntoma que describe.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Barra lateral fija, no navbar superior | Aprovecha el alto que sobra en una pantalla 16:9 —una herramienta de sesión que se consulta entre clases, no un sitio de contenido— y es el patrón que `design.md` ya reserva para la familia Workbench, que cubre ocho de las nueve secciones |
+| Se activa en `lg` (1024px), no en `md` (768px) | En `md` el contenido Workbench se habría quedado con menos de 512px en una tableta en vertical: peor que la columna única de antes. `lg` es el primer punto donde barra + contenido caben con holgura |
+| La barra entra en `RequireSession`, no en cada `page.tsx` | Es el único punto por el que pasan las doce pantallas con sesión. Tocar doce archivos habría sido más trabajo y, sobre todo, una pantalla nueva se habría podido quedar sin barra por un descuido de importación |
+| La lista de secciones se compartió entre la barra y la rejilla "Ir a" | Antes de esta fase solo existía dentro de `page.tsx`. Separarla evita que la barra y la rejilla del inicio diverjan en silencio, el mismo motivo que llevó la paleta a `tokens.ts` en la Fase 11 |
+| La rejilla "Ir a" se oculta en escritorio en vez de borrarse | En móvil sigue siendo la única navegación; en escritorio, mostrarla junto a la barra sería la misma información dos veces en la misma pantalla |
+| `semestres` recibió un `<main>` con ancho máximo que no tenía | Sin él, su contenido se habría estirado al ancho completo disponible junto a la barra, rompiendo la consistencia con el resto de pantallas Workbench |
+
+**Verificación (2026-08-20)**, navegador real vía Playwright, cuenta de prueba registrada en
+la propia verificación:
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| Los cuatro paquetes | `npm run typecheck` | Los cuatro, limpio |
+| Build de producción de la web | `next build` | Compila; 16 rutas generadas, ninguna rota |
+| Barra en escritorio (1440px) | Captura tras registro e inicio de sesión | Logo, nueve secciones, usuario y "Cerrar sesión"; la sección activa resaltada en cada pantalla visitada |
+| Doce pantallas en escritorio | `horario`, `faltas`, `agenda`, `calendario`, `compartir`, `semestres`, `social`, `mensajes`, `perfil`, `mensajes` con hilo | Todas dentro de la barra, con ancho ensanchado y sin desbordar |
+| Barra ausente por debajo de `lg` | Captura a 900px (tableta) | Sin barra; cabecera de usuario y rejilla "Ir a" completas, igual que antes de la fase |
+| Móvil sin cambios (390px) | Captura del inicio y de tres pantallas | Idéntico al comportamiento previo a la fase: sin barra, columna única |
+| `semestres` con su nuevo contenedor | Captura a 1440px | Contenido centrado con ancho máximo, ya no estirado a todo el ancho |
+| Consola del navegador | `console --errors` en cada navegación | Sin errores de JavaScript |
+
+---
 
 #### Fase 13 — Identidad visual: logo e iconos · cerrada el 2026-08-20
 
@@ -1924,7 +1994,7 @@ tamaño real, y en la pantalla de entrada de los dos clientes.
 
 ---
 
-### Fase 14 — La web en pantalla grande · P1
+### Fase 14 — La web en pantalla grande · P1 ✅ *(cerrada el 2026-08-20)*
 
 **Síntoma**: en una laptop o un escritorio la web se ve igual que en el teléfono, con todo el
 contenido en una columna estrecha y el resto de la pantalla vacío.

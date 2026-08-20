@@ -73,7 +73,7 @@ function Social() {
   const pendientes = pendingRequestsSummary(profile?.pendingRequestCount ?? 0);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl lg:max-w-5xl lg:px-nc-2xl">
       <ScreenHeader
         title="Perfil y contactos"
         back={{ href: '/', label: 'Inicio' }}
