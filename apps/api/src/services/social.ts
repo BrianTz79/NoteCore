@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
 import {
   areConnected,
   canSeeProfileDetails,
@@ -675,6 +675,63 @@ export async function listUserPosts(
     .orderBy(desc(posts.createdAt));
 
   return rows.map((row) => toPost(row, user, viewerId, viewpoint));
+}
+
+/**
+ * El muro: lo que han publicado tus contactos aceptados, más lo tuyo (Fase 15).
+ *
+ * **Por qué se apoya en `listContacts` en vez de consultar `contacts` por su cuenta**: quién
+ * cuenta como contacto aceptado —y, sobre todo, que un bloqueo saque a alguien de esa lista—
+ * ya está resuelto ahí. Repetir el `WHERE` aquí crearía una segunda definición de "contacto"
+ * que envejecería sola, y la forma en que se rompería es la peor de todas: alguien a quien
+ * bloqueaste siguiendo en tu muro.
+ *
+ * La visibilidad se comprueba **por autor** con `canSeeProfileDetails`, la misma función que
+ * usan el perfil y `listUserPosts`. Un contacto aceptado la pasa siempre, pero comprobarlo
+ * igualmente es lo que mantiene una sola regla en el proyecto: si mañana cambia lo que
+ * "aceptada" permite ver, cambia en un sitio y el muro obedece sin tocarlo.
+ */
+export async function listFeed(userId: string): Promise<readonly Post[]> {
+  const self = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!self) throw errors.noEncontrado('No se encontró tu cuenta.');
+
+  const { aceptados } = await listContacts(userId);
+
+  // Los autores de los que se leerá: los contactos aceptados que superan su propia
+  // visibilidad, más uno mismo.
+  const autores = new Map<string, { user: UserRow; viewpoint: ContactViewpoint }>();
+
+  if (aceptados.length > 0) {
+    const rows = await db
+      .select()
+      .from(users)
+      .where(inArray(users.id, aceptados.map((c) => c.user.id)));
+
+    for (const row of rows) {
+      const visible = canSeeProfileDetails(
+        row.profileVisibility as ProfileVisibility,
+        'aceptada',
+        false,
+      );
+      if (visible) autores.set(row.id, { user: row, viewpoint: 'aceptada' });
+    }
+  }
+
+  autores.set(self.id, { user: self, viewpoint: 'ninguna' });
+
+  const rows = await db
+    .select()
+    .from(posts)
+    .where(inArray(posts.userId, [...autores.keys()]))
+    .orderBy(desc(posts.createdAt));
+
+  return rows.flatMap((row) => {
+    const autor = autores.get(row.userId);
+    // No debería faltar —el `WHERE` sale de las mismas claves—, pero si faltara, omitir la
+    // publicación es lo correcto: nunca se manda algo cuyo permiso no se pudo comprobar.
+    if (!autor) return [];
+    return [toPost(row, autor.user, userId, autor.viewpoint)];
+  });
 }
 
 /** Publica algo en el perfil propio. */

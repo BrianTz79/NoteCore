@@ -36,6 +36,8 @@ export const SOCIAL_ROUTES = {
   block: '/social/contacts/block',
   /** Una relación concreta, para responder o bloquear. */
   contactById: (id: string) => `/social/contacts/${id}`,
+  /** El muro: publicaciones de los contactos aceptados y las propias (Fase 15). */
+  feed: '/social/feed',
   /** Publicaciones propias: lista y alta. */
   posts: '/social/posts',
   postById: (id: string) => `/social/posts/${id}`,
@@ -84,6 +86,16 @@ export function createSocialApi(client: ApiClient) {
     /** Las publicaciones de alguien, si su visibilidad lo permite. */
     getUserPosts(username: string): Promise<readonly Post[]> {
       return client.get<readonly Post[]>(SOCIAL_ROUTES.postsByUsername(username));
+    },
+
+    /**
+     * El muro: lo publicado por los contactos aceptados, más lo propio (Fase 15).
+     *
+     * Llega ya filtrado por el servidor. El cliente no recorta nada: si una publicación no
+     * debe verse, no viaja.
+     */
+    getFeed(): Promise<readonly Post[]> {
+      return client.get<readonly Post[]>(SOCIAL_ROUTES.feed);
     },
 
     /** Las cuatro listas: aceptados, recibidas, enviadas y bloqueados. */

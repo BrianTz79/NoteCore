@@ -44,10 +44,19 @@ export default function SocialPage() {
   );
 }
 
-type Pestana = 'perfil' | 'buscar' | 'contactos' | 'publicaciones';
+/**
+ * Las cuatro secciones de la Fase 15.
+ *
+ * Antes eran «perfil / buscar / contactos / publicaciones», y el problema no era el número
+ * sino el reparto: «perfil» mezclaba tu tarjeta pública con el formulario de ajustes, y
+ * «publicaciones» solo enseñaba las tuyas, así que no había forma de leer a nadie más.
+ * Ahora el perfil se mira, los ajustes se editan, la búsqueda vive con los contactos —que
+ * es donde se usa— y el muro es una sección de pleno derecho.
+ */
+type Pestana = 'muro' | 'perfil' | 'contactos' | 'ajustes';
 
 function Social() {
-  const [pestana, setPestana] = useState<Pestana>('perfil');
+  const [pestana, setPestana] = useState<Pestana>('muro');
   const [profile, setProfile] = useState<OwnProfile | null>(null);
   const [listas, setListas] = useState<ContactLists | null>(null);
   const [error, setError] = useState<string | undefined>();
@@ -75,7 +84,7 @@ function Social() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl lg:max-w-5xl lg:px-nc-2xl">
       <ScreenHeader
-        title="Perfil y contactos"
+        title="Social"
         back={{ href: '/', label: 'Inicio' }}
       />
       {pendientes ? (
@@ -92,10 +101,10 @@ function Social() {
       <nav className="flex flex-wrap gap-nc-xs">
         {(
           [
+            ['muro', 'Muro'],
             ['perfil', 'Mi perfil'],
-            ['buscar', 'Buscar'],
             ['contactos', 'Contactos'],
-            ['publicaciones', 'Publicaciones'],
+            ['ajustes', 'Ajustes'],
           ] as const
         ).map(([clave, etiqueta]) => (
           <button
@@ -117,21 +126,29 @@ function Social() {
         ))}
       </nav>
 
-      {pestana === 'perfil' ? (
-        <PerfilPropio profile={profile} onGuardado={cargar} />
-      ) : null}
-      {pestana === 'buscar' ? <Buscador onCambio={cargar} /> : null}
+      {pestana === 'muro' ? <Muro onCambio={cargar} /> : null}
+      {pestana === 'perfil' ? <MiPerfil profile={profile} onCambio={cargar} /> : null}
       {pestana === 'contactos' ? (
-        <Contactos listas={listas} onCambio={cargar} />
+        <div className="space-y-nc-lg">
+          <Buscador onCambio={cargar} />
+          <Contactos listas={listas} onCambio={cargar} />
+        </div>
       ) : null}
-      {pestana === 'publicaciones' ? <Publicaciones onCambio={cargar} /> : null}
+      {pestana === 'ajustes' ? <AjustesPerfil profile={profile} onGuardado={cargar} /> : null}
     </main>
   );
 }
 
-/* ─────────────────────────── Perfil propio ─────────────────────────── */
+/* ─────────────────────────── Ajustes del perfil ─────────────────────────── */
 
-function PerfilPropio({
+/**
+ * Los ajustes: biografía, carrera, escuela, edad y visibilidad (FR-045).
+ *
+ * Es configuración, y por eso vive aparte de `MiPerfil`. Mezclar el formulario con la
+ * tarjeta pública era lo que impedía entender cualquiera de los dos: nunca quedaba claro si
+ * lo que se veía era lo que ven los demás o lo que estabas editando.
+ */
+function AjustesPerfil({
   profile,
   onGuardado,
 }: {
@@ -146,7 +163,6 @@ function PerfilPropio({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [guardado, setGuardado] = useState(false);
-  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -285,12 +301,99 @@ function PerfilPropio({
         </div>
       </Card>
 
-      <Card title="Tu enlace y tu QR de perfil">
-        <p className="text-sm text-tinta2">
-          Compártelo para que te agreguen sin tener que buscarte.
+    </div>
+  );
+}
+
+/* ─────────────────────────── Mi perfil ─────────────────────────── */
+
+/**
+ * El perfil propio tal como lo ven los demás (Fase 15).
+ *
+ * Solo se mira: para cambiar algo está la pestaña de ajustes. Los campos vacíos se dicen
+ * como vacíos en lugar de desaparecer, porque un hueco silencioso se lee como "no se pudo
+ * cargar" y no como "esto no lo has llenado".
+ */
+function MiPerfil({
+  profile,
+  onCambio,
+}: {
+  profile: OwnProfile | null;
+  onCambio: () => Promise<void>;
+}) {
+  const [copiado, setCopiado] = useState(false);
+  const [posts, setPosts] = useState<readonly Post[] | null>(null);
+  const [error, setError] = useState<string | undefined>();
+
+  const cargar = useCallback(async () => {
+    try {
+      setPosts(await socialApi.listPosts());
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError ? caught.message : 'No se pudieron cargar tus publicaciones.',
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
+
+  if (!profile) return <Card>Cargando…</Card>;
+
+  async function borrar(id: string) {
+    try {
+      await socialApi.deletePost(id);
+      await cargar();
+      await onCambio();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo borrar.');
+    }
+  }
+
+  return (
+    <div className="space-y-nc-lg">
+      <Card title="Cómo te ven">
+        <p data-testid="mi-nombre" className="text-lg font-medium text-tinta">
+          {profile.displayName}
+        </p>
+        <p data-testid="mi-usuario" className="text-tinta2">
+          @{profile.username}
         </p>
         <p data-testid="resumen-conteos" className="text-tinta2">
           {profileCountsSummary(profile.contactCount, profile.postCount)}
+        </p>
+
+        <dl className="space-y-nc-xs">
+          {(
+            [
+              ['Biografía', profile.bio],
+              ['Carrera', profile.career],
+              ['Escuela', profile.school],
+              ['Edad', profile.age === null ? null : String(profile.age)],
+            ] as const
+          ).map(([etiqueta, valor]) => (
+            <div key={etiqueta} className="space-y-nc-2xs">
+              <dt className="text-sm font-medium text-tinta2">{etiqueta}</dt>
+              <dd className="whitespace-pre-wrap text-tinta">
+                {valor && valor.trim() !== '' ? (
+                  valor
+                ) : (
+                  <span className="text-tinta3">Sin llenar</span>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <p className="text-sm text-tinta3">
+          {PROFILE_VISIBILITY_HINTS[profile.visibility]}
+        </p>
+      </Card>
+
+      <Card title="Tu enlace y tu QR de perfil">
+        <p className="text-sm text-tinta2">
+          Compártelo para que te agreguen sin tener que buscarte.
         </p>
 
         <div className="flex flex-col items-start gap-nc-md sm:flex-row sm:items-center">
@@ -299,9 +402,6 @@ function PerfilPropio({
           </div>
           <div className="space-y-nc-xs">
             <p className="text-sm text-tinta2">Tu @usuario</p>
-            <p data-testid="mi-usuario" className="text-lg font-medium text-tinta">
-              @{profile.username}
-            </p>
             <p data-testid="mi-enlace" className="break-all text-sm text-tinta2">
               {profile.url}
             </p>
@@ -317,6 +417,41 @@ function PerfilPropio({
           </div>
         </div>
       </Card>
+
+      <FormError message={error} />
+
+      {posts === null ? (
+        <Card>Cargando…</Card>
+      ) : posts.length === 0 ? (
+        <Card>
+          <p data-testid="sin-publicaciones" className="text-tinta2">
+            Todavía no has publicado nada.
+          </p>
+        </Card>
+      ) : (
+        <Card title={`Tus publicaciones (${posts.length})`}>
+          <ul className="space-y-nc-sm" data-testid="lista-publicaciones">
+            {posts.map((post) => (
+              <li
+                key={post.id}
+                className="space-y-nc-xs rounded-lg border border-filete bg-papel2 p-nc-sm"
+              >
+                <p className="whitespace-pre-wrap text-tinta">{post.text}</p>
+                <div className="flex items-center justify-between gap-nc-sm">
+                  <span className="text-sm text-tinta3">{relativeTime(post.createdAt)}</span>
+                  <Button
+                    variant="secondary"
+                    data-testid={`borrar-post-${post.id}`}
+                    onClick={() => void borrar(post.id)}
+                  >
+                    Borrar
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </div>
   );
 }
@@ -575,9 +710,15 @@ function FilaContacto({
   );
 }
 
-/* ─────────────────────────── Publicaciones ─────────────────────────── */
+/* ─────────────────────────── Muro ─────────────────────────── */
 
-function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
+/**
+ * El muro: lo de tus contactos aceptados y lo tuyo, en orden (Fase 15).
+ *
+ * Principio II: aquí no se filtra nada. Lo que la visibilidad de alguien no permite ver no
+ * llega en la respuesta, así que la pantalla puede pintar todo lo que recibe.
+ */
+function Muro({ onCambio }: { onCambio: () => Promise<void> }) {
   const [posts, setPosts] = useState<readonly Post[] | null>(null);
   const [texto, setTexto] = useState('');
   const [publicando, setPublicando] = useState(false);
@@ -585,11 +726,9 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
 
   const cargar = useCallback(async () => {
     try {
-      setPosts(await socialApi.listPosts());
+      setPosts(await socialApi.getFeed());
     } catch (caught) {
-      setError(
-        caught instanceof ApiError ? caught.message : 'No se pudieron cargar tus publicaciones.',
-      );
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo cargar el muro.');
     }
   }, []);
 
@@ -654,28 +793,48 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
         <Card>Cargando…</Card>
       ) : posts.length === 0 ? (
         <Card>
-          <p data-testid="sin-publicaciones" className="text-tinta2">
-            Todavía no has publicado nada.
+          <p data-testid="muro-vacio" className="text-tinta2">
+            Aquí aparecerá lo que publiquen tus contactos. Todavía no hay nada.
           </p>
         </Card>
       ) : (
-        <Card title={`Tus publicaciones (${posts.length})`}>
-          <ul className="space-y-nc-sm" data-testid="lista-publicaciones">
+        <Card title={`Publicaciones (${posts.length})`}>
+          <ul className="space-y-nc-sm" data-testid="lista-muro">
             {posts.map((post) => (
               <li
                 key={post.id}
                 className="space-y-nc-xs rounded-lg border border-filete bg-papel2 p-nc-sm"
               >
+                <div className="flex flex-wrap items-baseline gap-nc-xs">
+                  <Link
+                    href={`/u/${post.author.username}`}
+                    className="font-medium text-tinta hover:text-acento"
+                  >
+                    {post.author.displayName}
+                  </Link>
+                  <span className="text-sm text-tinta3">@{post.author.username}</span>
+                  {post.isOwn ? (
+                    <span className="rounded-full bg-acento/10 px-nc-xs text-sm text-foco">
+                      Tú
+                    </span>
+                  ) : null}
+                </div>
+
                 <p className="whitespace-pre-wrap text-tinta">{post.text}</p>
+
                 <div className="flex items-center justify-between gap-nc-sm">
                   <span className="text-sm text-tinta3">{relativeTime(post.createdAt)}</span>
-                  <Button
-                    variant="secondary"
-                    data-testid={`borrar-post-${post.id}`}
-                    onClick={() => void borrar(post.id)}
-                  >
-                    Borrar
-                  </Button>
+                  {/* Solo lo propio se puede borrar. El servidor lo comprueba igual: que el
+                      botón no se pinte es comodidad, no la medida (Principio III). */}
+                  {post.isOwn ? (
+                    <Button
+                      variant="secondary"
+                      data-testid={`borrar-post-${post.id}`}
+                      onClick={() => void borrar(post.id)}
+                    >
+                      Borrar
+                    </Button>
+                  ) : null}
                 </div>
               </li>
             ))}

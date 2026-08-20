@@ -51,7 +51,14 @@ import { QrScanner } from '../components/qr-scanner';
  * enseña lo dice `detailsVisible`, ambos resueltos por el servidor.
  */
 
-type Pestana = 'perfil' | 'buscar' | 'contactos' | 'publicaciones';
+/**
+ * Las cuatro secciones de la Fase 15.
+ *
+ * El reparto anterior —perfil / buscar / contactos / publicaciones— escondía dos cosas: el
+ * perfil propio mezclado con su formulario de ajustes, y ningún sitio donde leer lo que
+ * publican los demás. La búsqueda se mudó dentro de «Contactos», que es donde se usa.
+ */
+type Pestana = 'muro' | 'perfil' | 'contactos' | 'ajustes';
 
 export function SocialScreen({
   onVolver,
@@ -61,7 +68,7 @@ export function SocialScreen({
   /** Abre la conversación con esta persona (Fase 10). */
   onEscribirA: (username: string) => void;
 }) {
-  const [pestana, setPestana] = useState<Pestana>('perfil');
+  const [pestana, setPestana] = useState<Pestana>('muro');
   const [profile, setProfile] = useState<OwnProfile | null>(null);
   const [listas, setListas] = useState<ContactLists | null>(null);
   const [error, setError] = useState<string | undefined>();
@@ -85,7 +92,7 @@ export function SocialScreen({
         void cargar();
       },
     },
-    { cuando: pestana !== 'perfil', hacer: () => setPestana('perfil') },
+    { cuando: pestana !== 'muro', hacer: () => setPestana('muro') },
     { cuando: true, hacer: onVolver },
   ]);
 
@@ -125,7 +132,7 @@ export function SocialScreen({
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
       <ScreenHeader
-        title="Perfil y contactos"
+        title="Social"
         onBack={onVolver}
       />
 
@@ -140,10 +147,10 @@ export function SocialScreen({
       <View style={styles.pestanas}>
         {(
           [
+            ['muro', 'Muro'],
             ['perfil', 'Mi perfil'],
-            ['buscar', 'Buscar'],
             ['contactos', 'Contactos'],
-            ['publicaciones', 'Publicaciones'],
+            ['ajustes', 'Ajustes'],
           ] as const
         ).map(([clave, etiqueta]) => (
           <Pressable
@@ -167,23 +174,33 @@ export function SocialScreen({
         ))}
       </View>
 
-      {pestana === 'perfil' ? (
-        <PerfilPropio profile={profile} onGuardado={cargar} />
+      {pestana === 'muro' ? (
+        <Muro onCambio={cargar} onAbrirPerfil={setVerPerfil} />
       ) : null}
-      {pestana === 'buscar' ? (
-        <Buscador onCambio={cargar} onAbrirPerfil={setVerPerfil} />
-      ) : null}
+      {pestana === 'perfil' ? <MiPerfil profile={profile} onCambio={cargar} /> : null}
       {pestana === 'contactos' ? (
-        <Contactos listas={listas} onCambio={cargar} onAbrirPerfil={setVerPerfil} />
+        <>
+          <Buscador onCambio={cargar} onAbrirPerfil={setVerPerfil} />
+          <Contactos listas={listas} onCambio={cargar} onAbrirPerfil={setVerPerfil} />
+        </>
       ) : null}
-      {pestana === 'publicaciones' ? <Publicaciones onCambio={cargar} /> : null}
+      {pestana === 'ajustes' ? (
+        <AjustesPerfil profile={profile} onGuardado={cargar} />
+      ) : null}
     </ScrollView>
   );
 }
 
-/* ─────────────────────────── Perfil propio ─────────────────────────── */
+/* ─────────────────────────── Ajustes del perfil ─────────────────────────── */
 
-function PerfilPropio({
+/**
+ * Los ajustes: biografía, carrera, escuela, edad y visibilidad (FR-045).
+ *
+ * Separado de `MiPerfil` por lo mismo que en la web: es configuración, y mezclarla con la
+ * tarjeta pública impedía entender si lo que se veía era lo que ven los demás o un
+ * formulario a medio llenar.
+ */
+function AjustesPerfil({
   profile,
   onGuardado,
 }: {
@@ -198,7 +215,6 @@ function PerfilPropio({
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [guardado, setGuardado] = useState(false);
-  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -296,19 +312,100 @@ function PerfilPropio({
         {guardado ? <Text style={styles.exito}>Guardado</Text> : null}
       </Card>
 
+    </View>
+  );
+}
+
+/* ─────────────────────────── Mi perfil ─────────────────────────── */
+
+/**
+ * El perfil propio tal como lo ven los demás (Fase 15).
+ *
+ * Solo se mira; editar es cosa de la pestaña de ajustes. Los campos sin llenar lo dicen en
+ * vez de desaparecer: un hueco callado se lee como un fallo de carga.
+ */
+function MiPerfil({
+  profile,
+  onCambio,
+}: {
+  profile: OwnProfile | null;
+  onCambio: () => Promise<void>;
+}) {
+  const [copiado, setCopiado] = useState(false);
+  const [posts, setPosts] = useState<readonly Post[] | null>(null);
+  const [error, setError] = useState<string | undefined>();
+
+  const cargar = useCallback(async () => {
+    try {
+      setPosts(await socialApi.listPosts());
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError ? caught.message : 'No se pudieron cargar tus publicaciones.',
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargar();
+  }, [cargar]);
+
+  if (!profile) {
+    return (
+      <Card>
+        <Text style={styles.texto}>Cargando…</Text>
+      </Card>
+    );
+  }
+
+  async function borrar(id: string) {
+    try {
+      await socialApi.deletePost(id);
+      await cargar();
+      await onCambio();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo borrar.');
+    }
+  }
+
+  const datos = [
+    ['Biografía', profile.bio],
+    ['Carrera', profile.career],
+    ['Escuela', profile.school],
+    ['Edad', profile.age === null ? null : String(profile.age)],
+  ] as const;
+
+  return (
+    <View style={styles.seccion}>
+      <Card title="Cómo te ven">
+        <Text style={styles.usuario}>{profile.displayName}</Text>
+        <Text style={styles.filaUsuario}>@{profile.username}</Text>
+        <Text style={styles.textoSuave}>
+          {profileCountsSummary(profile.contactCount, profile.postCount)}
+        </Text>
+
+        {datos.map(([etiqueta, valor]) => (
+          <View key={etiqueta} style={styles.campo}>
+            <Text style={styles.etiqueta}>{etiqueta}</Text>
+            {valor && valor.trim() !== '' ? (
+              <Text style={styles.texto}>{valor}</Text>
+            ) : (
+              <Text style={styles.contador}>Sin llenar</Text>
+            )}
+          </View>
+        ))}
+
+        <Text style={styles.opcionTexto}>{PROFILE_VISIBILITY_HINTS[profile.visibility]}</Text>
+      </Card>
+
       <Card title="Tu enlace y tu QR de perfil">
         <Text style={styles.textoSuave}>
           Compártelo para que te agreguen sin tener que buscarte.
-        </Text>
-        <Text style={styles.texto}>
-          {profileCountsSummary(profile.contactCount, profile.postCount)}
         </Text>
 
         <View style={styles.qrCentro}>
           <QrCode value={profile.url} size={180} />
         </View>
 
-        <Text style={styles.usuario}>@{profile.username}</Text>
         <Text style={styles.enlace}>{profile.url}</Text>
 
         <Button
@@ -320,6 +417,28 @@ function PerfilPropio({
           }}
         />
       </Card>
+
+      <FormError message={error} />
+
+      {posts === null ? (
+        <Card>
+          <Text style={styles.texto}>Cargando…</Text>
+        </Card>
+      ) : posts.length === 0 ? (
+        <Card>
+          <Text style={styles.textoSuave}>Todavía no has publicado nada.</Text>
+        </Card>
+      ) : (
+        <Card title={`Tus publicaciones (${posts.length})`}>
+          {posts.map((post) => (
+            <View key={post.id} style={styles.publicacion}>
+              <Text style={styles.texto}>{post.text}</Text>
+              <Text style={styles.contador}>{relativeTime(post.createdAt)}</Text>
+              <Button title="Borrar" variant="secondary" onPress={() => void borrar(post.id)} />
+            </View>
+          ))}
+        </Card>
+      )}
     </View>
   );
 }
@@ -804,9 +923,21 @@ function PerfilAjeno({
   );
 }
 
-/* ─────────────────────────── Publicaciones ─────────────────────────── */
+/* ─────────────────────────── Muro ─────────────────────────── */
 
-function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
+/**
+ * El muro: lo de tus contactos aceptados y lo tuyo, en orden (Fase 15).
+ *
+ * Principio II: la pantalla no filtra. Lo que la visibilidad de alguien no permite ver no
+ * viaja en la respuesta, así que se pinta todo lo que llega.
+ */
+function Muro({
+  onCambio,
+  onAbrirPerfil,
+}: {
+  onCambio: () => Promise<void>;
+  onAbrirPerfil: (username: string) => void;
+}) {
   const [posts, setPosts] = useState<readonly Post[] | null>(null);
   const [texto, setTexto] = useState('');
   const [publicando, setPublicando] = useState(false);
@@ -814,11 +945,9 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
 
   const cargar = useCallback(async () => {
     try {
-      setPosts(await socialApi.listPosts());
+      setPosts(await socialApi.getFeed());
     } catch (caught) {
-      setError(
-        caught instanceof ApiError ? caught.message : 'No se pudieron cargar tus publicaciones.',
-      );
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo cargar el muro.');
     }
   }, []);
 
@@ -884,15 +1013,30 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
         </Card>
       ) : posts.length === 0 ? (
         <Card>
-          <Text style={styles.textoSuave}>Todavía no has publicado nada.</Text>
+          <Text style={styles.textoSuave}>
+            Aquí aparecerá lo que publiquen tus contactos. Todavía no hay nada.
+          </Text>
         </Card>
       ) : (
-        <Card title={`Tus publicaciones (${posts.length})`}>
+        <Card title={`Publicaciones (${posts.length})`}>
           {posts.map((post) => (
             <View key={post.id} style={styles.publicacion}>
+              <Pressable onPress={() => onAbrirPerfil(post.author.username)} hitSlop={4}>
+                <Text style={styles.filaNombre}>
+                  {post.author.displayName}
+                  {post.isOwn ? ' · Tú' : ''}
+                </Text>
+                <Text style={styles.filaUsuario}>@{post.author.username}</Text>
+              </Pressable>
+
               <Text style={styles.texto}>{post.text}</Text>
               <Text style={styles.contador}>{relativeTime(post.createdAt)}</Text>
-              <Button title="Borrar" variant="secondary" onPress={() => void borrar(post.id)} />
+
+              {/* Solo lo propio se borra. El servidor lo comprueba igual: que el botón no se
+                  pinte es comodidad, no la medida (Principio III). */}
+              {post.isOwn ? (
+                <Button title="Borrar" variant="secondary" onPress={() => void borrar(post.id)} />
+              ) : null}
             </View>
           ))}
         </Card>

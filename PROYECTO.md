@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 14 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 15 cerrada y verificada)
 
 ---
 
@@ -34,7 +34,7 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 14 cerrada** el 2026-08-20. Quedan **cuatro fases** (15 a 18); la siguiente por prioridad es la [15](#fase-15--social-en-secciones-propias--p2) (P2), o la [18](#fase-18--cuatrimestres-además-de-semestres--p2) si pesa más el cuatrimestre |
+| **Fase actual** | Ninguna en curso. **Fase 15 cerrada** el 2026-08-20. Quedan **tres fases** (16, 17 y 18); la siguiente por prioridad es la [18](#fase-18--cuatrimestres-además-de-semestres--p2) (P2), y luego la [16](#fase-16--widgets-familia-y-densidad--p3) y la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) (P3) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
@@ -127,6 +127,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   la lista de nueve secciones pasó a un solo archivo compartido entre la barra y la rejilla del
   inicio, para que las dos no puedan divergir
 
+- **Fase 15 cerrada**: la sección social partida en **Muro, Mi perfil, Contactos y Ajustes**, en
+  app y web. Medir antes de empezar cambió el tamaño de la fase: estaba escrita como una
+  reorganización, pero el **muro no existía** —`GET /social/posts` devolvía solo las propias—, así
+  que hubo que construirlo en la API. Se apoya en `listContacts` en vez de consultar `contacts`
+  por su cuenta, para que un bloqueo saque a alguien del muro sin que haya dos definiciones de
+  "contacto" que puedan divergir; verificado con tres cuentas contra la API real, incluido que lo
+  que la visibilidad no permite **no viaja en la respuesta**
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -137,17 +145,24 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
 escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-**Las fases 12, 13 y 14 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
+**Las fases 12 a 15 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
 `WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
 formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada; la 14 le dio
-a la web una barra lateral de escritorio y ensanchó las doce pantallas. El APK de la 13 se
-recompiló, se firmó con la clave de siempre y quedó en `_apk/` —la 14 no toca la app, así que no
-generó un APK nuevo—. El detalle de cada una está en el historial:
+a la web una barra lateral de escritorio y ensanchó las doce pantallas; la 15 partió la sección
+social en Muro, Mi perfil, Contactos y Ajustes, y construyó el muro, que no existía. El APK se
+recompiló para la 15, firmado con la clave de siempre. El detalle de cada una está en el historial:
 [Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
 [Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20),
-[Fase 14](#fase-14--la-web-en-pantalla-grande--cerrada-el-2026-08-20).
+[Fase 14](#fase-14--la-web-en-pantalla-grande--cerrada-el-2026-08-20),
+[Fase 15](#fase-15--social-en-secciones-propias--cerrada-el-2026-08-20).
 
-**Quedan cuatro fases, 15 a 18, y pueden ir en el orden que se prefiera** —de ellas, la
+**Cerrar una fase no la despliega.** La web sirve una imagen de Docker: mientras no se
+reconstruya (`docker compose --env-file .env -f infra/docker-compose.yml build web && … up -d
+web`), producción muestra el código anterior aunque el commit ya esté en `main`. Pasó con las
+fases 13 y 14, y el síntoma —«la página no la veo cambiada»— parece caché del navegador y no lo
+es.
+
+**Quedan tres fases, 16 a 18, y pueden ir en el orden que se prefiera** —de ellas, la
 **18 (cuatrimestres)** es la que más se nota si quien usa NoteCore no cursa por semestres—.
 
 ---
@@ -174,7 +189,7 @@ generó un APK nuevo—. El detalle de cada una está en el historial:
 | 12 | Arreglos de producción | **P0** | ✅ | ✅ | ✅ | ✅ |
 | 13 | Identidad visual: logo e iconos | P2 | ✅ | — | ✅ | ✅ |
 | 14 | La web en pantalla grande | P1 | ✅ | — | ✅ | — |
-| 15 | Social en secciones propias | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 15 | Social en secciones propias | P2 | ✅ | ✅ | ✅ | ✅ |
 | 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
 | 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
 | 18 | Cuatrimestres además de semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -195,6 +210,59 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 15 — Social en secciones propias · cerrada el 2026-08-20
+
+**Entregado**: las cuatro secciones pedidas —**Muro, Mi perfil, Contactos y Ajustes**— en app y
+web, y el muro de publicaciones, que **no existía**.
+
+**Lo que se midió antes de escribir código cambió el tamaño de la fase.** La fase estaba escrita
+como una reorganización de pantallas, pero `GET /social/posts` devolvía `listOwnPosts`: solo las
+propias. **No había ninguna consulta que trajera las de los contactos**, así que el muro era
+backend nuevo, no un reparto distinto de lo que ya había. Las otras tres secciones sí eran
+partir las 989 + 687 líneas existentes.
+
+**El muro se apoya en `listContacts`, no consulta `contacts` por su cuenta.** Quién cuenta como
+contacto aceptado —y en particular que un bloqueo saque a alguien de esa lista— ya estaba
+resuelto ahí. Un `WHERE` propio habría creado una segunda definición de "contacto" que
+envejecería sola, y la forma de romperse habría sido la peor posible: **alguien a quien
+bloqueaste siguiendo en tu muro**. La visibilidad se comprueba además por autor con
+`canSeeProfileDetails`, la misma función del perfil y de `listUserPosts`.
+
+**«Mi perfil» y «Ajustes» se separaron porque mezclados no se entendía ninguno.** La tarjeta
+pública y el formulario de edición vivían en el mismo componente, y nunca quedaba claro si lo
+que se veía era lo que ven los demás o algo a medio editar. Ahora el perfil se mira —con los
+campos vacíos diciendo «Sin llenar», porque un hueco callado se lee como un fallo de carga— y
+los ajustes se editan.
+
+**La búsqueda se mudó dentro de «Contactos»**, que es donde se usa: buscar a alguien es un paso
+de agregarlo, no una sección aparte.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Pestañas dentro de Contactos, no cuatro botones en el inicio | Es cambio de contenido: no toca la navegación general, y el inicio se habría ido de 9 a 12 secciones |
+| El muro trae contactos aceptados **más lo propio** | Si lo propio no apareciera, publicar algo y no verlo se lee como que no se guardó |
+| El botón «Borrar» solo se pinta en lo propio | Comodidad de interfaz. El servidor lo comprueba igual: el `WHERE` de `deletePost` lleva el `userId` (Principio III) |
+| Pestaña de inicio: Muro | Es lo que cambia entre visitas; el perfil propio casi nunca cambia |
+
+**Ojo con esto para la próxima**: el `assembleRelease` a secas incrustó `http://localhost:3101`
+en el APK y la app no conectaba con nada —la receta de la Fase 12 ya lo advertía y no se
+siguió—. Hay que pasar `EXPO_PUBLIC_API_URL` **y** `--rerun-tasks`, y comprobarlo en el bundle:
+`grep -ao "notecore-api.ourocore.net" .../index.android.bundle`.
+
+**Verificación (2026-08-20)**:
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| El muro trae contactos aceptados y lo propio | Tres cuentas contra la API real | Llegan las dos, en orden |
+| Lo que la visibilidad no permite **no viaja** | Cuenta con perfil «solo contactos», sin relación | **Ausente de la respuesta**, no oculta en el cliente |
+| Un bloqueo saca del muro | Aceptar, leer el muro, bloquear, releer | `['POST_DE_LUIS']` → `[]` |
+| Las cuatro secciones en la app | APK de release en el emulador | Muro, Mi perfil, Contactos y Ajustes |
+| Las cuatro secciones en la web | Sesión real en el navegador | `["Muro","Mi perfil","Contactos","Ajustes"]` |
+| Borrar solo lo propio | Muro con dos autores | «Borrar» solo bajo la publicación propia |
+| Atrás sigue deshaciendo un paso | Ajustes → atrás → Muro → atrás → Inicio | Un paso cada vez, sin cerrar la app |
 
 #### Fase 14 — La web en pantalla grande · cerrada el 2026-08-20
 
@@ -2018,7 +2086,13 @@ se toca.
 
 ---
 
-### Fase 15 — Social en secciones propias · P2
+### Fase 15 — Social en secciones propias · P2 ✅ *(cerrada el 2026-08-20)*
+
+> **Nota al cerrarla**: lo de abajo es la especificación tal como se escribió. Al medir antes de
+> empezar apareció algo que la cambiaba de tamaño: **el muro no existía en la API** —`GET
+> /social/posts` devolvía solo las propias—, así que no fue una reorganización sino backend
+> nuevo. El detalle de lo entregado está en
+> [el historial](#fase-15--social-en-secciones-propias--cerrada-el-2026-08-20).
 
 **Síntoma**: el botón se llama «Contactos» pero dentro está todo: tu perfil, la búsqueda, las
 solicitudes, los perfiles ajenos y las publicaciones. No se encuentra el perfil propio, y no

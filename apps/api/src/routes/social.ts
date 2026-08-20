@@ -139,6 +139,16 @@ export const socialRoutes: FastifyPluginAsync = async (app) => {
 
   /* ─────────────────── Publicaciones ─────────────────── */
 
+  /**
+   * El muro: lo de los contactos aceptados y lo propio (Fase 15).
+   *
+   * Se declara **antes** que `/social/posts` a propósito: son rutas hermanas y conviene
+   * leerlas juntas. El filtrado por visibilidad lo hace el servicio, nunca el cliente.
+   */
+  app.get(SOCIAL_ROUTES.feed, { preHandler: requireAuth }, async (request) => {
+    return social.listFeed(authOf(request).userId);
+  });
+
   /** Las publicaciones propias. */
   app.get(SOCIAL_ROUTES.posts, { preHandler: requireAuth }, async (request) => {
     return social.listOwnPosts(authOf(request).userId);
