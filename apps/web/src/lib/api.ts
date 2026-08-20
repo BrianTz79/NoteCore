@@ -21,7 +21,31 @@ import {
  * contra XSS—. Por eso `useCookies` va en `true` y los métodos devuelven `null`.
  */
 
+/**
+ * Base de la API para el navegador.
+ *
+ * En producción es una ruta **relativa** (`/api`), servida por el rewrite de
+ * `next.config.mjs` desde el mismo origen que la web. Tiene que ser el mismo origen porque
+ * la sesión son cookies `httpOnly` con `sameSite: lax`, que el navegador no manda en
+ * peticiones cruzadas.
+ */
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3101';
+
+/**
+ * La misma base, pero siempre absoluta.
+ *
+ * `LiveChannel` la convierte en `wss://` cambiando el esquema, y en una ruta relativa no
+ * hay esquema que cambiar: `new WebSocket('/api/...')` lanza. Se resuelve contra el origen
+ * de la página, que es exactamente a donde apunta el rewrite.
+ *
+ * Se calcula en el navegador; durante el render en servidor no hay `location`, y tampoco
+ * hace falta: el canal solo se abre en el cliente.
+ */
+function baseUrlAbsoluta(): string {
+  if (baseUrl.startsWith('http')) return baseUrl;
+  if (typeof window === 'undefined') return baseUrl;
+  return new URL(baseUrl, window.location.origin).toString().replace(/\/+$/, '');
+}
 
 export const apiClient = new ApiClient({
   baseUrl,
@@ -51,4 +75,9 @@ export const messagingApi = createMessagingApi(apiClient);
  * Se exporta porque `LiveChannel` la necesita para derivar su `ws://`, y componerla otra vez
  * en la pantalla dejaría dos sitios donde cambiar el entorno de la API.
  */
-export const apiBaseUrl = baseUrl;
+/**
+ * Se exporta como **función**, no como constante: una constante de módulo se evalúa al
+ * importar, y en Next eso ocurre también durante el render en servidor, donde `window` no
+ * existe y el valor quedaría congelado en la ruta relativa.
+ */
+export const apiBaseUrl = baseUrlAbsoluta;

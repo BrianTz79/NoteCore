@@ -48,6 +48,8 @@ apps/web/AGENTS.md
 .expo/
 .expo-shared/
 *.apk
+# Las sumas de verificación acompañan al binario, y el binario no se sube.
+*.apk.sha256
 *.aab
 # Los keystores nunca se suben: el de release firma la app publicada
 *.keystore

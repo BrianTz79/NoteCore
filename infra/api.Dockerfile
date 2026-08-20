@@ -13,9 +13,11 @@ RUN npm ci
 
 # --- Build ---
 FROM base AS build
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+# npm iza casi todo a la raíz, pero deja en cada workspace lo que no puede subir
+# (una versión en conflicto, o los `.bin` del propio paquete). Copiar el árbol entero
+# con `/app/` en lugar de directorio por directorio evita depender de qué quedó dónde:
+# un `COPY` de una ruta que npm no creó aborta la construcción.
+COPY --from=deps /app/ ./
 COPY package.json tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api

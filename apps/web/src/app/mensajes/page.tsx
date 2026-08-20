@@ -108,7 +108,7 @@ function Mensajes() {
    */
   useEffect(() => {
     const canal = new LiveChannel({
-      baseUrl: apiBaseUrl,
+      baseUrl: apiBaseUrl(),
       // En web el token vive en una cookie `httpOnly` que este código no puede leer: viaja
       // solo en el handshake. Por eso no hay nada que devolver aquí.
       getToken: () => null,

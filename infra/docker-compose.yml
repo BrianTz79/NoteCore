@@ -42,6 +42,12 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET}
+      # Dominio padre compartido por la web y la API: sin esto la cookie de sesión que
+      # pone `api.notecore` no viaja a `notecore`, y la web no reconoce la sesión.
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # URL pública de la web: la base de los enlaces de compartición y de los QR.
+      WEB_URL: ${WEB_URL:-}
     ports:
       - '${API_PORT:-3101}:3101'
     depends_on:
@@ -69,6 +75,23 @@ services:
       - '${WEB_PORT:-3000}:3000'
     depends_on:
       - api
+
+  # Túnel de Cloudflare: publica la web y la API en HTTPS sin abrir un solo puerto
+  # del router. El enrutamiento (qué hostname va a qué servicio) vive en el panel de
+  # Cloudflare, no aquí:
+  #   notecore.ourocore.net      → http://web:3000
+  #   api.notecore.ourocore.net  → http://api:3101
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: notecore-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - api
+      - web
+
 
 volumes:
   postgres_data:

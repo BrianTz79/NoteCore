@@ -17,9 +17,11 @@ ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+# npm iza casi todo a la raíz, pero deja en cada workspace lo que no puede subir
+# (una versión en conflicto, o los `.bin` del propio paquete). Copiar el árbol entero
+# con `/app/` en lugar de directorio por directorio evita depender de qué quedó dónde:
+# un `COPY` de una ruta que npm no creó aborta la construcción.
+COPY --from=deps /app/ ./
 COPY package.json tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web

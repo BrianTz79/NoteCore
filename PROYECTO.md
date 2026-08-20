@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 11 cerrada)
+> Última actualización: **2026-08-20** (desplegado en producción)
 
 ---
 
@@ -35,6 +35,7 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real y **widget de pantalla principal**, sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 (Fase 0 a Fase 11) |
 | **Fase actual** | Ninguna. El plan está completo |
+| **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
@@ -112,10 +113,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 ### Próximo paso
 
-**El plan está completo.** Las doce fases —de la 0 a la 11— están cerradas y verificadas en app y web. Lo que queda
-no es una fase: es lo que el usuario decida hacer con un producto terminado —firmar y distribuir
-el `.apk`, levantar el despliegue detrás del túnel de Cloudflare, o abrirlo a estudiantes reales y
-ver qué piden—.
+**El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
+cerradas y verificadas en app y web. El **2026-08-20** se puso en producción: web y API en HTTPS
+tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la sección 6).
+
+Lo que queda ya no es construcción: subirlo a Play Store —que exige un `.aab`, no un `.apk`,
+además de la ficha de la tienda y la política de privacidad—, o abrirlo a estudiantes reales y
+ver qué piden.
 
 ---
 
@@ -1539,3 +1543,89 @@ subdominios sigue respondiendo y que ya no queda ningún túnel caído.
 - **Repositorio**: https://github.com/BrianTz79/NoteCore
 - **Web**: `notecore.ourocore.net`
 - **Stack**: revisado el 2026-08-16 (ver sección 4.3)
+
+---
+
+## 7. Despliegue en producción (2026-08-20)
+
+### Direcciones
+
+| Qué | Dónde | Notas |
+|---|---|---|
+| Web | `https://notecore.ourocore.net` | Next.js en modo producción |
+| API para la web | `https://notecore.ourocore.net/api/*` | Reescritura de Next hacia `http://api:3101` |
+| API para la app | `https://notecore-api.ourocore.net` | Alcanzada directa, con token por cabecera |
+| Túnel | `NoteCore` = `85a28853-5117-461c-8369-8323c5c0e18d` | 4 conexiones, `healthy` |
+
+Se levanta entero con `npm run docker:up`: PostgreSQL, API, web y `cloudflared`. **No hay
+un solo puerto abierto en el router**: el túnel establece la conexión de salida.
+
+### Por qué la web y la app entran por sitios distintos
+
+No es una inconsistencia, es la consecuencia de cómo se autentica cada una.
+
+La web usa **cookies `httpOnly` con `sameSite: lax`**, y `lax` no manda la cookie en
+peticiones cruzadas. Con la web en un host y la API en otro, cada `fetch` saldría sin
+sesión y no duraría ni una recarga. Por eso la API se sirve **bajo el mismo origen** que la
+web, con un `rewrite` en `next.config.mjs` que reenvía `/api/*` a `http://api:3101` por la
+red interna de Docker: el tráfico web→API no llega a salir a internet.
+
+La app manda el **token por cabecera**: no hay cookie que proteger, así que habla directa
+con `notecore-api.ourocore.net`.
+
+El `LiveChannel` de la mensajería deriva su `wss://` de esa misma base, así que en web se
+resuelve contra el origen de la página —una ruta relativa no tiene esquema que cambiar, y
+`new WebSocket('/api/...')` lanzaría—.
+
+### El hostname de la API es de un solo nivel, y esa es la razón
+
+El primer intento fue `api.notecore.ourocore.net`. **No funciona**: el certificado universal
+de Cloudflare cubre `*.ourocore.net`, pero no un segundo nivel de comodín, y el `curl`
+moría en el handshake TLS —no en un 404, que habría sido más fácil de leer—. Cubrirlo exige
+un certificado avanzado de pago. `notecore-api.ourocore.net` entra en el certificado que ya
+existe y no cuesta nada.
+
+### La firma del APK
+
+El `build.gradle` que genera React Native trae `signingConfig signingConfigs.debug` **dentro
+del bloque `release`**, con un comentario que dice que generes tu propia clave. Si no se
+hace, el APK de producción sale firmado con una clave **que está publicada en el repositorio
+de React Native**: Play Store lo rechaza, y cualquiera podría firmar una actualización que
+el teléfono aceptaría como legítima.
+
+La clave real es un **RSA de 4096 bits con 30 años de validez**, en
+`~/.notecore-release/`, **fuera del repositorio**. Si se pierde, no se puede volver a
+publicar una actualización de la app en Play Store bajo la misma identidad: **hay que
+respaldarla**.
+
+El arreglo vive en `plugins/with-firma-de-release.js` y no en `android/app/build.gradle`
+porque ese directorio está en `.gitignore` y `expo prebuild` lo regenera entero: un cambio a
+mano desaparece en la siguiente compilación limpia, en silencio y justo cuando importa. Si
+faltan las credenciales, el plugin **aborta la compilación** en vez de firmar con la clave de
+depuración.
+
+### Otros arreglos que salieron al desplegar
+
+| Qué estaba mal | Por qué importaba |
+|---|---|
+| Los `Dockerfile` copiaban `node_modules` de cada workspace por separado | npm los iza a la raíz y esos directorios no existen: la construcción **nunca había funcionado**. Ahora se copia el árbol entero |
+| La web no emitía **ninguna** cabecera de seguridad | `helmet` protege la API, pero las páginas las sirve Next. Sin `X-Frame-Options`, NoteCore se podía embeber en un iframe invisible para recoger las pulsaciones del usuario |
+| `JWT_SECRET` no llegaba al contenedor de la API | Estaba en `.env` pero el `docker-compose.yml` no lo pasaba |
+
+### Verificación (2026-08-20)
+
+- Web, API por `/api` y API directa: **HTTP 200 con TLS válido** por internet
+- **Ciclo completo de sesión por cookie** sobre HTTPS: registro, cookies `notecore_access` y
+  `notecore_refresh`, y `/auth/me` respondiendo solo con la cookie
+- **Ciclo de la app**: token por cabecera contra la API directa, y **401 sin token**
+- **El APK release instalado en el emulador**, con `adb reverse` retirado y sin Metro:
+  entró con una cuenta creada por HTTPS y pintó la pantalla de inicio con su `@usuario`
+- **Paridad**: esa misma cuenta entró en la web y devolvió el mismo usuario
+- Las cuentas de prueba se borraron al terminar
+
+### Pendiente antes de Play Store
+
+- Generar un **`.aab`** (`./gradlew bundleRelease`): la tienda no acepta `.apk`
+- Subir el `versionCode` en cada publicación —hoy va en `1`—
+- Política de privacidad y ficha de la tienda
+- **Respaldar `~/.notecore-release/`** en un sitio seguro
