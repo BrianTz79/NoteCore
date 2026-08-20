@@ -23,7 +23,7 @@ export function RequireSession({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center">
-        <p className="text-slate-500">Cargando…</p>
+        <p className="text-tinta3">Cargando…</p>
       </main>
     );
   }

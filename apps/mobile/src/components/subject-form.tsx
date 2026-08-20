@@ -11,7 +11,7 @@ import {
   type Subject,
   type Weekday,
 } from '@notecore/shared';
-import { Button, Field, FormError, colors } from './ui';
+import { Button, Field, FormError, RADIUS, TEXT, colors } from './ui';
 
 /**
  * Alta y edición de una materia en la app (FR-005).
@@ -244,9 +244,9 @@ export function SubjectForm({
 const styles = StyleSheet.create({
   content: { gap: 16, paddingBottom: 32 },
   section: { gap: 8 },
-  label: { color: colors.texto, fontSize: 14, fontWeight: '500' },
+  label: { color: colors.texto, fontSize: TEXT.md, fontWeight: '500' },
   colorRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  colorDot: { width: 32, height: 32, borderRadius: 16, opacity: 0.7 },
+  colorDot: { width: 32, height: 32, borderRadius: RADIUS.lg, opacity: 0.7 },
   colorDotSelected: {
     opacity: 1,
     borderWidth: 2,
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   blockCard: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
     gap: 12,
   },
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   dayChip: {
     paddingHorizontal: 10,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
@@ -271,10 +271,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dayChipActive: { backgroundColor: colors.acento, borderColor: colors.acento },
-  dayChipText: { color: colors.textoSuave, fontSize: 13 },
+  dayChipText: { color: colors.textoSuave, fontSize: TEXT.sm },
   dayChipTextActive: { color: colors.textoFuerte, fontWeight: '600' },
   timeRow: { flexDirection: 'row', gap: 12 },
   timeField: { flex: 1 },
-  removeText: { color: colors.error, fontSize: 13 },
-  addText: { color: colors.acentoClaro, fontSize: 14, fontWeight: '500' },
+  removeText: { color: colors.error, fontSize: TEXT.sm },
+  addText: { color: colors.acentoClaro, fontSize: TEXT.md, fontWeight: '500' },
 });

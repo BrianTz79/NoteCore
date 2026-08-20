@@ -16,6 +16,7 @@ import {
   type ShareUnavailableReason,
 } from '../types/share.js';
 import { parseDate, type Instant } from '../types/auth.js';
+import { COLOR } from '../design/tokens.js';
 
 /**
  * Normaliza un código tecleado o pegado por el receptor.
@@ -193,9 +194,9 @@ export const SHARE_STATUS_LABELS: Readonly<Record<ShareStatus, string>> = {
  * gris y la app en rojo, la misma situación se leería distinto según el dispositivo.
  */
 export const SHARE_STATUS_COLORS: Readonly<Record<ShareStatus, string>> = {
-  activo: '#10b981',
-  revocado: '#ef4444',
-  caducado: '#94a3b8',
+  activo: COLOR.exito,
+  revocado: COLOR.error,
+  caducado: COLOR.tinta3,
 };
 
 /** Ordena los compartidos del emisor: los usables primero, y dentro, lo más reciente. */

@@ -22,9 +22,9 @@ import { useSync } from '@/lib/sync-context';
  */
 
 const TONE_CLASSES: Readonly<Record<SyncTone, string>> = {
-  atencion: 'border-red-900 bg-red-950/60 text-red-300',
-  espera: 'border-slate-700 bg-slate-900 text-slate-300',
-  ok: 'border-emerald-900 bg-emerald-950/40 text-emerald-300',
+  atencion: 'border-error/40 bg-error-fondo text-error',
+  espera: 'border-filete2 bg-papel2 text-tinta2',
+  ok: 'border-exito/40 bg-exito/10 text-exito',
 };
 
 export function SyncIndicator() {
@@ -37,7 +37,7 @@ export function SyncIndicator() {
       // `role="status"` hace que un lector de pantalla anuncie el cambio de conexión sin
       // robar el foco, que es justo lo que se quiere de un aviso de estado.
       role="status"
-      className={`rounded-lg border px-3.5 py-2 text-sm ${TONE_CLASSES[syncStatusTone(state)]}`}
+      className={`rounded-lg border px-nc-sm py-nc-xs text-sm ${TONE_CLASSES[syncStatusTone(state)]}`}
     >
       {syncStatusMessage(state)}
     </p>
@@ -54,7 +54,7 @@ export function CacheNotice({ cachedAt }: { cachedAt: Instant | null }) {
   if (!cachedAt) return null;
 
   return (
-    <p className="text-sm text-slate-500">
+    <p className="text-sm text-tinta3">
       {cacheAgeMessage(cachedAt)} · sin conexión con el servidor
     </p>
   );

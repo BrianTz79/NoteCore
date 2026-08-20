@@ -10,6 +10,7 @@ import type {
 import { isNetworkError } from '@notecore/shared';
 import { authApi, setSessionExpiredHandler, tokenStore } from './api';
 import { offlineStorage } from './offline-storage';
+import { limpiarWidget } from './widget';
 
 /**
  * Estado de sesión de la app.
@@ -138,6 +139,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // El perfil recordado se olvida aquí: si no, al abrir sin conexión se volvería a entrar
     // con la cuenta que se acaba de cerrar.
     await forgetProfile();
+    // El widget de la pantalla de inicio también (FR-051): el horario de quien se fue no
+    // puede quedarse a la vista de cualquiera que mire el teléfono. Es el Principio III
+    // fuera de la app, que es justo donde se olvida.
+    await limpiarWidget();
     setUser(null);
   }, []);
 

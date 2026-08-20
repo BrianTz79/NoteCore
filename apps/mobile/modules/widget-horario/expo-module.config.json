@@ -1,0 +1,6 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": ["net.ourocore.notecore.widget.WidgetHorarioModule"]
+  }
+}

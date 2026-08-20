@@ -8,6 +8,7 @@
 import type { AgendaItem, AgendaList, AgendaUrgency } from '../types/agenda.js';
 import type { CalendarDate } from '../types/attendance.js';
 import { calendarDateToLocal } from './dates.js';
+import { COLOR } from '../design/tokens.js';
 
 /**
  * Días de margen a partir de los cuales una entrega deja de considerarse próxima.
@@ -66,11 +67,11 @@ export const AGENDA_URGENCY_LABELS: Readonly<Record<AgendaUrgency, string>> = {
  * signifique lo mismo en toda la aplicación.
  */
 export const AGENDA_URGENCY_COLORS: Readonly<Record<AgendaUrgency, string>> = {
-  vencida: '#ef4444',
-  hoy: '#f59e0b',
-  proxima: '#38bdf8',
-  lejana: '#10b981',
-  sin_fecha: '#94a3b8',
+  vencida: COLOR.error,
+  hoy: COLOR.aviso,
+  proxima: COLOR.acento,
+  lejana: COLOR.exito,
+  sin_fecha: COLOR.tinta3,
 };
 
 /**

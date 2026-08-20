@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-17** (Fase 10 cerrada)
+> Última actualización: **2026-08-20** (Fase 11 cerrada)
 
 ---
 
@@ -32,13 +32,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social —perfil ampliado, contactos y publicaciones—, consulta sin conexión con cola de cambios y **mensajería entre contactos con entrega en tiempo real**, funcionando en app y web |
-| **Fases completadas** | 10 de 12 |
-| **Fase actual** | Fase 11 — Widget y pulido visual (no iniciada) |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real y **widget de pantalla principal**, sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Fases completadas** | 12 de 12 (Fase 0 a Fase 11) |
+| **Fase actual** | Ninguna. El plan está completo |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `██████████░░` 83%
+**Avance**: `████████████` 100%
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -101,11 +101,21 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   «Solo puedes escribir a tus contactos.» —la palabra «bloqueo» no aparece en ninguna parte de la
   jerarquía de vistas de Android, porque a quien bloquean no se le dice—
 
+- **Fase 11 cerrada**: widget de pantalla principal con la próxima clase, y pasada de diseño
+  integral sobre las 23 pantallas de los dos clientes. El hallazgo de la fase fue que **la paleta
+  estaba escrita dos veces** —clases de Tailwind en la web, un objeto copiado a mano en la app— y
+  coincidían por casualidad; ahora las dos salen de `packages/shared/src/design/tokens.ts`, con el
+  sistema documentado en [`design.md`](design.md). El acento cambió porque el anterior **no pasaba
+  el contraste mínimo** en texto pequeño. El widget **no decide qué clase mostrar**: la regla vive
+  en `shared` y la ejecuta la app, que le deja el resultado resuelto —por eso la web, la app y la
+  pantalla de inicio del teléfono dicen lo mismo a la misma hora—
+
 ### Próximo paso
 
-**Fase 11 — Widget y pulido visual**: widget de pantalla principal con la vista semanal (FR-051) y
-pasada de diseño integral con **hallmark** sobre el producto ya funcional. Es la última fase del
-plan: cierra el producto en lugar de añadirle superficie.
+**El plan está completo.** Las doce fases —de la 0 a la 11— están cerradas y verificadas en app y web. Lo que queda
+no es una fase: es lo que el usuario decida hacer con un producto terminado —firmar y distribuir
+el `.apk`, levantar el despliegue detrás del túnel de Cloudflare, o abrirlo a estudiantes reales y
+ver qué piden—.
 
 ---
 
@@ -126,7 +136,7 @@ plan: cierra el producto en lugar de añadirle superficie.
 | 8 | Social: perfiles y contactos | P3 | ✅ | ✅ | ✅ | ✅ |
 | 9 | Offline y sincronización | P2 | ✅ | ✅ | ✅ | ✅ |
 | 10 | Mensajería | P3 | ✅ | ✅ | ✅ | ✅ |
-| 11 | Widget y pulido visual | P4 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 11 | Widget y pulido visual | P4 | ✅ | ✅ | ✅ | ✅ |
 
 ### Regla de cierre
 
@@ -137,6 +147,72 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 11 — Widget y pulido visual · cerrada el 2026-08-20
+
+**Entregado**: widget de pantalla principal con la próxima clase (FR-051) y pasada de diseño
+integral con **hallmark** sobre las 12 pantallas de la web y las 11 de la app. Con un sistema
+bloqueado en [`design.md`](design.md) y sus valores en `packages/shared/src/design/tokens.ts`.
+
+**La paleta estaba escrita dos veces y nadie lo había notado.** Es el hallazgo que reordenó la
+fase. La web usaba clases de Tailwind (`slate-950`, `sky-600`) y la app un objeto `colors`
+copiado a mano; coincidían por casualidad, no por construcción, y cualquier ajuste en un cliente
+habría dejado al otro atrás en silencio. Además había **cinco tablas de colores de estado** más
+en `shared` —faltas, agenda, social, compartir, semestres— cada una con su propio rojo y su
+propio ámbar. Ahora todo sale de `tokens.ts`: 468 clases migradas en la web, 224 medidas y 39
+colores sueltos en la app.
+
+**El acento cambió por contraste, no por gusto.** El `sky-600` anterior daba 3,4:1 sobre el
+fondo y los enlaces de navegación lo usaban en texto de 14px, por debajo del mínimo AA de 4,5:1.
+El cobalto nuevo da 8,3:1. Es el único arreglo de accesibilidad de la fase que cambia un valor
+que ya estaba en producción.
+
+**El inicio dejó de ser un menú disfrazado de contenido.** Eran diez tarjetas idénticas con
+título, párrafo y enlace `→`: había que leer diez párrafos para encontrar dónde tocar, y el
+párrafo solo servía la primera vez. Ahora responde antes de que se le pregunte —qué clase toca,
+qué exige atención— y la navegación va al final, compacta. **Nada se muestra por completitud**:
+si no hay faltas cerca del límite no hay línea de faltas, porque un aviso que aparece siempre
+deja de leerse.
+
+**El widget no decide nada.** `widgetSnapshot()` vive en `shared` y la ejecuta la app, que deja
+el resultado ya resuelto en un `SharedPreferences` donde el Kotlin lo lee y lo pinta. El widget
+corre en el proceso del lanzador: no tiene JavaScript, ni sesión, ni forma de llamar a la API. Si
+hubiera calculado él qué clase toca, la regla existiría en dos idiomas y una de las dos copias
+habría envejecido sin que nadie lo notara. Los tres —web, app y widget— dicen lo mismo a la misma
+hora porque los tres llaman a la misma función.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| El widget es un **módulo local de Expo**, no código generado en el prebuild | Se intentó primero generarlo dentro de `android/app` desde un plugin, y **no funciona**: los módulos se registran desde una clase `ExpoModulesPackageList` que el autolinking genera dentro de `node_modules`. Un módulo que no pasa por el autolinking no aparece en el runtime aunque sus tres clases estén en el APK —lo estaban, y `requireNativeModule` seguía devolviendo `null`—. Como módulo local, además, vive versionado en git en lugar de en un directorio que el prebuild regenera |
+| La barra de color del widget es un **`ImageView`** | `android.view.View` no está en la lista de clases que un `RemoteViews` puede inflar: el lanzador responde «Class not allowed to be inflated» y el widget entero deja de cargar. `ImageView` sí está permitido y acepta el mismo `setBackgroundColor` |
+| Los colores del widget se **generan** en cada `prebuild` | Un `RemoteViews` solo entiende colores compilados en `res/values/`. Es la única duplicación del sistema; derivarla de `tokens.ts` en cada compilación es lo que impide que se convierta en una divergencia |
+| El widget muestra **la próxima clase**, no la rejilla semanal | Seis columnas por ocho horas en el ancho de un teléfono dan celdas de menos de 40dp, donde no cabe el nombre de una materia. Lo que se mira en la pantalla de inicio es «qué me toca ahora», y eso sí se lee de un vistazo. La semana está a un toque |
+| Las clases de espaciado de la web llevan el prefijo **`nc-`** | En Tailwind 4, `--spacing-*` alimenta también las anchuras nombradas: declarar `--spacing-md` redefine `max-w-md` de 28rem a 1rem. La columna del formulario de entrada colapsó al ancho de una letra, y desde fuera parecía un fallo de la rejilla |
+| La app usa la **tipografía del sistema** y la web las tres familias | `monospace` en Android resuelve a Roboto Mono, que cumple el rol tabular —el que de verdad importa—, y `sans-serif` a Roboto. Empaquetar tres familias son ~700 KB en un APK que se instala a mano. La paridad del Principio I es de **información y estructura**, no de archivo tipográfico |
+| Los botones destructivos son **discretos en reposo** | Cinco botones rojos rellenos en una lista de materias gritan la acción menos frecuente de la pantalla y convierten el rojo en decoración —y entonces el rojo del aviso de faltas, que sí importa, deja de destacar—. El color aparece al apuntarlos |
+| El widget se **borra al cerrar sesión** | El horario de quien se fue no puede quedarse visible en la pantalla de inicio del teléfono, a la vista de cualquiera que lo mire. Es el Principio III aplicado fuera de la app, que es donde se olvida |
+
+**Verificación** (2026-08-20, emulador Android + navegador con la misma cuenta):
+
+- **La misma cuenta en los dos clientes dice lo mismo al minuto**: «Álgebra Lineal · 07:00–09:00
+  · B101 · En 7 h 16 min», con los mismos tres avisos y los mismos colores. Coinciden porque
+  ambos llaman a `nextClass()` en `shared`, no porque se hayan igualado a mano
+- **El widget se colocó en la pantalla de inicio** desde el propio botón de la app, con el
+  diálogo de fijado de Android, y mostró la clase real con **la barra en verde** —el color exacto
+  de esa materia—, su hora, su aula y «Quedan 2 clases hoy»
+- **Al tocar el widget, la app abrió en «Mi horario»**, no en el inicio: el enlace profundo
+  `notecore://horario` cumple el criterio del plan
+- **El widget se refresca solo**: se le vio pasar de «En 7 h 2 min» a «En 6 h 50 min» sin abrir
+  la app
+- Las 12 pantallas de la web se recorrieron con sesión iniciada y **ninguna desborda a lo ancho**
+  a 1280px; el typecheck de los cuatro paquetes y el build de producción de Next pasan limpios
+
+**Nota de entorno**: el puerto 8081 estaba ocupado por `qbittorrent-nox`, así que Metro corrió en
+el 8083. La app busca el bundle en `10.0.2.2:8081` —la puerta al host desde el emulador—, donde
+`adb reverse` no interviene: hay que escribir `debug_http_host` en
+`shared_prefs/net.ourocore.notecore_preferences.xml` con `run-as`.
 
 #### Fase 10 — Mensajería · cerrada el 2026-08-17
 
@@ -1386,10 +1462,11 @@ fuera apareció solo y el acuse pasó a «Leído» solo; al bloquear, el campo d
 y la palabra «bloqueo» no aparece en ninguna parte de la jerarquía de vistas. Detalle en el
 historial.
 
-#### Fase 11 — Widget y pulido visual (P4)
-Widget de pantalla principal con la vista semanal. Pasada de diseño integral con **hallmark** sobre
-el producto ya funcional. Preparación para distribución.
-**Verificación**: el widget refleja datos reales y abre la vista correspondiente.
+#### Fase 11 — Widget y pulido visual (P4) ✅
+Widget de pantalla principal con la próxima clase y pasada de diseño integral con **hallmark**.
+Cerrada el 2026-08-20: el widget se colocó en la pantalla de inicio del emulador, mostró la clase
+real con el color de su materia y, al tocarlo, la app abrió en «Mi horario». Detalle en el
+historial.
 
 ### 4.5 Fuera de alcance
 
@@ -1426,7 +1503,8 @@ datos— que **no se sube al repositorio** por contener secretos reales. Es desc
 ### Herramientas del proyecto
 
 - **spec-kit** — comandos `/speckit-*` para el flujo de especificación y planificación
-- **hallmark** — skill de diseño de UI, se usará en la Fase 11
+- **hallmark** — skill de diseño de UI; se usó en la Fase 11 y su resultado está
+  bloqueado en [`design.md`](design.md), que toda pantalla nueva debe leer antes de tocar estilos
 
 ### Infraestructura Cloudflare
 

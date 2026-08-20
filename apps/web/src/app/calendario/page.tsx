@@ -26,7 +26,7 @@ import {
 } from '@notecore/shared';
 import { calendarApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card, FormError } from '@/components/ui';
+import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 
 /**
  * Calendario y recordatorios (FR-023 a FR-027).
@@ -132,26 +132,22 @@ function Calendario() {
   const ajustes = plan?.settings;
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Mi calendario</h1>
-          <p className="text-slate-400">Tus clases y tus entregas, día a día</p>
-        </div>
-        <Link href="/" className="text-sm font-medium text-sky-400 hover:text-sky-300">
-          ← Volver al inicio
-        </Link>
-      </header>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl">
+      <ScreenHeader
+        title="Mi calendario"
+        subtitle={"Tus clases y tus entregas, día a día"}
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       <FormError message={error} />
 
       {loading ? (
-        <p className="text-slate-500">Cargando tu calendario…</p>
+        <p className="text-tinta3">Cargando tu calendario…</p>
       ) : (
         <>
           {/* ── Rejilla del mes (FR-023) ─────────────────────────────────── */}
           <Card>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-nc-sm">
               <Button
                 variant="secondary"
                 disabled={busy}
@@ -162,7 +158,7 @@ function Calendario() {
 
               {/* `formatMonthName` ya devuelve la inicial en mayúscula; `capitalize` la
                   pondría en cada palabra y daría "Agosto De 2026". */}
-              <h2 className="text-lg font-medium text-slate-100">{formatMonthName(mes)}</h2>
+              <h2 className="text-lg font-medium text-tinta">{formatMonthName(mes)}</h2>
 
               <Button
                 variant="secondary"
@@ -173,15 +169,15 @@ function Calendario() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500">
+            <div className="grid grid-cols-7 gap-nc-2xs text-center text-xs font-medium text-tinta3">
               {CABECERAS.map((dia) => (
-                <div key={dia} className="py-1">
+                <div key={dia} className="py-nc-2xs">
                   {dia}
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-nc-2xs">
               {rango?.days.map((dia) => (
                 <CeldaDia
                   key={dia.date}
@@ -193,7 +189,7 @@ function Calendario() {
               ))}
             </div>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-tinta3">
               Toca un día para ver sus clases y sus entregas.
             </p>
           </Card>
@@ -203,12 +199,12 @@ function Calendario() {
 
           {/* ── Recordatorios (FR-025 a FR-027) ──────────────────────────── */}
           <Card title="Recordatorios">
-            <p className="text-slate-300">
+            <p className="text-tinta2">
               Recibe un aviso antes de que venza cada entrega. Las notificaciones llegan a tu
               teléfono desde la app de NoteCore; aquí eliges cuándo.
             </p>
 
-            <label className="flex items-center gap-3 text-slate-200">
+            <label className="flex items-center gap-nc-sm text-tinta">
               <input
                 type="checkbox"
                 checked={ajustes?.enabled ?? false}
@@ -223,11 +219,11 @@ function Calendario() {
 
             {ajustes?.enabled ? (
               <>
-                <div className="space-y-1.5">
-                  <span className="block text-sm font-medium text-slate-300">
+                <div className="space-y-nc-2xs">
+                  <span className="block text-sm font-medium text-tinta2">
                     Con cuánta anticipación
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-nc-xs">
                     {REMINDER_LEAD_DAYS.map((dias) => (
                       <button
                         key={dias}
@@ -235,10 +231,10 @@ function Calendario() {
                         disabled={busy}
                         onClick={() => void guardarAjustes({ leadDays: dias })}
                         aria-pressed={ajustes.leadDays === dias}
-                        className={`rounded-lg border px-3 py-2 text-sm transition ${
+                        className={`rounded-lg border px-nc-sm py-nc-xs text-sm transition ${
                           ajustes.leadDays === dias
-                            ? 'border-sky-700 bg-sky-950/50 text-sky-300'
-                            : 'border-slate-800 text-slate-300 hover:border-slate-700'
+                            ? 'border-filete2 bg-acento/10 text-foco'
+                            : 'border-filete text-tinta2 hover:border-filete2'
                         }`}
                       >
                         {REMINDER_LEAD_LABELS[dias]}
@@ -247,10 +243,10 @@ function Calendario() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-nc-2xs">
                   <label
                     htmlFor="hora-aviso"
-                    className="block text-sm font-medium text-slate-300"
+                    className="block text-sm font-medium text-tinta2"
                   >
                     A qué hora
                   </label>
@@ -262,9 +258,9 @@ function Calendario() {
                     onChange={(event) =>
                       void guardarAjustes({ timeOfDay: event.target.value })
                     }
-                    className="rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+                    className="rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none focus:border-acento focus:ring-2 focus:ring-acento-tenue"
                   />
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-tinta3">
                     Las entregas se guardan por día, sin hora. Este es el momento del aviso.
                   </p>
                 </div>
@@ -305,30 +301,32 @@ function CeldaDia({
       onClick={onAbrir}
       aria-label={`${formatCalendarDate(dia.date)}: ${dia.classes.length} clases, ${dia.dues.length} entregas`}
       aria-current={dia.isToday ? 'date' : undefined}
-      className={`flex min-h-20 flex-col gap-1 rounded-lg border p-1.5 text-left transition ${
+      className={`flex min-h-20 flex-col gap-nc-2xs rounded-lg border p-nc-2xs text-left transition ${
         seleccionado
-          ? 'border-sky-600 bg-sky-950/40'
+          ? 'border-acento bg-acento/10'
           : dia.isToday
-            ? 'border-sky-800 bg-slate-900'
-            : 'border-slate-800 hover:border-slate-700'
+            ? 'border-acento-tenue bg-papel2'
+            : 'border-filete hover:border-filete2'
       } ${delMes ? '' : 'opacity-40'}`}
     >
       <span
-        className={`text-sm ${dia.isToday ? 'font-semibold text-sky-300' : 'text-slate-300'}`}
+        className={`font-mono text-sm tabular-nums ${
+          dia.isToday ? 'font-semibold text-foco' : 'text-tinta2'
+        }`}
       >
         {numero}
       </span>
 
       {/* Un punto por clase, con el color de su materia (FR-010). */}
       {dia.classes.length > 0 ? (
-        <span className="flex flex-wrap gap-0.5">
+        <span className="flex flex-wrap gap-nc-3xs">
           {dia.classes.map((clase) => (
             <span
               key={clase.blockId}
               aria-hidden
               title={clase.subjectName}
               style={{ backgroundColor: clase.color }}
-              className="h-1.5 w-1.5 rounded-full"
+              className="h-1.5 w-1.5 rounded-pill"
             />
           ))}
         </span>
@@ -352,34 +350,34 @@ function CeldaDia({
 function DetalleDia({ dia }: { dia: CalendarDay }) {
   return (
     <Card title={formatCalendarDate(dia.date)}>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-slate-400">Clases</h3>
+      <div className="space-y-nc-md">
+        <div className="space-y-nc-xs">
+          <h3 className="text-sm font-medium text-tinta2">Clases</h3>
           {dia.classes.length === 0 ? (
-            <p className="text-slate-500">No hay clases este día.</p>
+            <p className="text-tinta3">No hay clases este día.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-nc-xs">
               {dia.classes.map((clase) => (
                 <li
                   key={clase.blockId}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-800 p-3"
+                  className="flex flex-wrap items-center gap-x-nc-sm gap-y-nc-2xs rounded-lg border border-filete p-nc-sm"
                 >
                   <span
                     aria-hidden
                     style={{ backgroundColor: clase.color }}
-                    className="h-3 w-3 shrink-0 rounded-full"
+                    className="h-3 w-3 shrink-0 rounded-pill"
                   />
-                  <span className="font-medium text-slate-100">{clase.subjectName}</span>
-                  <span className="text-sm text-slate-400">
+                  <span className="font-medium text-tinta">{clase.subjectName}</span>
+                  <span className="font-mono text-sm tabular-nums text-tinta2">
                     {clase.startTime}–{clase.endTime}
                   </span>
                   {clase.room ? (
-                    <span className="text-sm text-slate-500">{clase.room}</span>
+                    <span className="text-sm text-tinta3">{clase.room}</span>
                   ) : null}
                   {/* Si se faltó a esa clase, el día lo dice: es parte de lo que pasó. */}
                   {clase.absenceId ? (
                     <span
-                      className={`text-sm font-medium ${clase.absenceJustified ? 'text-slate-400' : 'text-red-400'}`}
+                      className={`text-sm font-medium ${clase.absenceJustified ? 'text-tinta2' : 'text-error'}`}
                     >
                       {clase.absenceJustified ? 'Falta justificada' : 'Faltaste'}
                     </span>
@@ -390,37 +388,37 @@ function DetalleDia({ dia }: { dia: CalendarDay }) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-slate-400">Entregas</h3>
+        <div className="space-y-nc-xs">
+          <h3 className="text-sm font-medium text-tinta2">Entregas</h3>
           {dia.dues.length === 0 ? (
-            <p className="text-slate-500">No vence nada este día.</p>
+            <p className="text-tinta3">No vence nada este día.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-nc-xs">
               {dia.dues.map((due) => (
                 <li
                   key={due.itemId}
-                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-800 p-3"
+                  className="flex flex-wrap items-center gap-x-nc-sm gap-y-nc-2xs rounded-lg border border-filete p-nc-sm"
                 >
                   <span
-                    className={`font-medium ${due.completed ? 'text-slate-500 line-through' : 'text-slate-100'}`}
+                    className={`font-medium ${due.completed ? 'text-tinta3 line-through' : 'text-tinta'}`}
                   >
                     {due.title}
                   </span>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-tinta3">
                     {AGENDA_KIND_LABELS[due.kind]}
                   </span>
                   {due.subjectName ? (
-                    <span className="inline-flex items-center gap-1.5 text-sm text-slate-400">
+                    <span className="inline-flex items-center gap-nc-2xs text-sm text-tinta2">
                       <span
                         aria-hidden
                         style={{ backgroundColor: due.subjectColor ?? '#64748b' }}
-                        className="h-2.5 w-2.5 rounded-full"
+                        className="h-2.5 w-2.5 rounded-pill"
                       />
                       {due.subjectName}
                     </span>
                   ) : null}
                   {due.completed ? (
-                    <span className="text-sm text-emerald-400">Completada</span>
+                    <span className="text-sm text-exito">Completada</span>
                   ) : null}
                 </li>
               ))}
@@ -430,7 +428,7 @@ function DetalleDia({ dia }: { dia: CalendarDay }) {
 
         <Link
           href="/agenda"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+          className="inline-block text-sm font-medium text-acento hover:text-foco"
         >
           Ir a mi agenda →
         </Link>
@@ -450,26 +448,26 @@ function ListaRecordatorios({ plan }: { plan: ReminderPlan | undefined }) {
 
   if (plan.reminders.length === 0) {
     return (
-      <p className="text-slate-500">
+      <p className="text-tinta3">
         No tienes entregas pendientes con fecha, así que no hay nada que recordarte.
       </p>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-slate-400">
+    <div className="space-y-nc-xs">
+      <h3 className="text-sm font-medium text-tinta2">
         Próximos avisos ({plan.reminders.length})
       </h3>
-      <ul className="space-y-2">
+      <ul className="space-y-nc-xs">
         {plan.reminders.map((recordatorio) => (
           <li
             key={recordatorio.itemId}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800 p-3"
+            className="flex flex-wrap items-center justify-between gap-nc-xs rounded-lg border border-filete p-nc-sm"
           >
             {/* El plazo se cuenta desde hoy, no desde el día del aviso: en una lista que se
                 lee hoy, "Vence mañana" para algo a nueve días desorientaría. */}
-            <span className="text-slate-200">
+            <span className="text-tinta">
               {reminderListMessage(
                 recordatorio.title,
                 recordatorio.subjectName,
@@ -477,7 +475,7 @@ function ListaRecordatorios({ plan }: { plan: ReminderPlan | undefined }) {
               )}
             </span>
             <span
-              className={`text-sm ${recordatorio.overdue ? 'text-amber-400' : 'text-slate-500'}`}
+              className={`text-sm ${recordatorio.overdue ? 'text-aviso' : 'text-tinta3'}`}
             >
               {recordatorio.overdue
                 ? 'Ya debería haberte avisado'

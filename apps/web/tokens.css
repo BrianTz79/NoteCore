@@ -1,0 +1,90 @@
+/* Hallmark · genre: modern-minimal · design-system: design.md · designed-as-app
+ * Tokens de NoteCore. Derivados de packages/shared/src/design/tokens.ts — esa es la
+ * fuente; este archivo es su forma en CSS. Si cambias un valor aquí y no allí, la app se
+ * queda atrás en silencio, que es exactamente el fallo que la Fase 11 vino a corregir.
+ *
+ * El bloque @theme es lo que hace que Tailwind 4 genere utilidades a partir de los tokens:
+ * `bg-papel`, `text-tinta3`, `border-filete` existen porque están declaradas ahí.
+ */
+
+@theme {
+  /* ---- Color ---------------------------------------------------------- */
+  --color-papel: #0b0f18;
+  --color-papel2: #131926;
+  --color-papel3: #1b2333;
+
+  --color-tinta: #f2f5fa;
+  --color-tinta2: #c2ccdc;
+  --color-tinta3: #8b97ad;
+
+  --color-filete: #242e40;
+  --color-filete2: #33405a;
+
+  --color-acento: #5aa9ff;
+  --color-acento-tenue: #1e3a5f;
+  --color-acento-tinta: #04101f;
+
+  --color-error: #ff8080;
+  --color-error-fondo: #2a1116;
+  --color-exito: #4ade9b;
+  --color-aviso: #f2c14e;
+  --color-aviso-fondo: #2b2211;
+
+  --color-foco: #8fd0ff;
+
+  /* ---- Tipografía ------------------------------------------------------ */
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-cuerpo: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* La escala de tokens.ts, en rem. 11 13 15 17 21 26 34 px sobre una raíz de 16. */
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.3125rem;
+  --text-2xl: 1.625rem;
+  --text-3xl: 2.125rem;
+
+  /* ---- Espaciado, escala de 4 puntos -----------------------------------
+   *
+   * El prefijo es `nc-` y **no puede quitarse**. En Tailwind 4 el espacio de nombres
+   * `--spacing-*` no alimenta solo el relleno y la separación: también las anchuras y
+   * alturas nombradas. Declarar `--spacing-md: 1rem` redefine `max-w-md` de 28rem a 1rem,
+   * y una columna centrada de formulario colapsa al ancho de una letra —ocurrió en esta
+   * misma fase, y desde fuera parecía un fallo de la rejilla—.
+   *
+   * Con el prefijo, `p-nc-md` es relleno y `max-w-md` sigue siendo lo que Tailwind define.
+   * Las dos escalas dejan de pisarse.
+   */
+  --spacing-nc-3xs: 0.125rem;
+  --spacing-nc-2xs: 0.25rem;
+  --spacing-nc-xs: 0.5rem;
+  --spacing-nc-sm: 0.75rem;
+  --spacing-nc-md: 1rem;
+  --spacing-nc-lg: 1.5rem;
+  --spacing-nc-xl: 2rem;
+  --spacing-nc-2xl: 3rem;
+  --spacing-nc-3xl: 4rem;
+
+  /* ---- Radios ---------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  /* ---- Movimiento ------------------------------------------------------ */
+  --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-entrada-salida: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/*
+ * Duraciones fuera de @theme: Tailwind ya genera `duration-*` con su propia escala, y
+ * declararlas ahí crearía dos formas de decir lo mismo.
+ */
+:root {
+  --dur-corta: 120ms;
+  --dur-media: 200ms;
+  /* Medida de lectura máxima, en caracteres. */
+  --medida: 68ch;
+}

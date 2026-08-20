@@ -19,7 +19,7 @@ import {
 } from '@notecore/shared';
 import { agendaApi, scheduleApi } from '../lib/api';
 import { AgendaForm } from '../components/agenda-form';
-import { Button, Card, FormError, colors } from '../components/ui';
+import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
 
@@ -184,16 +184,15 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mi agenda</Text>
-        <Text style={styles.subtitle}>
-          {agenda
+      <ScreenHeader
+        title="Mi agenda"
+        subtitle={agenda
             ? agenda.pending.length === 0
               ? 'No tienes nada pendiente'
               : `${agenda.pending.length} pendiente${agenda.pending.length > 1 ? 's' : ''}`
             : 'Tus tareas, proyectos y actividades'}
-        </Text>
-      </View>
+        onBack={onVolver}
+      />
 
       {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
       <SyncIndicator />
@@ -462,46 +461,56 @@ function ItemRow({
         <Pressable onPress={onEdit} disabled={busy} hitSlop={8}>
           <Text style={styles.link}>Editar</Text>
         </Pressable>
-        <Pressable onPress={onDelete} disabled={busy} hitSlop={8}>
-          <Text style={styles.deleteText}>Eliminar</Text>
-        </Pressable>
+        {/*
+          Botón y no enlace de texto: borrar es la acción destructiva de la fila y necesita
+          el borde que la enmarca, además del área táctil que un texto suelto no alcanza.
+          Es el mismo criterio que en el horario y que en la web.
+        */}
+        <Button
+          title="Eliminar"
+          variant="danger"
+          size="sm"
+          compacto
+          disabled={busy}
+          onPress={onDelete}
+        />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, gap: 16, paddingBottom: 48 },
+  content: { ...base.contenido, paddingTop: SPACE.md },
   header: { gap: 4 },
-  title: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.textoSuave, fontSize: 14 },
-  body: { color: colors.texto, fontSize: 15 },
-  muted: { color: colors.textoSuave, fontSize: 13 },
-  tenue: { color: colors.textoTenue, fontSize: 13 },
-  link: { color: colors.acentoClaro, fontSize: 14 },
-  deleteText: { color: colors.error, fontSize: 14 },
+  title: { ...base.titulo },
+  subtitle: { ...base.cuerpo },
+  body: { color: colors.texto, fontSize: TEXT.md },
+  muted: { ...base.tenue },
+  tenue: { color: colors.textoTenue, fontSize: TEXT.sm },
+  link: { color: colors.acentoClaro, fontSize: TEXT.md },
+  deleteText: { color: colors.error, fontSize: TEXT.md },
   notice: {
     color: colors.exito,
-    fontSize: 14,
-    borderColor: '#065f46',
+    fontSize: TEXT.md,
+    borderColor: c.exito,
     borderWidth: 1,
-    backgroundColor: '#06402933',
-    borderRadius: 10,
+    backgroundColor: c.papel3,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
   alerta: {
-    color: '#fbbf24',
-    fontSize: 14,
-    borderColor: '#78350f',
+    color: c.aviso,
+    fontSize: TEXT.md,
+    borderColor: c.aviso,
     borderWidth: 1,
-    backgroundColor: '#45170933',
-    borderRadius: 10,
+    backgroundColor: c.avisoFondo,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
   itemCard: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 10,
   },
@@ -509,7 +518,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 24,
     height: 24,
-    borderRadius: 6,
+    borderRadius: RADIUS.md,
     borderWidth: 2,
     borderColor: colors.textoTenue,
     alignItems: 'center',
@@ -517,13 +526,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   checkboxChecked: { backgroundColor: colors.acento, borderColor: colors.acento },
-  checkmark: { color: colors.textoFuerte, fontSize: 15, lineHeight: 18, fontWeight: '700' },
+  checkmark: { color: colors.textoFuerte, fontSize: TEXT.md, lineHeight: 18, fontWeight: '700' },
   itemBody: { flex: 1, gap: 4 },
-  itemTitle: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
+  itemTitle: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
   itemTitleDone: { color: colors.textoTenue, textDecorationLine: 'line-through' },
   metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 },
   subjectTag: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  colorDot: { width: 8, height: 8, borderRadius: 4 },
-  urgency: { fontSize: 13, fontWeight: '600' },
+  colorDot: { width: 8, height: 8, borderRadius: RADIUS.sm },
+  urgency: { fontSize: TEXT.sm, fontWeight: '600' },
   itemActions: { flexDirection: 'row', gap: 16, justifyContent: 'flex-end' },
 });

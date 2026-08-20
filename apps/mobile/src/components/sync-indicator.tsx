@@ -7,7 +7,7 @@ import {
   type SyncTone,
 } from '@notecore/shared';
 import { useSync } from '../lib/sync-context';
-import { colors } from './ui';
+import { RADIUS, TEXT, c, colors } from './ui';
 
 /**
  * Indicador de estado de sincronización (FR-050).
@@ -22,8 +22,8 @@ import { colors } from './ui';
 
 const TONE_STYLES: Readonly<Record<SyncTone, { fondo: string; borde: string; texto: string }>> = {
   atencion: { fondo: colors.errorFondo, borde: colors.error, texto: colors.error },
-  espera: { fondo: '#1e293b', borde: '#334155', texto: colors.textoSuave },
-  ok: { fondo: '#052e16', borde: '#166534', texto: colors.exito },
+  espera: { fondo: c.papel3, borde: c.filete2, texto: colors.textoSuave },
+  ok: { fondo: c.papel3, borde: c.exito, texto: colors.exito },
 };
 
 export function SyncIndicator({ onPress }: { onPress?: () => void }) {
@@ -122,7 +122,7 @@ export function SyncQueuePanel() {
 const styles = StyleSheet.create({
   barra: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingVertical: 8,
     paddingHorizontal: 12,
     flexDirection: 'row',
@@ -130,40 +130,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
   },
-  texto: { fontSize: 13, fontWeight: '500', flexShrink: 1 },
-  accion: { fontSize: 13, fontWeight: '700' },
+  texto: { fontSize: TEXT.sm, fontWeight: '500', flexShrink: 1 },
+  accion: { fontSize: TEXT.sm, fontWeight: '700' },
   panel: { gap: 16 },
-  vacio: { color: colors.textoSuave, fontSize: 14 },
+  vacio: { color: colors.textoSuave, fontSize: TEXT.md },
   grupo: { gap: 8 },
-  grupoTitulo: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
+  grupoTitulo: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
   grupoTituloError: { color: colors.error },
   fila: {
     backgroundColor: colors.tarjeta,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     padding: 12,
     gap: 4,
   },
   filaError: { borderColor: colors.error },
-  filaTitulo: { color: colors.texto, fontSize: 14, fontWeight: '500' },
-  filaTipo: { color: colors.textoTenue, fontSize: 12 },
-  filaError2: { color: colors.error, fontSize: 12 },
+  filaTitulo: { color: colors.texto, fontSize: TEXT.md, fontWeight: '500' },
+  filaTipo: { color: colors.textoTenue, fontSize: TEXT.sm },
+  filaError2: { color: colors.error, fontSize: TEXT.sm },
   acciones: { flexDirection: 'row', gap: 8, marginTop: 4 },
   boton: {
     backgroundColor: colors.acento,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingVertical: 10,
     alignItems: 'center',
   },
-  botonTexto: { color: '#f8fafc', fontWeight: '600', fontSize: 14 },
+  botonTexto: { color: c.tinta, fontWeight: '600', fontSize: TEXT.md },
   botonPeq: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: RADIUS.md,
     paddingVertical: 6,
     paddingHorizontal: 12,
   },
-  botonPeqTexto: { color: colors.texto, fontSize: 13 },
-  nota: { color: colors.textoTenue, fontSize: 12 },
+  botonPeqTexto: { color: colors.texto, fontSize: TEXT.sm },
+  nota: { color: colors.textoTenue, fontSize: TEXT.sm },
 });

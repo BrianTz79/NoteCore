@@ -13,7 +13,7 @@ import {
   type FormErrors,
   type Subject,
 } from '@notecore/shared';
-import { Button, Field, FormError, colors } from './ui';
+import { Button, Field, FormError, RADIUS, TEXT, colors } from './ui';
 
 /**
  * Alta y edición de una actividad en la app (FR-018, FR-019).
@@ -248,19 +248,19 @@ function Chip({
 const styles = StyleSheet.create({
   form: { gap: 16 },
   field: { gap: 8 },
-  label: { color: colors.texto, fontSize: 14, fontWeight: '500' },
+  label: { color: colors.texto, fontSize: TEXT.md, fontWeight: '500' },
   input: {
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: colors.textoFuerte,
-    fontSize: 16,
+    fontSize: TEXT.md,
   },
   textarea: { minHeight: 80, textAlignVertical: 'top' },
-  errorText: { color: colors.error, fontSize: 13 },
+  errorText: { color: colors.error, fontSize: TEXT.sm },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     flexDirection: 'row',
@@ -268,25 +268,25 @@ const styles = StyleSheet.create({
     gap: 6,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 14,
     paddingVertical: 9,
     // Alto cómodo para el pulgar sin que la fila de opciones ocupe media pantalla.
     minHeight: 40,
   },
   chipSelected: { backgroundColor: colors.acento, borderColor: colors.acento },
-  chipDot: { width: 8, height: 8, borderRadius: 4 },
-  chipText: { color: colors.textoSuave, fontSize: 14 },
+  chipDot: { width: 8, height: 8, borderRadius: RADIUS.sm },
+  chipText: { color: colors.textoSuave, fontSize: TEXT.md },
   chipTextSelected: { color: colors.textoFuerte, fontWeight: '600' },
   dateRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   dateArrow: {
     backgroundColor: colors.borde,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dateArrowText: { color: colors.textoFuerte, fontSize: 24, lineHeight: 26 },
-  dateValue: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
+  dateArrowText: { color: colors.textoFuerte, fontSize: TEXT['2xl'], lineHeight: 26 },
+  dateValue: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
 });

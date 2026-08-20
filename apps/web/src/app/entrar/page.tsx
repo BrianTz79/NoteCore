@@ -45,13 +45,13 @@ export default function EntrarPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-16">
-      <header className="space-y-2">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-nc-xl px-nc-lg py-nc-3xl">
+      <header className="space-y-nc-xs">
         <h1 className="text-3xl font-semibold tracking-tight">Bienvenido de vuelta</h1>
-        <p className="text-slate-400">Entra para ver tu horario y tu agenda.</p>
+        <p className="text-tinta2">Entra para ver tu horario y tu agenda.</p>
       </header>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-nc-md">
         <FormError message={errors.general} />
 
         <Field
@@ -80,9 +80,9 @@ export default function EntrarPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-tinta2">
         ¿Aún no tienes cuenta?{' '}
-        <Link href="/registro" className="font-medium text-sky-400 hover:text-sky-300">
+        <Link href="/registro" className="font-medium text-acento hover:text-foco">
           Crea una
         </Link>
       </p>

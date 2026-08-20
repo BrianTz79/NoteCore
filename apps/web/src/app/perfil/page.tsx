@@ -27,13 +27,13 @@ function Perfil() {
   const { user } = useAuth();
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-6 py-16">
-      <header className="space-y-1">
-        <Link href="/" className="text-sm text-slate-500 hover:text-slate-300">
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-nc-lg px-nc-lg py-nc-3xl">
+      <header className="space-y-nc-2xs">
+        <Link href="/" className="text-sm text-tinta3 hover:text-tinta">
           ← Volver
         </Link>
         <h1 className="text-3xl font-semibold tracking-tight">Tu perfil</h1>
-        <p className="text-slate-400">{user?.email}</p>
+        <p className="text-tinta2">{user?.email}</p>
       </header>
 
       <DatosDelPerfil />
@@ -81,7 +81,7 @@ function DatosDelPerfil() {
 
   return (
     <Card title="Nombre y usuario">
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-nc-md">
         <FormError message={errors.general} />
 
         <Field
@@ -101,11 +101,11 @@ function DatosDelPerfil() {
           hint="Con este nombre te encontrarán tus compañeros."
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-nc-sm">
           <Button type="submit" loading={saving}>
             Guardar cambios
           </Button>
-          {saved ? <span className="text-sm text-emerald-400">Guardado</span> : null}
+          {saved ? <span className="text-sm text-exito">Guardado</span> : null}
         </div>
       </form>
     </Card>
@@ -146,11 +146,11 @@ function CambiarContrasena() {
 
   return (
     <Card title="Contraseña">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta2">
         Al cambiarla se cerrarán tus sesiones en los demás dispositivos.
       </p>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-nc-md">
         <FormError message={errors.general} />
 
         <Field
@@ -176,11 +176,11 @@ function CambiarContrasena() {
           hint="Al menos 8 caracteres."
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-nc-sm">
           <Button type="submit" loading={saving}>
             Cambiar contraseña
           </Button>
-          {done ? <span className="text-sm text-emerald-400">Contraseña actualizada</span> : null}
+          {done ? <span className="text-sm text-exito">Contraseña actualizada</span> : null}
         </div>
       </form>
     </Card>
@@ -222,21 +222,21 @@ function Dispositivos() {
       <FormError message={error} />
 
       {loading ? (
-        <p className="text-slate-500">Cargando…</p>
+        <p className="text-tinta3">Cargando…</p>
       ) : (
-        <ul className="divide-y divide-slate-800">
+        <ul className="divide-y divide-filete">
           {sessions.map((session) => (
-            <li key={session.id} className="flex items-center justify-between gap-4 py-3">
+            <li key={session.id} className="flex items-center justify-between gap-nc-md py-nc-sm">
               <div>
-                <p className="text-slate-200">
+                <p className="text-tinta">
                   {session.client === 'mobile' ? 'App Android' : 'Navegador web'}
                   {session.isCurrent ? (
-                    <span className="ml-2 rounded bg-emerald-950 px-2 py-0.5 text-xs text-emerald-400">
+                    <span className="ml-nc-xs rounded bg-exito/10 px-nc-xs py-nc-3xs text-xs text-exito">
                       este dispositivo
                     </span>
                   ) : null}
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-tinta3">
                   Última actividad: {formatDateTime(session.lastUsedAt)}
                 </p>
               </div>

@@ -1,0 +1,36 @@
+// Módulo Android del widget de pantalla principal de NoteCore (FR-051).
+//
+// Es un módulo local de Expo: el autolinking lo descubre por `expo-module.config.json`,
+// lo añade al proyecto Gradle y registra `WidgetHorarioModule` en el runtime. Ese
+// descubrimiento es el motivo de que el widget viva aquí y no en `android/app`, que el
+// prebuild regenera y que además no está versionado.
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'net.ourocore.notecore.widget'
+version = '0.1.0'
+
+android {
+  namespace 'net.ourocore.notecore.widget'
+  compileSdk rootProject.ext.has('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
+
+  defaultConfig {
+    minSdk rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = '17'
+  }
+}
+
+dependencies {
+  // `expo-modules-core` aporta la clase `Module` y el registro; el resto del widget solo
+  // necesita el SDK de Android.
+  implementation project(':expo-modules-core')
+}

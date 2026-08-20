@@ -124,7 +124,7 @@ export function SubjectForm({
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-5">
+    <form onSubmit={(event) => void handleSubmit(event)} className="space-y-nc-md">
       <FormError message={errors.general} />
 
       <Field
@@ -137,9 +137,9 @@ export function SubjectForm({
         autoFocus
       />
 
-      <div className="space-y-2">
-        <span className="block text-sm font-medium text-slate-300">Color</span>
-        <div className="flex flex-wrap gap-2">
+      <div className="space-y-nc-xs">
+        <span className="block text-sm font-medium text-tinta2">Color</span>
+        <div className="flex flex-wrap gap-nc-xs">
           {SUBJECT_COLORS.map((option) => (
             <button
               key={option}
@@ -148,9 +148,9 @@ export function SubjectForm({
               aria-label={`Color ${option}`}
               aria-pressed={color === option}
               style={{ backgroundColor: option }}
-              className={`h-8 w-8 rounded-full transition ${
+              className={`h-8 w-8 rounded-pill transition ${
                 color === option
-                  ? 'ring-2 ring-slate-100 ring-offset-2 ring-offset-slate-900'
+                  ? 'ring-2 ring-tinta ring-offset-2 ring-offset-slate-900'
                   : 'opacity-70 hover:opacity-100'
               }`}
             />
@@ -158,13 +158,13 @@ export function SubjectForm({
         </div>
       </div>
 
-      <div className="space-y-3">
-        <span className="block text-sm font-medium text-slate-300">Sesiones de la semana</span>
+      <div className="space-y-nc-sm">
+        <span className="block text-sm font-medium text-tinta2">Sesiones de la semana</span>
 
         {blocks.map((block, index) => (
           <div
             key={index}
-            className="grid grid-cols-2 gap-2 rounded-lg border border-slate-800 p-3 sm:grid-cols-[1fr_auto_auto_1fr_auto]"
+            className="grid grid-cols-2 gap-nc-xs rounded-lg border border-filete p-nc-sm sm:grid-cols-[1fr_auto_auto_1fr_auto]"
           >
             <label className="sr-only" htmlFor={`weekday-${index}`}>
               Día
@@ -175,7 +175,7 @@ export function SubjectForm({
               onChange={(event) =>
                 updateBlock(index, { weekday: event.target.value as Weekday })
               }
-              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 outline-none focus:border-sky-700"
+              className="rounded-lg border border-filete bg-papel2 px-nc-xs py-nc-xs text-sm text-tinta outline-none focus:border-acento"
             >
               {WEEKDAYS.map((day) => (
                 <option key={day} value={day}>
@@ -192,7 +192,7 @@ export function SubjectForm({
               type="time"
               value={block.startTime}
               onChange={(event) => updateBlock(index, { startTime: event.target.value })}
-              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 outline-none focus:border-sky-700"
+              className="rounded-lg border border-filete bg-papel2 px-nc-xs py-nc-xs text-sm text-tinta outline-none focus:border-acento"
             />
 
             <label className="sr-only" htmlFor={`end-${index}`}>
@@ -203,7 +203,7 @@ export function SubjectForm({
               type="time"
               value={block.endTime}
               onChange={(event) => updateBlock(index, { endTime: event.target.value })}
-              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 outline-none focus:border-sky-700"
+              className="rounded-lg border border-filete bg-papel2 px-nc-xs py-nc-xs text-sm text-tinta outline-none focus:border-acento"
             />
 
             <label className="sr-only" htmlFor={`room-${index}`}>
@@ -214,7 +214,7 @@ export function SubjectForm({
               value={block.room}
               onChange={(event) => updateBlock(index, { room: event.target.value })}
               placeholder="Aula (opcional)"
-              className="rounded-lg border border-slate-800 bg-slate-900 px-2.5 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-600 focus:border-sky-700"
+              className="rounded-lg border border-filete bg-papel2 px-nc-xs py-nc-xs text-sm text-tinta outline-none placeholder:text-tinta3 focus:border-acento"
             />
 
             <button
@@ -223,7 +223,7 @@ export function SubjectForm({
               // Con una sola sesión no se puede quitar: una materia sin sesiones no
               // aparecería en el horario.
               disabled={blocks.length === 1}
-              className="rounded-lg px-2 py-2 text-sm text-slate-400 transition hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg px-nc-xs py-nc-xs text-sm text-tinta2 transition hover:text-error disabled:cursor-not-allowed disabled:opacity-40"
             >
               Quitar
             </button>
@@ -233,13 +233,13 @@ export function SubjectForm({
         <button
           type="button"
           onClick={() => setBlocks((current) => [...current, { ...EMPTY_BLOCK }])}
-          className="text-sm font-medium text-sky-400 transition hover:text-sky-300"
+          className="text-sm font-medium text-acento transition hover:text-foco"
         >
           + Añadir otra sesión
         </button>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-nc-sm">
         <Button type="submit" loading={saving}>
           {subject ? 'Guardar cambios' : 'Crear materia'}
         </Button>

@@ -21,7 +21,7 @@ import {
 } from '@notecore/shared';
 import { attendanceApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card, FormError } from '@/components/ui';
+import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
 import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
@@ -136,20 +136,14 @@ function Faltas() {
   const pendientes = day?.sessions.filter((s) => !s.alreadyAbsent) ?? [];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Mis faltas</h1>
-          <p className="text-slate-400">
-            {summary?.subjects.length
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl">
+      <ScreenHeader
+        title="Mis faltas"
+        subtitle={summary?.subjects.length
               ? `${summary.subjects.length} materias · semestre de ${summary.semesterWeeks} semanas`
               : 'Registra tus inasistencias y vigila tu margen'}
-          </p>
-        </div>
-        <Link href="/" className="text-sm font-medium text-sky-400 hover:text-sky-300">
-          ← Volver al inicio
-        </Link>
-      </header>
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
       <SyncIndicator />
@@ -160,21 +154,21 @@ function Faltas() {
       {notice ? (
         <p
           role="status"
-          className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3.5 py-2.5 text-sm text-emerald-300"
+          className="rounded-lg border border-exito/40 bg-exito/10 px-nc-sm py-nc-xs text-sm text-exito"
         >
           {notice}
         </p>
       ) : null}
 
       {loading ? (
-        <p className="text-slate-500">Cargando tus faltas…</p>
+        <p className="text-tinta3">Cargando tus faltas…</p>
       ) : summary?.subjects.length === 0 ? (
         <Card>
-          <p className="text-slate-300">
+          <p className="text-tinta2">
             Todavía no tienes materias en tu horario. Captúralo primero y aquí podrás llevar
             el control de tus faltas.
           </p>
-          <Link href="/horario" className="text-sm font-medium text-sky-400 hover:text-sky-300">
+          <Link href="/horario" className="text-sm font-medium text-acento hover:text-foco">
             Ir a mi horario →
           </Link>
         </Card>
@@ -182,8 +176,8 @@ function Faltas() {
         <>
           {/* ── Marcar falta ─────────────────────────────────────────────── */}
           <Card title="Marcar una falta">
-            <div className="space-y-1.5">
-              <label htmlFor="fecha" className="block text-sm font-medium text-slate-300">
+            <div className="space-y-nc-2xs">
+              <label htmlFor="fecha" className="block text-sm font-medium text-tinta2">
                 Fecha
               </label>
               <input
@@ -191,33 +185,35 @@ function Faltas() {
                 type="date"
                 value={date}
                 onChange={(event) => void cambiarFecha(event.target.value)}
-                className="rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+                className="rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition focus:border-acento focus:ring-2 focus:ring-acento-tenue"
               />
-              <p className="text-sm text-slate-500">{formatCalendarDate(date)}</p>
+              <p className="text-sm text-tinta3">{formatCalendarDate(date)}</p>
             </div>
 
             {day && day.sessions.length === 0 ? (
-              <p className="text-slate-400">Ese día no tienes clases.</p>
+              <p className="text-tinta2">Ese día no tienes clases.</p>
             ) : (
               <>
-                <ul className="divide-y divide-slate-800">
+                <ul className="divide-y divide-filete">
                   {day?.sessions.map((session) => (
                     <li
                       key={session.blockId}
-                      className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0"
+                      className="flex flex-wrap items-center justify-between gap-nc-sm py-nc-sm first:pt-0"
                     >
-                      <div className="flex min-w-0 items-center gap-3">
+                      <div className="flex min-w-0 items-center gap-nc-sm">
                         <span
                           aria-hidden
                           style={{ backgroundColor: session.color }}
-                          className="h-3 w-3 shrink-0 rounded-full"
+                          className="h-3 w-3 shrink-0 rounded-pill"
                         />
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-slate-100">
+                          <p className="truncate font-medium text-tinta">
                             {session.subjectName}
                           </p>
-                          <p className="truncate text-sm text-slate-400">
-                            {session.startTime}–{session.endTime}
+                          <p className="truncate text-sm text-tinta2">
+                            <span className="font-mono tabular-nums">
+                              {session.startTime}–{session.endTime}
+                            </span>
                             {session.room ? ` · ${session.room}` : ''}
                             {session.alreadyAbsent
                               ? session.justified
@@ -229,7 +225,7 @@ function Faltas() {
                       </div>
 
                       {session.alreadyAbsent && session.absenceId ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-nc-xs">
                           <Button
                             variant="secondary"
                             disabled={busy}
@@ -286,7 +282,7 @@ function Faltas() {
 
           {/* ── Panel por materia ────────────────────────────────────────── */}
           <Card title="Tus materias">
-            <ul className="space-y-4">
+            <ul className="space-y-nc-md">
               {summary?.subjects.map((subject) => (
                 <SubjectRow
                   key={subject.subjectId}
@@ -313,18 +309,18 @@ function Faltas() {
 
             {/* Principio VII: la recomendación de confirmar con el profesor es obligatoria
                 y va siempre visible junto a los límites (FR-014). */}
-            <p className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-3.5 py-2.5 text-sm text-amber-300">
+            <p className="rounded-lg border border-aviso/40 bg-aviso-fondo px-nc-sm py-nc-xs text-sm text-aviso">
               {ABSENCE_LIMIT_DISCLAIMER}
             </p>
           </Card>
 
           {/* ── Semanas del semestre ─────────────────────────────────────── */}
           <Card title="Semanas del semestre">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-tinta2">
               Los totales y los límites sugeridos se calculan multiplicando tus clases
               semanales por este número. Ajústalo al calendario de tu escuela.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-nc-sm">
               <input
                 type="number"
                 min={MIN_SEMESTER_WEEKS}
@@ -347,9 +343,9 @@ function Faltas() {
                     }
                   })();
                 }}
-                className="w-24 rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+                className="w-24 rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none focus:border-acento focus:ring-2 focus:ring-acento-tenue"
               />
-              <span className="text-sm text-slate-400">semanas</span>
+              <span className="text-sm text-tinta2">semanas</span>
             </div>
           </Card>
         </>
@@ -378,18 +374,20 @@ function SubjectRow({
     subject.limit === 0 ? 100 : Math.min(100, (subject.absences / subject.limit) * 100);
 
   return (
-    <li className="space-y-2 rounded-lg border border-slate-800 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
+    <li className="space-y-nc-xs rounded-lg border border-filete p-nc-md">
+      <div className="flex flex-wrap items-start justify-between gap-nc-sm">
+        <div className="flex min-w-0 items-center gap-nc-sm">
           <span
             aria-hidden
             style={{ backgroundColor: subject.color }}
-            className="h-3 w-3 shrink-0 rounded-full"
+            className="h-3 w-3 shrink-0 rounded-pill"
           />
           <div className="min-w-0">
-            <p className="truncate font-medium text-slate-100">{subject.subjectName}</p>
-            <p className="text-sm text-slate-400">
-              {subject.absences} de {subject.limit} faltas
+            <p className="truncate font-medium text-tinta">{subject.subjectName}</p>
+            <p className="text-sm text-tinta2">
+              <span className="font-mono tabular-nums">
+                {subject.absences} de {subject.limit}
+              </span>{' '}faltas
               {subject.justifiedAbsences > 0
                 ? ` · ${subject.justifiedAbsences} justificada${subject.justifiedAbsences > 1 ? 's' : ''}`
                 : ''}
@@ -398,7 +396,7 @@ function SubjectRow({
         </div>
 
         <span
-          className="rounded-full px-2.5 py-1 text-xs font-medium"
+          className="rounded-pill px-nc-xs py-nc-2xs text-xs font-medium"
           style={{ backgroundColor: `${color}22`, color }}
         >
           {ABSENCE_STATUS_LABELS[subject.status]}
@@ -406,34 +404,34 @@ function SubjectRow({
       </div>
 
       <div
-        className="h-2 w-full overflow-hidden rounded-full bg-slate-800"
+        className="h-2 w-full overflow-hidden rounded-pill bg-papel3"
         role="progressbar"
         aria-valuenow={subject.absences}
         aria-valuemin={0}
         aria-valuemax={subject.limit}
         aria-label={`Faltas en ${subject.subjectName}`}
       >
-        <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, backgroundColor: color }} />
+        <div className="h-full rounded-pill transition-all" style={{ width: `${percent}%`, backgroundColor: color }} />
       </div>
 
       <p className="text-sm" style={{ color }}>
         {absenceStatusMessage(subject.status, subject.remaining)}
       </p>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+      <div className="flex flex-wrap items-center gap-nc-xs text-sm text-tinta3">
         <span>
           {subject.sessionsPerWeek} por semana · {subject.totalSessions} en el semestre ·
           sugerido {subject.suggestedLimit}
         </span>
 
         {editing ? (
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-nc-xs">
             <input
               type="number"
               min={0}
               value={value}
               onChange={(event) => setValue(event.target.value)}
-              className="w-20 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-slate-100 outline-none focus:border-sky-700"
+              className="w-20 rounded-lg border border-filete bg-papel2 px-nc-xs py-nc-2xs text-tinta outline-none focus:border-acento"
             />
             <Button
               variant="secondary"
@@ -451,14 +449,14 @@ function SubjectRow({
             </Button>
           </span>
         ) : (
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-nc-xs">
             <button
               type="button"
               onClick={() => {
                 setValue(String(subject.limit));
                 setEditing(true);
               }}
-              className="font-medium text-sky-400 hover:text-sky-300"
+              className="font-medium text-acento hover:text-foco"
             >
               Cambiar límite
             </button>
@@ -468,7 +466,7 @@ function SubjectRow({
                 type="button"
                 disabled={busy}
                 onClick={() => void onLimitChange(null)}
-                className="font-medium text-slate-400 hover:text-slate-300"
+                className="font-medium text-tinta2 hover:text-tinta"
               >
                 Usar el sugerido
               </button>

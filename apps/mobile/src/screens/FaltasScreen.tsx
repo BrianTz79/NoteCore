@@ -20,7 +20,7 @@ import {
   type SubjectAttendance,
 } from '@notecore/shared';
 import { attendanceApi } from '../lib/api';
-import { Button, Card, FormError, colors } from '../components/ui';
+import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSyncActions } from '../lib/sync-context';
 
@@ -187,14 +187,13 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mis faltas</Text>
-        <Text style={styles.subtitle}>
-          {summary?.subjects.length
+      <ScreenHeader
+        title="Mis faltas"
+        subtitle={summary?.subjects.length
             ? `${summary.subjects.length} materias · semestre de ${summary.semesterWeeks} semanas`
             : 'Registra tus inasistencias y vigila tu margen'}
-        </Text>
-      </View>
+        onBack={onVolver}
+      />
 
       {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
       <SyncIndicator />
@@ -269,7 +268,9 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
                         </Text>
                       </View>
                       <Text style={styles.muted}>
-                        {session.startTime}–{session.endTime}
+                        <Text style={styles.cifra}>
+                          {session.startTime}–{session.endTime}
+                        </Text>
                         {session.room ? ` · ${session.room}` : ''}
                         {session.alreadyAbsent
                           ? session.justified
@@ -418,7 +419,9 @@ function SubjectRow({
       </View>
 
       <Text style={styles.muted}>
-        {subject.absences} de {subject.limit} faltas
+        <Text style={styles.cifra}>
+          {subject.absences} de {subject.limit}
+        </Text>{' '}faltas
         {subject.justifiedAbsences > 0
           ? ` · ${subject.justifiedAbsences} justificada${subject.justifiedAbsences > 1 ? 's' : ''}`
           : ''}
@@ -548,36 +551,38 @@ function etiquetaDeMaterias(
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, gap: 16, paddingBottom: 48 },
+  /** Cifra que se compara con otra: mono tabular, igual que en la web. */
+  cifra: { fontFamily: fuente.mono, fontVariant: ['tabular-nums'] },
+  content: { ...base.contenido, paddingTop: SPACE.md },
   header: { gap: 4 },
-  title: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.textoSuave, fontSize: 14 },
-  body: { color: colors.texto, fontSize: 15, flexShrink: 1 },
-  muted: { color: colors.textoSuave, fontSize: 13 },
-  tenue: { color: colors.textoTenue, fontSize: 13 },
-  link: { color: colors.acentoClaro, fontSize: 14 },
-  deleteText: { color: colors.error, fontSize: 14 },
+  title: { ...base.titulo },
+  subtitle: { ...base.cuerpo },
+  body: { color: colors.texto, fontSize: TEXT.md, flexShrink: 1 },
+  muted: { ...base.tenue },
+  tenue: { color: colors.textoTenue, fontSize: TEXT.sm },
+  link: { color: colors.acentoClaro, fontSize: TEXT.md },
+  deleteText: { color: colors.error, fontSize: TEXT.md },
   notice: {
     color: colors.exito,
-    fontSize: 14,
-    borderColor: '#065f46',
+    fontSize: TEXT.md,
+    borderColor: c.exito,
     borderWidth: 1,
-    backgroundColor: '#06402933',
-    borderRadius: 10,
+    backgroundColor: c.papel3,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
   dayNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   dayArrow: {
     backgroundColor: colors.borde,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dayArrowText: { color: colors.textoFuerte, fontSize: 24, lineHeight: 26 },
+  dayArrowText: { color: colors.textoFuerte, fontSize: TEXT['2xl'], lineHeight: 26 },
   dayLabel: { flex: 1, alignItems: 'center', gap: 2 },
-  dayText: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600', textAlign: 'center' },
+  dayText: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600', textAlign: 'center' },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -590,11 +595,11 @@ const styles = StyleSheet.create({
   sessionInfo: { flex: 1, gap: 4 },
   sessionName: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   sessionActions: { alignItems: 'flex-end', gap: 8 },
-  colorDot: { width: 10, height: 10, borderRadius: 5 },
+  colorDot: { width: 10, height: 10, borderRadius: RADIUS.md },
   subjectCard: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 8,
   },
@@ -605,40 +610,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   badge: {
-    fontSize: 12,
+    fontSize: TEXT.sm,
     fontWeight: '600',
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
     overflow: 'hidden',
   },
   barTrack: {
     height: 8,
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     backgroundColor: colors.borde,
     overflow: 'hidden',
   },
-  barFill: { height: '100%', borderRadius: 999 },
-  statusText: { fontSize: 13 },
+  barFill: { height: '100%', borderRadius: RADIUS.pill },
+  statusText: { fontSize: TEXT.sm },
   limitRow: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
   limitInput: {
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
     color: colors.textoFuerte,
-    fontSize: 15,
+    fontSize: TEXT.md,
     minWidth: 72,
   },
   disclaimer: {
-    color: '#fbbf24',
-    fontSize: 13,
-    borderColor: '#78350f',
+    color: c.aviso,
+    fontSize: TEXT.sm,
+    borderColor: c.aviso,
     borderWidth: 1,
-    backgroundColor: '#45170933',
-    borderRadius: 10,
+    backgroundColor: c.avisoFondo,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
 });

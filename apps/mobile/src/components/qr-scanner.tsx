@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
-import { Button, colors } from './ui';
+import { Button, RADIUS, TEXT, colors } from './ui';
 
 /**
  * Escáner de códigos QR con la cámara (FR-028).
@@ -95,6 +95,15 @@ export function QrScanner({
   );
 }
 
+/*
+ * El negro y el blanco de esta pantalla **no son tokens del sistema, y no deben serlo**.
+ *
+ * Aquí se pinta encima de la imagen en directo de la cámara, no sobre el papel de la
+ * aplicación: el marco de puntería y su texto necesitan contraste contra un vídeo cuyo
+ * contenido no se conoce —puede ser una hoja blanca o un aula a oscuras—. El blanco puro y
+ * el negro puro son los únicos valores que lo garantizan en los dos casos. Un `c.tinta`
+ * sobre un papel impreso desaparecería.
+ */
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: '#000000' },
   centro: {
@@ -105,9 +114,9 @@ const styles = StyleSheet.create({
     padding: 28,
     gap: 14,
   },
-  titulo: { color: colors.textoFuerte, fontSize: 22, fontWeight: '700' },
-  texto: { color: colors.texto, fontSize: 15, textAlign: 'center', lineHeight: 21 },
-  error: { color: colors.error, fontSize: 14, textAlign: 'center' },
+  titulo: { color: colors.textoFuerte, fontSize: TEXT.xl, fontWeight: '700' },
+  texto: { color: colors.texto, fontSize: TEXT.md, textAlign: 'center', lineHeight: 21 },
+  error: { color: colors.error, fontSize: TEXT.md, textAlign: 'center' },
   superpuesto: {
     flex: 1,
     alignItems: 'center',
@@ -117,14 +126,14 @@ const styles = StyleSheet.create({
   },
   instruccion: {
     color: '#ffffff',
-    fontSize: 17,
+    fontSize: TEXT.lg,
     fontWeight: '600',
     textAlign: 'center',
     // Fondo propio para que se lea sobre cualquier cosa que enfoque la cámara.
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
   },
   marco: {
@@ -132,7 +141,7 @@ const styles = StyleSheet.create({
     height: 240,
     borderColor: '#ffffff',
     borderWidth: 3,
-    borderRadius: 20,
+    borderRadius: RADIUS.lg,
   },
   acciones: { width: '100%' },
 });

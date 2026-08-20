@@ -59,15 +59,15 @@ export default function RegistroPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-8 px-6 py-16">
-      <header className="space-y-2">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-nc-xl px-nc-lg py-nc-3xl">
+      <header className="space-y-nc-xs">
         <h1 className="text-3xl font-semibold tracking-tight">Crea tu cuenta</h1>
-        <p className="text-slate-400">
+        <p className="text-tinta2">
           Tu horario, tus faltas y tu agenda en un solo lugar.
         </p>
       </header>
 
-      <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <form onSubmit={onSubmit} noValidate className="space-y-nc-md">
         <FormError message={errors.general} />
 
         <Field
@@ -118,9 +118,9 @@ export default function RegistroPage() {
         </Button>
       </form>
 
-      <p className="text-center text-sm text-slate-400">
+      <p className="text-center text-sm text-tinta2">
         ¿Ya tienes cuenta?{' '}
-        <Link href="/entrar" className="font-medium text-sky-400 hover:text-sky-300">
+        <Link href="/entrar" className="font-medium text-acento hover:text-foco">
           Inicia sesión
         </Link>
       </p>

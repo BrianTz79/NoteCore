@@ -26,5 +26,11 @@
   "devDependencies": {
     "@types/react": "~19.2.0",
     "typescript": "^5.7.3"
+  },
+  "_comentario_autolinking": "El widget de la Fase 11 es un módulo local de Expo en modules/widget-horario. El autolinking no mira ahí por defecto: sin esta línea, sus clases entran en el APK pero el módulo no se registra en el runtime y requireNativeModule devuelve null.",
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": "./modules"
+    }
   }
 }

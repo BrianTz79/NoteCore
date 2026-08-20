@@ -1,0 +1,23 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!--
+    El receptor del widget se declara aquí, en el propio módulo, y el fusionador de
+    manifiestos de Gradle lo incorpora al de la app. Así el widget viaja completo con su
+    módulo en lugar de depender de que un plugin recuerde inyectarlo.
+
+    `exported="true"` es obligatorio: quien manda el broadcast de actualización es el
+    sistema, desde fuera del proceso de la app.
+  -->
+  <application>
+    <receiver
+        android:name="net.ourocore.notecore.widget.HorarioWidgetProvider"
+        android:exported="true"
+        android:label="@string/widget_descripcion">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/widget_horario_info" />
+    </receiver>
+  </application>
+</manifest>

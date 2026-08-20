@@ -7,6 +7,7 @@
  */
 
 import type { AbsenceStatus } from '../types/attendance.js';
+import { COLOR } from '../design/tokens.js';
 
 /**
  * Asistencia mínima exigida por la norma TecNM. Por debajo de este porcentaje el profesor
@@ -160,9 +161,9 @@ export const ABSENCE_STATUS_LABELS: Readonly<Record<AbsenceStatus, string>> = {
  * el dispositivo.
  */
 export const ABSENCE_STATUS_COLORS: Readonly<Record<AbsenceStatus, string>> = {
-  bien: '#10b981',
-  cerca: '#f59e0b',
-  alcanzado: '#ef4444',
+  bien: COLOR.exito,
+  cerca: COLOR.aviso,
+  alcanzado: COLOR.error,
 };
 
 /**

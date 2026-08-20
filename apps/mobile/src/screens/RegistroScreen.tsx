@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { registerSchema, toFormErrors, type FormErrors } from '@notecore/shared';
 import { useAuth } from '../lib/auth-context';
-import { Button, Field, FormError, colors } from '../components/ui';
+import { Button, Field, FormError, SPACE, TEXT, base, colors } from '../components/ui';
 
 export function RegistroScreen({ onIrAEntrar }: { onIrAEntrar: () => void }) {
   const { register } = useAuth();
@@ -118,11 +118,11 @@ export function RegistroScreen({ onIrAEntrar }: { onIrAEntrar: () => void }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', padding: 24, gap: 28 },
+  content: { flexGrow: 1, justifyContent: 'center', padding: SPACE.md, gap: SPACE.xl },
   header: { gap: 6 },
-  title: { color: colors.textoFuerte, fontSize: 30, fontWeight: '700' },
-  subtitle: { color: colors.textoSuave, fontSize: 15 },
+  title: { ...base.titulo, fontSize: TEXT['3xl'] },
+  subtitle: { ...base.cuerpo },
   form: { gap: 16 },
-  link: { color: colors.textoSuave, fontSize: 14, textAlign: 'center' },
+  link: { color: colors.textoSuave, fontSize: TEXT.md, textAlign: 'center' },
   linkStrong: { color: colors.acentoClaro, fontWeight: '600' },
 });

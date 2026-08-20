@@ -9,7 +9,7 @@ import {
   type ImportPreview,
 } from '@notecore/shared';
 import { scheduleApi } from '../lib/api';
-import { Button, FormError, colors } from './ui';
+import { Button, FormError, RADIUS, TEXT, c, colors } from './ui';
 
 /**
  * Importación del horario desde el JSON de una IA, en la app (FR-006, FR-007, FR-008).
@@ -205,34 +205,34 @@ export function ImportDialog({
 const styles = StyleSheet.create({
   content: { gap: 20, paddingBottom: 32 },
   section: { gap: 10 },
-  stepTitle: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
-  help: { color: colors.textoSuave, fontSize: 14 },
+  stepTitle: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  help: { color: colors.textoSuave, fontSize: TEXT.md },
   promptBox: {
     maxHeight: 140,
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
-  promptText: { color: colors.textoSuave, fontSize: 11, fontFamily: 'monospace' },
+  promptText: { color: colors.textoSuave, fontSize: TEXT.xs, fontFamily: 'monospace' },
   textarea: {
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
     color: colors.textoFuerte,
-    fontSize: 12,
+    fontSize: TEXT.sm,
     fontFamily: 'monospace',
     minHeight: 120,
     textAlignVertical: 'top',
   },
-  pasteText: { color: colors.acentoClaro, fontSize: 13 },
+  pasteText: { color: colors.acentoClaro, fontSize: TEXT.sm },
   previewCard: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
     gap: 4,
   },
@@ -242,25 +242,25 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 8,
   },
-  previewName: { color: colors.textoFuerte, fontSize: 14, fontWeight: '600', flex: 1 },
+  previewName: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600', flex: 1 },
   badge: {
-    color: '#fcd34d',
-    backgroundColor: '#451a03',
-    fontSize: 11,
+    color: c.aviso,
+    backgroundColor: c.avisoFondo,
+    fontSize: TEXT.xs,
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: RADIUS.sm,
     overflow: 'hidden',
   },
-  previewBlocks: { color: colors.textoSuave, fontSize: 12 },
+  previewBlocks: { color: colors.textoSuave, fontSize: TEXT.sm },
   rejectedBox: {
-    borderColor: '#78350f',
+    borderColor: c.aviso,
     borderWidth: 1,
-    backgroundColor: '#451a0333',
-    borderRadius: 10,
+    backgroundColor: c.avisoFondo,
+    borderRadius: RADIUS.lg,
     padding: 12,
     gap: 4,
   },
-  rejectedTitle: { color: '#fcd34d', fontSize: 13, fontWeight: '600' },
-  rejectedItem: { color: '#fde68a', fontSize: 11 },
+  rejectedTitle: { color: c.aviso, fontSize: TEXT.sm, fontWeight: '600' },
+  rejectedItem: { color: c.aviso, fontSize: TEXT.xs },
 });

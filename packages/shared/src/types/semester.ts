@@ -20,6 +20,7 @@
 import type { EntityId } from './common.js';
 import type { Instant } from './auth.js';
 import type { CalendarDate } from './attendance.js';
+import { COLOR } from '../design/tokens.js';
 
 /**
  * Estado de un semestre.
@@ -47,8 +48,8 @@ export const SEMESTER_STATUS_LABELS: Readonly<Record<SemesterStatus, string>> = 
  * el dispositivo.
  */
 export const SEMESTER_STATUS_COLORS: Readonly<Record<SemesterStatus, string>> = {
-  activo: '#10b981',
-  archivado: '#94a3b8',
+  activo: COLOR.exito,
+  archivado: COLOR.tinta3,
 };
 
 /** Longitud máxima del nombre de un semestre. Es una etiqueta corta: "2026-2", "Quinto". */

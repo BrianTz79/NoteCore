@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por plugins/with-widget-horario.js — no editar a mano. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_fondo"
+    android:padding="14dp">
+
+  <!-- Cabecera: marca + cuándo -->
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:baselineAligned="false">
+
+    <TextView
+        android:id="@+id/widget_marca"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/widget_titulo"
+        android:textColor="@color/nc_tinta3"
+        android:textSize="11sp"
+        android:letterSpacing="0.08"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/widget_cuando"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/nc_acento"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:maxLines="1" />
+  </LinearLayout>
+
+  <!-- Bloque de la clase: barra de color + nombre + hora -->
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
+      android:orientation="horizontal"
+      android:layout_marginTop="10dp"
+      android:baselineAligned="false">
+
+    <!--
+      Es un ImageView y no un View a secas **por obligación**: un RemoteViews solo puede
+      inflar una lista cerrada de clases, y `android.view.View` no está en ella —el
+      lanzador responde «Class not allowed to be inflated» y el widget entero no carga—.
+      ImageView sí está permitido y admite el mismo `setBackgroundColor` con el que el
+      proveedor le pone el color de la materia.
+    -->
+    <ImageView
+        android:id="@+id/widget_barra"
+        android:layout_width="3dp"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:background="@drawable/widget_barra" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginStart="10dp">
+
+      <TextView
+          android:id="@+id/widget_materia"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:textColor="@color/nc_tinta"
+          android:textSize="17sp"
+          android:fontFamily="sans-serif-medium"
+          android:maxLines="2"
+          android:ellipsize="end" />
+
+      <TextView
+          android:id="@+id/widget_hora"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="2dp"
+          android:textColor="@color/nc_tinta2"
+          android:textSize="13sp"
+          android:fontFamily="monospace"
+          android:maxLines="1" />
+
+      <TextView
+          android:id="@+id/widget_aula"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:textColor="@color/nc_tinta3"
+          android:textSize="12sp"
+          android:maxLines="1"
+          android:ellipsize="end" />
+    </LinearLayout>
+  </LinearLayout>
+
+  <!-- Pie: cuántas clases quedan hoy -->
+  <TextView
+      android:id="@+id/widget_pie"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:textColor="@color/nc_tinta3"
+      android:textSize="11sp"
+      android:maxLines="1"
+      android:ellipsize="end" />
+</LinearLayout>

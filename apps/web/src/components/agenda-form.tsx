@@ -83,7 +83,7 @@ export function AgendaForm({
 
   return (
     <form
-      className="space-y-4"
+      className="space-y-nc-md"
       onSubmit={(event) => {
         event.preventDefault();
         void submit();
@@ -101,9 +101,9 @@ export function AgendaForm({
         autoFocus
       />
 
-      <div className="space-y-1.5">
-        <label htmlFor="description" className="block text-sm font-medium text-slate-300">
-          Detalles <span className="text-slate-500">(opcional)</span>
+      <div className="space-y-nc-2xs">
+        <label htmlFor="description" className="block text-sm font-medium text-tinta2">
+          Detalles <span className="text-tinta3">(opcional)</span>
         </label>
         <textarea
           id="description"
@@ -111,23 +111,23 @@ export function AgendaForm({
           onChange={(event) => setDescription(event.target.value)}
           rows={3}
           placeholder="Portada, marco teórico y conclusiones. Mínimo 5 cuartillas."
-          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+          className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
         />
         {errors.fields.description ? (
-          <p className="text-sm text-red-400">{errors.fields.description}</p>
+          <p className="text-sm text-error">{errors.fields.description}</p>
         ) : null}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <label htmlFor="kind" className="block text-sm font-medium text-slate-300">
+      <div className="grid gap-nc-md sm:grid-cols-3">
+        <div className="space-y-nc-2xs">
+          <label htmlFor="kind" className="block text-sm font-medium text-tinta2">
             Tipo
           </label>
           <select
             id="kind"
             value={kind}
             onChange={(event) => setKind(event.target.value as AgendaKind)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+            className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none focus:border-acento focus:ring-2 focus:ring-acento-tenue"
           >
             {AGENDA_KINDS.map((value) => (
               <option key={value} value={value}>
@@ -137,15 +137,15 @@ export function AgendaForm({
           </select>
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="subjectId" className="block text-sm font-medium text-slate-300">
-            Materia <span className="text-slate-500">(opcional)</span>
+        <div className="space-y-nc-2xs">
+          <label htmlFor="subjectId" className="block text-sm font-medium text-tinta2">
+            Materia <span className="text-tinta3">(opcional)</span>
           </label>
           <select
             id="subjectId"
             value={subjectId}
             onChange={(event) => setSubjectId(event.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+            className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none focus:border-acento focus:ring-2 focus:ring-acento-tenue"
           >
             {/* FR-018: la materia es opcional, así que "ninguna" es una opción de verdad. */}
             <option value="">Sin materia</option>
@@ -156,28 +156,28 @@ export function AgendaForm({
             ))}
           </select>
           {errors.fields.subjectId ? (
-            <p className="text-sm text-red-400">{errors.fields.subjectId}</p>
+            <p className="text-sm text-error">{errors.fields.subjectId}</p>
           ) : null}
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="dueDate" className="block text-sm font-medium text-slate-300">
-            Fecha límite <span className="text-slate-500">(opcional)</span>
+        <div className="space-y-nc-2xs">
+          <label htmlFor="dueDate" className="block text-sm font-medium text-tinta2">
+            Fecha límite <span className="text-tinta3">(opcional)</span>
           </label>
           <input
             id="dueDate"
             type="date"
             value={dueDate}
             onChange={(event) => setDueDate(event.target.value)}
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+            className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none focus:border-acento focus:ring-2 focus:ring-acento-tenue"
           />
           {errors.fields.dueDate ? (
-            <p className="text-sm text-red-400">{errors.fields.dueDate}</p>
+            <p className="text-sm text-error">{errors.fields.dueDate}</p>
           ) : null}
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-nc-sm">
         <Button type="submit" loading={saving}>
           {item ? 'Guardar cambios' : 'Añadir a mi agenda'}
         </Button>

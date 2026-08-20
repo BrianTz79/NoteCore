@@ -24,7 +24,7 @@ import {
 import { agendaApi, scheduleApi, shareApi } from '../lib/api';
 import { QrCode } from '../components/qr-code';
 import { QrScanner } from '../components/qr-scanner';
-import { Button, Card, Field, FormError, colors } from '../components/ui';
+import { Button, Card, Field, FormError, RADIUS, SPACE, TEXT, base, colors } from '../components/ui';
 
 /**
  * Compartir en la app (FR-028 a FR-033).
@@ -647,17 +647,17 @@ function ListaShares({
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colors.fondo },
-  contenido: { padding: 20, gap: 16, paddingBottom: 48 },
+  contenido: { ...base.contenido, paddingTop: SPACE.md },
   centro: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.fondo },
   cabecera: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  titulo: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  enlace: { color: colors.acentoClaro, fontSize: 15 },
-  enlacePequeno: { color: colors.acentoClaro, fontSize: 13 },
-  enlaceTenue: { color: colors.textoTenue, fontSize: 13 },
-  parrafo: { color: colors.texto, fontSize: 15, lineHeight: 21 },
-  tenue: { color: colors.textoSuave, fontSize: 13 },
-  exito: { color: colors.exito, fontSize: 14 },
-  etiqueta: { color: colors.texto, fontSize: 14, fontWeight: '600', paddingTop: 4 },
+  titulo: { ...base.titulo },
+  enlace: { color: colors.acentoClaro, fontSize: TEXT.md },
+  enlacePequeno: { color: colors.acentoClaro, fontSize: TEXT.sm },
+  enlaceTenue: { color: colors.textoTenue, fontSize: TEXT.sm },
+  parrafo: { color: colors.texto, fontSize: TEXT.md, lineHeight: 21 },
+  tenue: { color: colors.textoSuave, fontSize: TEXT.sm },
+  exito: { color: colors.exito, fontSize: TEXT.md },
+  etiqueta: { color: colors.texto, fontSize: TEXT.md, fontWeight: '600', paddingTop: 4 },
   fila: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flex: { flex: 1 },
   opcion: {
@@ -666,49 +666,49 @@ const styles = StyleSheet.create({
     gap: 10,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
-  opcionTexto: { color: colors.texto, fontSize: 15, flex: 1 },
+  opcionTexto: { color: colors.texto, fontSize: TEXT.md, flex: 1 },
   casilla: {
     width: 20,
     height: 20,
-    borderRadius: 4,
+    borderRadius: RADIUS.sm,
     borderWidth: 1.5,
     borderColor: colors.textoTenue,
     alignItems: 'center',
     justifyContent: 'center',
   },
   casillaMarcada: { backgroundColor: colors.acento, borderColor: colors.acento },
-  palomita: { color: colors.textoFuerte, fontSize: 13, fontWeight: '700' },
+  palomita: { color: colors.textoFuerte, fontSize: TEXT.sm, fontWeight: '700' },
   radio: {
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: RADIUS.md,
     borderWidth: 2,
     borderColor: colors.textoTenue,
   },
   radioMarcado: { borderColor: colors.acento, backgroundColor: colors.acento },
-  punto: { width: 12, height: 12, borderRadius: 6 },
+  punto: { width: 12, height: 12, borderRadius: RADIUS.md },
   item: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
     gap: 4,
   },
-  itemTitulo: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600', flex: 1 },
-  estado: { fontSize: 12, fontWeight: '700' },
+  itemTitulo: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600', flex: 1 },
+  estado: { fontSize: TEXT.sm, fontWeight: '700' },
   qrCentro: { alignItems: 'center', gap: 8, paddingVertical: 8 },
   codigoGrande: {
     color: colors.acentoClaro,
-    fontSize: 26,
+    fontSize: TEXT['2xl'],
     fontWeight: '700',
     letterSpacing: 4,
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
-  codigoLista: { color: colors.textoSuave, fontSize: 14, letterSpacing: 2 },
-  enlaceTexto: { color: colors.textoSuave, fontSize: 13 },
+  codigoLista: { color: colors.textoSuave, fontSize: TEXT.md, letterSpacing: 2 },
+  enlaceTexto: { color: colors.textoSuave, fontSize: TEXT.sm },
 });

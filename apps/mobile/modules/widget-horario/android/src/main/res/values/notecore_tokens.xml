@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Generado por plugins/with-widget-horario.js a partir de
+  packages/shared/src/design/tokens.ts — NO EDITAR A MANO.
+
+  Un RemoteViews solo entiende colores compilados en recursos: no puede leer los tokens
+  compartidos. Esta copia se regenera en cada prebuild para que no pueda quedarse atrás,
+  que es la única forma de que la única duplicación del sistema de diseño no se convierta
+  en una divergencia.
+-->
+<resources>
+  <color name="nc_papel">#0b0f18</color>
+  <color name="nc_papel2">#131926</color>
+  <color name="nc_papel3">#1b2333</color>
+  <color name="nc_tinta">#f2f5fa</color>
+  <color name="nc_tinta2">#c2ccdc</color>
+  <color name="nc_tinta3">#8b97ad</color>
+  <color name="nc_filete">#242e40</color>
+  <color name="nc_filete2">#33405a</color>
+  <color name="nc_acento">#5aa9ff</color>
+  <color name="nc_acentoTenue">#1e3a5f</color>
+  <color name="nc_acentoTinta">#04101f</color>
+  <color name="nc_error">#ff8080</color>
+  <color name="nc_errorFondo">#2a1116</color>
+  <color name="nc_exito">#4ade9b</color>
+  <color name="nc_aviso">#f2c14e</color>
+  <color name="nc_avisoFondo">#2b2211</color>
+  <color name="nc_foco">#8fd0ff</color>
+</resources>

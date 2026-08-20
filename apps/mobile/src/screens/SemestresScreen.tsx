@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   SEMESTER_ARCHIVED_MESSAGE,
   SEMESTER_CLOSE_DISCLAIMER,
@@ -15,7 +15,7 @@ import {
   type SemesterCloseEffect,
 } from '@notecore/shared';
 import { semesterApi } from '../lib/api';
-import { Button, Card, Field, FormError, colors } from '../components/ui';
+import { Button, Card, Field, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 
 /**
  * Semestres en la app (FR-034 a FR-038).
@@ -100,16 +100,11 @@ export function SemestresScreen({ onVolver }: { onVolver: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.contenido}>
-      <Pressable onPress={onVolver} hitSlop={8}>
-        <Text style={styles.volver}>← Inicio</Text>
-      </Pressable>
-
-      <View style={styles.encabezado}>
-        <Text style={styles.titulo}>Semestres</Text>
-        <Text style={styles.subtitulo}>
-          Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta.
-        </Text>
-      </View>
+      <ScreenHeader
+        title="Semestres"
+        subtitle={"Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta."}
+        onBack={onVolver}
+      />
 
       <FormError message={error} />
       {notice ? <Text style={styles.aviso}>{notice}</Text> : null}
@@ -219,38 +214,38 @@ function SemesterRow({ semester }: { semester: Semester }) {
 }
 
 const styles = StyleSheet.create({
-  contenido: { padding: 20, gap: 16, paddingBottom: 48 },
-  volver: { color: colors.acentoClaro, fontSize: 15 },
+  contenido: { ...base.contenido, paddingTop: SPACE.md },
+  volver: { color: c.tinta3, fontSize: TEXT.sm, fontFamily: fuente.cuerpo },
   encabezado: { gap: 4 },
-  titulo: { color: colors.textoFuerte, fontSize: 24, fontWeight: '600' },
-  subtitulo: { color: colors.textoSuave, fontSize: 14 },
-  cargando: { color: colors.textoSuave, fontSize: 15 },
-  disclaimer: { color: colors.textoTenue, fontSize: 13 },
+  titulo: { ...base.titulo },
+  subtitulo: { ...base.cuerpo },
+  cargando: { color: colors.textoSuave, fontSize: TEXT.md },
+  disclaimer: { color: colors.textoTenue, fontSize: TEXT.sm },
   aviso: {
     color: colors.exito,
-    backgroundColor: '#022c22',
-    borderColor: '#065f46',
+    backgroundColor: c.papel3,
+    borderColor: c.exito,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
-    fontSize: 14,
+    fontSize: TEXT.md,
   },
   avisoFila: { flexDirection: 'row', gap: 8 },
-  avisoPunto: { color: colors.textoTenue, fontSize: 14 },
-  avisoTexto: { color: colors.texto, fontSize: 14, flex: 1 },
+  avisoPunto: { color: colors.textoTenue, fontSize: TEXT.md },
+  avisoTexto: { color: colors.texto, fontSize: TEXT.md, flex: 1 },
   fila: { gap: 4 },
   filaCabecera: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
-  nombre: { color: colors.textoFuerte, fontSize: 16, fontWeight: '600' },
-  etiqueta: { borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  etiquetaTexto: { fontSize: 12, fontWeight: '600' },
-  periodo: { color: colors.textoSuave, fontSize: 14 },
-  vacio: { color: colors.textoTenue, fontSize: 14 },
+  nombre: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  etiqueta: { borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 },
+  etiquetaTexto: { fontSize: TEXT.sm, fontWeight: '600' },
+  periodo: { color: colors.textoSuave, fontSize: TEXT.md },
+  vacio: { color: colors.textoTenue, fontSize: TEXT.md },
   archivado: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 6,
   },
-  soloLectura: { color: colors.textoTenue, fontSize: 12 },
+  soloLectura: { color: colors.textoTenue, fontSize: TEXT.sm },
 });

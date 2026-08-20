@@ -31,7 +31,8 @@
         }
       ],
       "./plugins/with-dev-cleartext.js",
-      "./plugins/with-sin-permisos-de-almacenamiento.js"
+      "./plugins/with-sin-permisos-de-almacenamiento.js",
+      "./plugins/with-widget-horario.js"
     ]
   }
 }

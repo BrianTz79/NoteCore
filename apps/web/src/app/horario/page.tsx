@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import {
   CACHE_KEYS,
@@ -16,7 +15,7 @@ import { RequireSession } from '@/components/require-session';
 import { ScheduleGrid } from '@/components/schedule-grid';
 import { SubjectForm } from '@/components/subject-form';
 import { ImportDialog } from '@/components/import-dialog';
-import { Button, Card, FormError } from '@/components/ui';
+import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
 import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
@@ -108,20 +107,14 @@ function Horario() {
   const entries = toScheduleEntries(subjects);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Mi horario</h1>
-          <p className="text-slate-400">
-            {subjects.length === 0
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl">
+      <ScreenHeader
+        title="Mi horario"
+        subtitle={subjects.length === 0
               ? 'Todavía no has capturado tus clases'
               : `${subjects.length} materias · ${entries.length} sesiones a la semana`}
-          </p>
-        </div>
-        <Link href="/" className="text-sm font-medium text-sky-400 hover:text-sky-300">
-          ← Volver al inicio
-        </Link>
-      </header>
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
       <SyncIndicator />
@@ -132,14 +125,14 @@ function Horario() {
       {notice ? (
         <p
           role="status"
-          className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3.5 py-2.5 text-sm text-emerald-300"
+          className="rounded-lg border border-exito/40 bg-exito/10 px-nc-sm py-nc-xs text-sm text-exito"
         >
           {notice}
         </p>
       ) : null}
 
       {panel.kind === 'ninguno' ? (
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-nc-sm">
           <Button onClick={() => { setNotice(undefined); setPanel({ kind: 'nueva' }); }}>
             Añadir materia
           </Button>
@@ -186,10 +179,10 @@ function Horario() {
       ) : null}
 
       {loading ? (
-        <p className="text-slate-500">Cargando tu horario…</p>
+        <p className="text-tinta3">Cargando tu horario…</p>
       ) : entries.length === 0 ? (
         <Card>
-          <p className="text-slate-300">
+          <p className="text-tinta2">
             Añade tus materias una por una, o pega el horario que te genere una IA a partir de
             una foto: es más rápido si llevas muchas clases.
           </p>
@@ -199,21 +192,21 @@ function Horario() {
           <ScheduleGrid entries={entries} />
 
           <Card title="Tus materias">
-            <ul className="divide-y divide-slate-800">
+            <ul className="divide-y divide-filete">
               {subjects.map((subject) => (
                 <li
                   key={subject.id}
-                  className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                  className="flex flex-wrap items-center justify-between gap-nc-sm py-nc-sm first:pt-0 last:pb-0"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-nc-sm">
                     <span
                       aria-hidden
                       style={{ backgroundColor: subject.color }}
-                      className="h-3 w-3 shrink-0 rounded-full"
+                      className="h-3 w-3 shrink-0 rounded-pill"
                     />
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-100">{subject.name}</p>
-                      <p className="truncate text-sm text-slate-400">
+                      <p className="truncate font-medium text-tinta">{subject.name}</p>
+                      <p className="truncate text-sm text-tinta2">
                         {subject.blocks
                           .map(
                             (block) =>
@@ -224,7 +217,7 @@ function Horario() {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-nc-xs">
                     <Button
                       variant="secondary"
                       onClick={() => { setNotice(undefined); setPanel({ kind: 'editar', subject }); }}

@@ -35,7 +35,7 @@ import {
   type UserSearchResult,
 } from '@notecore/shared';
 import { socialApi } from '../lib/api';
-import { Button, Card, Field, FormError, colors } from '../components/ui';
+import { Button, Card, Field, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { QrCode } from '../components/qr-code';
 import { QrScanner } from '../components/qr-scanner';
 
@@ -103,11 +103,10 @@ export function SocialScreen({
 
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
-      <Pressable onPress={onVolver} hitSlop={8}>
-        <Text style={styles.volver}>← Volver al inicio</Text>
-      </Pressable>
-
-      <Text style={styles.titulo}>Perfil y contactos</Text>
+      <ScreenHeader
+        title="Perfil y contactos"
+        onBack={onVolver}
+      />
 
       {pendientes ? (
         <View style={styles.aviso}>
@@ -883,43 +882,43 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colors.fondo },
-  contenido: { padding: 20, gap: 16, paddingBottom: 48 },
-  volver: { color: colors.textoSuave, fontSize: 14 },
-  titulo: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
+  contenido: { ...base.contenido, paddingTop: SPACE.md },
+  volver: { color: c.tinta3, fontSize: TEXT.sm, fontFamily: fuente.cuerpo },
+  titulo: { ...base.titulo },
   seccion: { gap: 16 },
-  texto: { color: colors.texto, fontSize: 15, lineHeight: 21 },
-  textoSuave: { color: colors.textoSuave, fontSize: 14, lineHeight: 20 },
-  contador: { color: colors.textoTenue, fontSize: 13 },
-  exito: { color: colors.exito, fontSize: 14 },
+  texto: { color: colors.texto, fontSize: TEXT.md, lineHeight: 21 },
+  textoSuave: { color: colors.textoSuave, fontSize: TEXT.md, lineHeight: 20 },
+  contador: { color: colors.textoTenue, fontSize: TEXT.sm },
+  exito: { color: colors.exito, fontSize: TEXT.md },
   aviso: {
-    backgroundColor: '#082f49',
-    borderColor: '#0369a1',
+    backgroundColor: c.acentoTenue,
+    borderColor: c.acento,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
   },
-  avisoTexto: { color: colors.acentoClaro, fontSize: 14 },
+  avisoTexto: { color: colors.acentoClaro, fontSize: TEXT.md },
   pestanas: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pestana: {
     backgroundColor: colors.borde,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   pestanaActiva: { backgroundColor: colors.acento },
-  pestanaTexto: { color: colors.textoSuave, fontSize: 14, fontWeight: '500' },
+  pestanaTexto: { color: colors.textoSuave, fontSize: TEXT.md, fontWeight: '500' },
   pestanaTextoActivo: { color: colors.textoFuerte },
   campo: { gap: 6 },
-  etiqueta: { color: colors.texto, fontSize: 14, fontWeight: '500' },
+  etiqueta: { color: colors.texto, fontSize: TEXT.md, fontWeight: '500' },
   areaTexto: {
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: colors.textoFuerte,
-    fontSize: 15,
+    fontSize: TEXT.md,
     minHeight: 88,
     textAlignVertical: 'top',
   },
@@ -927,42 +926,42 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: colors.textoFuerte,
-    fontSize: 16,
+    fontSize: TEXT.md,
   },
   opcion: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 4,
   },
-  opcionActiva: { borderColor: colors.acento, backgroundColor: '#0c2b40' },
-  opcionTitulo: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
-  opcionTexto: { color: colors.textoSuave, fontSize: 13, lineHeight: 18 },
+  opcionActiva: { borderColor: colors.acento, backgroundColor: c.acentoTenue },
+  opcionTitulo: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  opcionTexto: { color: colors.textoSuave, fontSize: TEXT.sm, lineHeight: 18 },
   qrCentro: { alignItems: 'center' },
-  usuario: { color: colors.textoFuerte, fontSize: 18, fontWeight: '600' },
-  enlace: { color: colors.textoSuave, fontSize: 13 },
+  usuario: { color: colors.textoFuerte, fontSize: TEXT.lg, fontWeight: '600' },
+  enlace: { color: colors.textoSuave, fontSize: TEXT.sm },
   fila: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 8,
   },
-  filaNombre: { color: colors.textoFuerte, fontSize: 16, fontWeight: '600' },
-  filaUsuario: { color: colors.textoSuave, fontSize: 14 },
-  estado: { fontSize: 13, fontWeight: '500' },
-  errorLinea: { color: colors.error, fontSize: 13 },
+  filaNombre: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  filaUsuario: { color: colors.textoSuave, fontSize: TEXT.md },
+  estado: { fontSize: TEXT.sm, fontWeight: '500' },
+  errorLinea: { color: colors.error, fontSize: TEXT.sm },
   acciones: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   accion: { flexGrow: 1, flexBasis: '45%' },
   publicacion: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 14,
     gap: 8,
   },

@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import {
   AGENDA_KIND_LABELS,
@@ -17,7 +16,7 @@ import {
 import { agendaApi, scheduleApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
 import { AgendaForm } from '@/components/agenda-form';
-import { Button, Card, FormError } from '@/components/ui';
+import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 import { CacheNotice, SyncIndicator } from '@/components/sync-indicator';
 import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 
@@ -115,22 +114,16 @@ function Agenda() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-12">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Mi agenda</h1>
-          <p className="text-slate-400">
-            {agenda
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-2xl">
+      <ScreenHeader
+        title="Mi agenda"
+        subtitle={agenda
               ? agenda.pending.length === 0
                 ? 'No tienes nada pendiente'
                 : `${agenda.pending.length} pendiente${agenda.pending.length > 1 ? 's' : ''}`
               : 'Tus tareas, proyectos y actividades'}
-          </p>
-        </div>
-        <Link href="/" className="text-sm font-medium text-sky-400 hover:text-sky-300">
-          ← Volver al inicio
-        </Link>
-      </header>
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       {/* Estado de la conexión (FR-050) y antigüedad de lo cacheado (FR-048). */}
       <SyncIndicator />
@@ -141,7 +134,7 @@ function Agenda() {
       {notice ? (
         <p
           role="status"
-          className="rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3.5 py-2.5 text-sm text-emerald-300"
+          className="rounded-lg border border-exito/40 bg-exito/10 px-nc-sm py-nc-xs text-sm text-exito"
         >
           {notice}
         </p>
@@ -149,7 +142,7 @@ function Agenda() {
 
       {/* Lo vencido y lo de hoy se resumen arriba: es lo que decide qué hacer al abrir. */}
       {agenda && (agenda.overdueCount > 0 || agenda.dueTodayCount > 0) ? (
-        <p className="rounded-lg border border-amber-900/50 bg-amber-950/20 px-3.5 py-2.5 text-sm text-amber-300">
+        <p className="rounded-lg border border-aviso/40 bg-aviso-fondo px-nc-sm py-nc-xs text-sm text-aviso">
           {agenda.overdueCount > 0
             ? `${agenda.overdueCount} ${agenda.overdueCount === 1 ? 'actividad vencida' : 'actividades vencidas'}`
             : ''}
@@ -161,7 +154,7 @@ function Agenda() {
       ) : null}
 
       {loading ? (
-        <p className="text-slate-500">Cargando tu agenda…</p>
+        <p className="text-tinta3">Cargando tu agenda…</p>
       ) : (
         <>
           {/* ── Alta y edición ───────────────────────────────────────────── */}
@@ -191,12 +184,12 @@ function Agenda() {
           {/* ── Pendientes ───────────────────────────────────────────────── */}
           <Card title="Pendientes">
             {agenda?.pending.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="text-tinta2">
                 No tienes nada pendiente. Añade lo que te dejen en clase para no perderlo de
                 vista.
               </p>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-nc-sm">
                 {agenda?.pending.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -215,7 +208,7 @@ function Agenda() {
           {agenda && agenda.completed.length > 0 ? (
             <Card title={`Completadas (${agenda.completed.length})`}>
               {/* FR-020: completar conserva el registro, así que siguen consultables. */}
-              <ul className="space-y-3">
+              <ul className="space-y-nc-sm">
                 {agenda.completed.map((item) => (
                   <ItemRow
                     key={item.id}
@@ -252,39 +245,39 @@ function ItemRow({
   const color = AGENDA_URGENCY_COLORS[item.urgency];
 
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-slate-800 p-4">
-      <div className="flex min-w-0 flex-1 items-start gap-3">
+    <li className="flex flex-wrap items-start justify-between gap-nc-sm rounded-lg border border-filete p-nc-md">
+      <div className="flex min-w-0 flex-1 items-start gap-nc-sm">
         <input
           type="checkbox"
           checked={item.completed}
           disabled={busy}
           onChange={onToggle}
           aria-label={item.completed ? `Reabrir ${item.title}` : `Completar ${item.title}`}
-          className="mt-1 h-4 w-4 shrink-0 accent-sky-500"
+          className="mt-nc-2xs h-4 w-4 shrink-0 accent-sky-500"
         />
 
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-nc-2xs">
           <p
-            className={`font-medium ${item.completed ? 'text-slate-500 line-through' : 'text-slate-100'}`}
+            className={`font-medium ${item.completed ? 'text-tinta3 line-through' : 'text-tinta'}`}
           >
             {item.title}
           </p>
 
           {item.description ? (
-            <p className="whitespace-pre-wrap text-sm text-slate-400">{item.description}</p>
+            <p className="whitespace-pre-wrap text-sm text-tinta2">{item.description}</p>
           ) : null}
 
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-500">
+          <p className="flex flex-wrap items-center gap-x-nc-xs gap-y-nc-2xs text-sm text-tinta3">
             <span>{AGENDA_KIND_LABELS[item.kind]}</span>
 
             {item.subjectName ? (
               <>
                 <span aria-hidden>·</span>
-                <span className="inline-flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-nc-2xs">
                   <span
                     aria-hidden
                     style={{ backgroundColor: item.subjectColor ?? '#64748b' }}
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="h-2.5 w-2.5 rounded-pill"
                   />
                   {item.subjectName}
                 </span>
@@ -308,7 +301,7 @@ function ItemRow({
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-nc-xs">
         <Button variant="secondary" disabled={busy} onClick={onEdit}>
           Editar
         </Button>

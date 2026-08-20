@@ -1,0 +1,7 @@
+{
+  "name": "widget-horario",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Widget de pantalla principal de NoteCore (FR-051)",
+  "main": "index.ts"
+}

@@ -39,8 +39,8 @@ export function ScheduleGrid({
   return (
     // La rejilla se desplaza en horizontal dentro de su propio contenedor: en una pantalla
     // estrecha se arrastra, y la página nunca se desborda a lo ancho.
-    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50">
-      <div className="min-w-[640px] p-4">
+    <div className="overflow-x-auto rounded-lg border border-filete bg-papel2">
+      <div className="min-w-[640px] p-nc-md">
         <div
           className="grid gap-px"
           // La primera columna es el eje de horas, más estrecha que los días.
@@ -50,7 +50,7 @@ export function ScheduleGrid({
           {range.weekdays.map((day) => (
             <div
               key={day}
-              className="pb-2 text-center text-sm font-medium text-slate-300"
+              className="pb-nc-xs text-center text-sm font-medium text-tinta2"
             >
               <span className="hidden sm:inline">{WEEKDAY_LABELS[day]}</span>
               <span className="sm:hidden">{WEEKDAY_SHORT_LABELS[day]}</span>
@@ -61,8 +61,12 @@ export function ScheduleGrid({
             {hours.map((hour, index) => (
               <div
                 key={hour}
-                className="absolute right-2 -translate-y-1/2 text-xs tabular-nums text-slate-500"
-                style={{ top: index * HOUR_HEIGHT }}
+                className="absolute right-nc-xs font-mono text-xs tabular-nums text-tinta3"
+                // Cada etiqueta va **debajo** de su línea, no centrada sobre ella: centrada,
+                // la primera se sale por arriba del contenedor y queda cortada. Con dos
+                // píxeles de separación, la hora se lee como el encabezado de la franja que
+                // abre, que además es como se lee un horario.
+                style={{ top: index * HOUR_HEIGHT + 2 }}
               >
                 {String(hour).padStart(2, '0')}:00
               </div>
@@ -72,13 +76,13 @@ export function ScheduleGrid({
           {range.weekdays.map((day) => (
             <div
               key={day}
-              className="relative border-l border-slate-800"
+              className="relative border-l border-filete"
               style={{ height: totalHeight }}
             >
               {hours.map((hour, index) => (
                 <div
                   key={hour}
-                  className="absolute inset-x-0 border-t border-slate-800/70"
+                  className="absolute inset-x-0 border-t border-filete"
                   style={{ top: index * HOUR_HEIGHT }}
                 />
               ))}
@@ -103,16 +107,16 @@ export function ScheduleGrid({
                       borderLeftColor: entry.color,
                       backgroundColor: `${entry.color}33`,
                     }}
-                    className="absolute inset-x-1 overflow-hidden rounded border-l-4 px-2 py-1 text-left transition hover:brightness-125"
+                    className="absolute inset-x-1 overflow-hidden rounded border-l-4 px-nc-xs py-nc-2xs text-left transition hover:brightness-125"
                   >
-                    <p className="truncate text-xs font-medium text-slate-100">
+                    <p className="truncate text-xs font-medium text-tinta">
                       {entry.subjectName}
                     </p>
-                    <p className="truncate text-[11px] tabular-nums text-slate-300">
+                    <p className="truncate font-mono text-xs tabular-nums text-tinta2">
                       {entry.startTime}–{entry.endTime}
                     </p>
                     {entry.room ? (
-                      <p className="truncate text-[11px] text-slate-400">{entry.room}</p>
+                      <p className="truncate text-[11px] text-tinta2">{entry.room}</p>
                     ) : null}
                   </button>
                 );

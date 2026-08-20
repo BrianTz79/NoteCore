@@ -25,7 +25,7 @@ import {
 } from '@notecore/shared';
 import { apiBaseUrl, messagingApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card, FormError } from '@/components/ui';
+import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 
 /**
  * Mensajería (FR-043, FR-044).
@@ -59,8 +59,8 @@ export default function MensajesPage() {
 
 function Cargando() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-16">
-      <p className="text-slate-400">Cargando tus mensajes…</p>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl">
+      <p className="text-tinta2">Cargando tus mensajes…</p>
     </main>
   );
 }
@@ -133,25 +133,23 @@ function Mensajes() {
   );
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-6 py-16">
-      <header className="space-y-2">
-        <Link href="/" className="text-sm text-slate-400 hover:text-slate-200">
-          ← Volver al inicio
-        </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">Mensajes</h1>
-        {avisoCanal ? (
-          <p
-            data-testid="estado-canal"
-            className="rounded-lg border border-amber-900/60 bg-amber-950/30 px-3.5 py-2 text-sm text-amber-300"
-          >
-            {avisoCanal}
-          </p>
-        ) : null}
-      </header>
+    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-nc-lg px-nc-lg py-nc-3xl">
+      <ScreenHeader
+        title="Mensajes"
+        back={{ href: '/', label: 'Inicio' }}
+      />
+      {avisoCanal ? (
+        <p
+          data-testid="estado-canal"
+          className="rounded-lg border border-aviso/40 bg-aviso-fondo px-nc-sm py-nc-xs text-sm text-aviso"
+        >
+          {avisoCanal}
+        </p>
+      ) : null}
 
       <FormError message={error} />
 
-      <div className="grid gap-6 md:grid-cols-[20rem_1fr]">
+      <div className="grid gap-nc-lg md:grid-cols-[20rem_1fr]">
         <Bandeja
           conversaciones={ordenadas}
           abierta={abierta}
@@ -160,7 +158,7 @@ function Mensajes() {
 
         {abierta === null ? (
           <Card>
-            <p data-testid="sin-hilo" className="text-slate-400">
+            <p data-testid="sin-hilo" className="text-tinta2">
               Elige una conversación para leerla, o abre el perfil de un contacto para
               escribirle por primera vez.
             </p>
@@ -194,10 +192,10 @@ function Bandeja({
   if (conversaciones.length === 0) {
     return (
       <Card title="Conversaciones">
-        <p data-testid="sin-conversaciones" className="text-slate-400">
+        <p data-testid="sin-conversaciones" className="text-tinta2">
           Todavía no tienes conversaciones. Abre el perfil de un contacto para escribirle.
         </p>
-        <Link href="/social" className="text-sm font-medium text-sky-400 hover:text-sky-300">
+        <Link href="/social" className="text-sm font-medium text-acento hover:text-foco">
           Ver mis contactos →
         </Link>
       </Card>
@@ -206,7 +204,7 @@ function Bandeja({
 
   return (
     <Card title="Conversaciones">
-      <ul className="space-y-2" data-testid="lista-conversaciones">
+      <ul className="space-y-nc-xs" data-testid="lista-conversaciones">
         {conversaciones.map((conversacion) => {
           const insignia = unreadBadge(conversacion.unreadCount);
           const activa = conversacion.user.username === abierta;
@@ -217,19 +215,19 @@ function Bandeja({
                 type="button"
                 data-testid={`conversacion-${conversacion.user.username}`}
                 onClick={() => onAbrir(conversacion.user.username)}
-                className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
+                className={`flex w-full items-center gap-nc-sm rounded-lg border p-nc-sm text-left transition ${
                   activa
-                    ? 'border-sky-800 bg-sky-950/40'
-                    : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
+                    ? 'border-acento-tenue bg-acento/10'
+                    : 'border-filete bg-papel2 hover:border-filete2'
                 }`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-slate-100">
+                  <p className="truncate font-medium text-tinta">
                     {conversacion.user.displayName}
                   </p>
                   <p
                     data-testid={`vista-previa-${conversacion.user.username}`}
-                    className="truncate text-sm text-slate-400"
+                    className="truncate text-sm text-tinta2"
                   >
                     {messagePreview(conversacion.lastMessage)}
                   </p>
@@ -238,7 +236,7 @@ function Bandeja({
                 {insignia ? (
                   <span
                     data-testid={`sin-leer-${conversacion.user.username}`}
-                    className="shrink-0 rounded-full bg-sky-600 px-2 py-0.5 text-xs font-medium text-white"
+                    className="shrink-0 rounded-pill bg-acento px-nc-xs py-nc-3xs text-xs font-medium text-white"
                   >
                     {insignia}
                   </span>
@@ -410,15 +408,15 @@ function Hilo({
 
   return (
     <Card>
-      <header className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <header className="flex items-center justify-between gap-nc-sm border-b border-filete pb-nc-sm">
         <div className="min-w-0">
           <Link
             href={`/u/${conversacion.user.username}`}
-            className="block truncate text-lg font-medium text-slate-100 hover:text-sky-300"
+            className="block truncate text-lg font-medium text-tinta hover:text-foco"
           >
             {conversacion.user.displayName}
           </Link>
-          <p className="truncate text-sm text-slate-400">@{conversacion.user.username}</p>
+          <p className="truncate text-sm text-tinta2">@{conversacion.user.username}</p>
         </div>
       </header>
 
@@ -426,10 +424,10 @@ function Hilo({
 
       <div
         data-testid="hilo"
-        className="flex max-h-[26rem] min-h-[16rem] flex-col gap-1 overflow-y-auto py-2"
+        className="flex max-h-[26rem] min-h-[16rem] flex-col gap-nc-2xs overflow-y-auto py-nc-xs"
       >
         {conversacion.hasMore ? (
-          <div className="pb-2 text-center">
+          <div className="pb-nc-xs text-center">
             <Button
               variant="secondary"
               onClick={() => void cargarAnteriores()}
@@ -442,7 +440,7 @@ function Hilo({
         ) : null}
 
         {mensajes.length === 0 ? (
-          <p data-testid="hilo-vacio" className="py-8 text-center text-slate-500">
+          <p data-testid="hilo-vacio" className="py-nc-xl text-center text-tinta3">
             Todavía no se han escrito nada.
           </p>
         ) : (
@@ -462,13 +460,13 @@ function Hilo({
       {motivo ? (
         <p
           data-testid="motivo-bloqueo"
-          className="rounded-lg border border-slate-800 bg-slate-900/60 px-3.5 py-3 text-sm text-slate-400"
+          className="rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-sm text-sm text-tinta2"
         >
           {motivo}
         </p>
       ) : (
         <form
-          className="flex items-end gap-2 border-t border-slate-800 pt-3"
+          className="flex items-end gap-nc-xs border-t border-filete pt-nc-sm"
           onSubmit={(event) => {
             event.preventDefault();
             void enviar();
@@ -489,7 +487,7 @@ function Hilo({
             rows={2}
             maxLength={MESSAGE_MAX_LENGTH}
             placeholder="Escribe un mensaje…"
-            className="flex-1 resize-none rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+            className="flex-1 resize-none rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
           />
           <Button type="submit" loading={enviando} data-testid="enviar-mensaje">
             Enviar
@@ -513,17 +511,17 @@ function Burbuja({
     <div
       data-testid={`mensaje-${mensaje.id}`}
       className={`group flex ${mensaje.isOwn ? 'justify-end' : 'justify-start'} ${
-        agrupado ? 'mt-0.5' : 'mt-3'
+        agrupado ? 'mt-nc-3xs' : 'mt-nc-sm'
       }`}
     >
       <div className={`max-w-[80%] ${mensaje.isOwn ? 'text-right' : 'text-left'}`}>
         <div
-          className={`inline-block rounded-2xl px-3.5 py-2 text-sm ${
+          className={`inline-block rounded-lg px-nc-sm py-nc-xs text-sm ${
             mensaje.deleted
-              ? 'border border-slate-800 bg-transparent italic text-slate-500'
+              ? 'border border-filete bg-transparent italic text-tinta3'
               : mensaje.isOwn
-                ? 'bg-sky-700 text-white'
-                : 'bg-slate-800 text-slate-100'
+                ? 'bg-acento text-white'
+                : 'bg-papel3 text-tinta'
           }`}
         >
           <span className="whitespace-pre-wrap break-words">
@@ -531,7 +529,7 @@ function Burbuja({
           </span>
         </div>
 
-        <div className="mt-0.5 flex items-center justify-end gap-2 text-xs text-slate-500">
+        <div className="mt-nc-3xs flex items-center justify-end gap-nc-xs text-xs text-tinta3">
           <span>{relativeTime(mensaje.sentAt)}</span>
           {/*
             El acuse solo se pinta en los propios: de los ajenos, quien leyó es uno mismo, y
@@ -547,7 +545,7 @@ function Burbuja({
               type="button"
               data-testid={`borrar-${mensaje.id}`}
               onClick={onBorrar}
-              className="opacity-0 transition group-hover:opacity-100 hover:text-red-400"
+              className="opacity-0 transition group-hover:opacity-100 hover:text-error"
             >
               Eliminar
             </button>

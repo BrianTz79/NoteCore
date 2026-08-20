@@ -16,6 +16,7 @@ import type {
   UserSearchResult,
 } from '../types/social.js';
 import { parseDate, type Instant } from '../types/auth.js';
+import { COLOR } from '../design/tokens.js';
 
 /* ─────────────────────────── El par ordenado ─────────────────────────── */
 
@@ -222,12 +223,12 @@ export const CONTACT_VIEWPOINT_LABELS: Readonly<Record<ContactViewpoint, string>
  * el dispositivo.
  */
 export const CONTACT_VIEWPOINT_COLORS: Readonly<Record<ContactViewpoint, string>> = {
-  ninguna: '#94a3b8',
-  enviada: '#f59e0b',
-  recibida: '#3b82f6',
-  aceptada: '#10b981',
-  bloqueada_por_mi: '#ef4444',
-  bloqueada_por_otro: '#94a3b8',
+  ninguna: COLOR.tinta3,
+  enviada: COLOR.aviso,
+  recibida: COLOR.acento,
+  aceptada: COLOR.exito,
+  bloqueada_por_mi: COLOR.error,
+  bloqueada_por_otro: COLOR.tinta3,
 };
 
 /**

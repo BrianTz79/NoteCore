@@ -2,17 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { unreadSummary, type UnreadSummary } from '@notecore/shared';
-import { messagingApi } from '@/lib/api';
+import {
+  CACHE_KEYS,
+  describeUpcoming,
+  nextClass,
+  remainingToday,
+  toScheduleEntries,
+  unreadSummary,
+  type AgendaList,
+  type AttendanceSummary,
+  type Subject,
+  type UnreadSummary,
+  type UpcomingClass,
+} from '@notecore/shared';
+import { agendaApi, attendanceApi, messagingApi, scheduleApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card } from '@/components/ui';
+import { Button, EmptyState, NavLink, Rule, Tag } from '@/components/ui';
+import { SyncIndicator } from '@/components/sync-indicator';
 
 /**
- * Inicio, ya con sesión.
+ * Inicio, ya con sesión (Fase 11 · macroestructura Stat-Led de `design.md`).
  *
- * Enlaza a lo que hay disponible: el horario (Fase 2), las faltas (Fase 3), la agenda
- * (Fase 4), el calendario (Fase 5), el perfil (Fase 8) y los mensajes (Fase 10).
+ * **Qué cambió y por qué.** Hasta la Fase 10 esta pantalla eran diez tarjetas visualmente
+ * idénticas, cada una con título, párrafo explicativo y un enlace `→`. Eso es un menú
+ * disfrazado de contenido: obliga a leer diez párrafos para encontrar dónde tocar, y el
+ * párrafo solo sirve la primera vez que alguien abre la aplicación.
+ *
+ * Ahora la pantalla responde antes de que se le pregunte: arriba, **qué clase toca**;
+ * después, solo lo que exige atención —faltas cerca del límite, entregas vencidas,
+ * mensajes sin leer—; y al final la navegación, compacta, sin explicar lo que ya se
+ * entiende por su nombre.
  */
 export default function HomePage() {
   return (
@@ -22,179 +43,308 @@ export default function HomePage() {
   );
 }
 
+/** Lo que el inicio necesita de la API, en un solo objeto para pedirlo de una vez. */
+interface Resumen {
+  readonly proxima: UpcomingClass | null;
+  readonly quedanHoy: number;
+  readonly faltas: AttendanceSummary | null;
+  readonly agenda: AgendaList | null;
+  readonly sinLeer: UnreadSummary | null;
+}
+
 function Inicio() {
   const { user, logout } = useAuth();
-  const [sinLeer, setSinLeer] = useState<UnreadSummary | null>(null);
+  const sync = useSyncActions();
+  const [resumen, setResumen] = useState<Resumen | null>(null);
 
   /**
-   * El número de mensajes sin leer, para el aviso (FR-043).
+   * Todo lo del inicio, en paralelo.
    *
-   * Se pide su propia ruta en lugar de la bandeja entera: el inicio solo necesita el número,
-   * y traer todas las conversaciones con su último mensaje para contarlo sería trabajo de más
-   * en la pantalla que más se abre. Es el mismo criterio del conteo de solicitudes.
+   * `Promise.allSettled` y no `all`: si los mensajes fallan, el horario debe salir igual.
+   * Esta es la pantalla que más se abre y la que peor tolera quedarse en blanco por una
+   * ruta que no respondió.
+   *
+   * El horario pasa por el cache de la Fase 9 —es lo que hace que el inicio siga diciendo
+   * qué clase toca sin conexión—; el resto no, porque un conteo de faltas viejo induce a
+   * error de una forma que un horario viejo no.
    */
   useEffect(() => {
     let vigente = true;
-    void messagingApi
-      .unread()
-      .then((resumen) => {
-        if (vigente) setSinLeer(resumen);
-      })
-      // Un fallo aquí no debe romper el inicio: es un aviso, no el contenido de la pantalla.
-      .catch(() => undefined);
+
+    async function cargar() {
+      const [horario, faltas, agenda, mensajes] = await Promise.allSettled([
+        loadWithCache(sync, CACHE_KEYS.schedule, () => scheduleApi.subjects()),
+        attendanceApi.summary(),
+        agendaApi.list(),
+        messagingApi.unread(),
+      ]);
+
+      if (!vigente) return;
+
+      const subjects: readonly Subject[] =
+        horario.status === 'fulfilled' ? horario.value.data : [];
+      const entries = toScheduleEntries(subjects);
+
+      setResumen({
+        // La regla de qué clase toca vive en `shared` y la comparten la app y el widget de
+        // Android: los tres dicen lo mismo a la misma hora porque llaman a lo mismo.
+        proxima: nextClass(entries),
+        quedanHoy: remainingToday(entries).length,
+        faltas: faltas.status === 'fulfilled' ? faltas.value : null,
+        agenda: agenda.status === 'fulfilled' ? agenda.value : null,
+        sinLeer: mensajes.status === 'fulfilled' ? mensajes.value : null,
+      });
+    }
+
+    void cargar();
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [sync]);
 
   if (!user) return null;
 
-  const avisoMensajes = unreadSummary(sinLeer?.total ?? 0, sinLeer?.conversations ?? 0);
-
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-8 px-6 py-16">
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Hola, {user.displayName}
-          </h1>
-          <p className="text-slate-400">@{user.username}</p>
+    <main className="mx-auto w-full max-w-3xl px-nc-md pb-nc-3xl">
+      <header className="flex flex-wrap items-center justify-between gap-nc-sm py-nc-lg">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium">{user.displayName}</h1>
+          <p className="font-mono text-sm text-tinta3">@{user.username}</p>
         </div>
-        <Button variant="secondary" onClick={() => void logout()}>
+        <Button variant="ghost" size="sm" onClick={() => void logout()}>
           Cerrar sesión
         </Button>
       </header>
 
-      <Card title="Tu horario">
-        <p className="text-slate-300">
-          Captura tus clases a mano o pega el horario que te genere una IA a partir de una
-          foto, y consúltalo en la vista semanal.
-        </p>
-        <Link
-          href="/horario"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mi horario →
-        </Link>
-      </Card>
-
-      <Card title="Tus faltas">
-        <p className="text-slate-300">
-          Marca las clases a las que faltaste y lleva el conteo por materia, con un límite
-          sugerido que puedes ajustar.
-        </p>
-        <Link
-          href="/faltas"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mis faltas →
-        </Link>
-      </Card>
-
-      <Card title="Tu agenda">
-        <p className="text-slate-300">
-          Anota tareas, proyectos y exámenes con su materia y su fecha de entrega, y
-          consúltalos ordenados por lo que vence antes.
-        </p>
-        <Link
-          href="/agenda"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mi agenda →
-        </Link>
-      </Card>
-
-      <Card title="Tu calendario">
-        <p className="text-slate-300">
-          Tus clases y tus entregas en la misma vista, día a día, con avisos antes de que
-          venza cada cosa.
-        </p>
-        <Link
-          href="/calendario"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mi calendario →
-        </Link>
-      </Card>
-
-      <Card title="Compartir">
-        <p className="text-slate-300">
-          Pásale tu horario o tus actividades a un compañero por QR, código o enlace. Recibe
-          una copia suya que puede editar sin afectar a la tuya.
-        </p>
-        <Link
-          href="/compartir"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Compartir o recibir →
-        </Link>
-      </Card>
-
-      <Card title="Semestres">
-        <p className="text-slate-300">
-          Cuando termine el semestre, ciérralo: se archiva completo —horario, faltas y
-          agenda— y lo puedes consultar siempre. El nuevo empieza vacío.
-        </p>
-        <Link
-          href="/semestres"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mis semestres →
-        </Link>
-      </Card>
-
-      <Card title="Perfil y contactos">
-        <p className="text-slate-300">
-          Llena tu perfil, encuentra compañeros por su @usuario y agrégalos como contactos.
-          Tú decides quién ve lo que publicas.
-        </p>
-        <Link
-          href="/social"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mi perfil y mis contactos →
-        </Link>
-      </Card>
-
-      <Card title="Mensajes">
-        <p className="text-slate-300">
-          Escríbete con tus contactos. Los mensajes llegan al momento, y solo puedes hablar
-          con quienes ya aceptaron tu solicitud.
-        </p>
-        {avisoMensajes ? (
-          <p
-            data-testid="aviso-mensajes"
-            className="rounded-lg border border-sky-900/60 bg-sky-950/40 px-3.5 py-2.5 text-sm text-sky-300"
-          >
-            Tienes {avisoMensajes}.
-          </p>
-        ) : null}
-        <Link
-          href="/mensajes"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mis mensajes →
-        </Link>
-      </Card>
-
-      <Card title="Tu cuenta está lista">
-        <p className="text-slate-300">
-          Ya puedes entrar desde la app y desde la web a la vez: cada dispositivo mantiene su
-          propia sesión.
-        </p>
-        <Link
-          href="/perfil"
-          className="inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-        >
-          Ver mi perfil y mis dispositivos →
-        </Link>
-      </Card>
-
-      <Card title="Lo que viene">
-        <ul className="space-y-2 text-slate-400">
-          <li>· Widget de pantalla principal con tu vista semanal</li>
-        </ul>
-      </Card>
+      <div className="space-y-nc-lg">
+        <SyncIndicator />
+        <ProximaClase resumen={resumen} />
+        <Avisos resumen={resumen} />
+        <Navegacion />
+      </div>
     </main>
+  );
+}
+
+/* ==========================================================================
+ * El dato principal
+ * ======================================================================== */
+
+/**
+ * Qué clase toca.
+ *
+ * Es el motivo por el que alguien abre esta aplicación entre dos clases, así que ocupa el
+ * sitio que le corresponde: arriba y grande, no en la séptima tarjeta de una lista.
+ */
+function ProximaClase({ resumen }: { resumen: Resumen | null }) {
+  if (resumen === null) {
+    // Reserva del alto real del bloque para que la pantalla no salte al llegar los datos.
+    return <div className="h-32 animate-pulse rounded-lg border border-filete bg-papel2" />;
+  }
+
+  const { proxima, quedanHoy } = resumen;
+
+  if (proxima === null) {
+    return (
+      <EmptyState
+        message="Todavía no has capturado tu horario."
+        action={
+          <Button
+            // Un enlace con voz de botón: la acción principal de una pantalla vacía.
+            onClick={() => {
+              window.location.href = '/horario';
+            }}
+          >
+            Capturar mi horario
+          </Button>
+        }
+      />
+    );
+  }
+
+  const { entry } = proxima;
+  const enCurso = proxima.timing === 'en_curso';
+
+  return (
+    <section
+      className="rounded-lg border border-filete bg-papel2 p-nc-lg"
+      // El color de la materia entra como borde izquierdo: identifica la clase sin teñir
+      // una superficie entera, que a este tamaño sería un bloque de color con texto encima.
+      style={{ borderLeft: `3px solid ${entry.color}` }}
+    >
+      <div className="flex items-center justify-between gap-nc-sm">
+        <p className="text-xs font-medium tracking-wide text-tinta3 uppercase">
+          {enCurso ? 'Clase en curso' : 'Próxima clase'}
+        </p>
+        <p className="font-mono text-sm text-acento">{describeUpcoming(proxima)}</p>
+      </div>
+
+      <h2 className="mt-nc-xs text-3xl font-medium">{entry.subjectName}</h2>
+
+      <div className="mt-nc-xs flex flex-wrap items-center gap-x-nc-md gap-y-nc-2xs">
+        <p className="font-mono text-lg tabular-nums text-tinta2">
+          {entry.startTime}–{entry.endTime}
+        </p>
+        {entry.room ? <p className="text-md text-tinta3">Aula {entry.room}</p> : null}
+      </div>
+
+      {quedanHoy > 0 ? (
+        <p className="mt-nc-sm text-sm text-tinta3">
+          {quedanHoy === 1 ? 'Queda 1 clase hoy' : `Quedan ${quedanHoy} clases hoy`}
+        </p>
+      ) : null}
+
+      <div className="mt-nc-md">
+        <NavLink href="/horario">Ver la semana completa →</NavLink>
+      </div>
+    </section>
+  );
+}
+
+/* ==========================================================================
+ * Lo que exige atención
+ * ======================================================================== */
+
+/**
+ * Solo lo que hay que atender.
+ *
+ * **Nada se muestra "por completitud".** Si no hay faltas cerca del límite, no hay línea de
+ * faltas: un aviso que aparece siempre deja de leerse, y entonces tampoco se lee el día que
+ * de verdad importa.
+ */
+function Avisos({ resumen }: { resumen: Resumen | null }) {
+  if (resumen === null) return null;
+
+  const { faltas, agenda, sinLeer } = resumen;
+
+  // Materias en riesgo o pasadas del límite sugerido (FR-016).
+  const enRiesgo = (faltas?.subjects ?? []).filter(
+    (materia) => materia.status === 'cerca' || materia.status === 'alcanzado',
+  );
+
+  const vencidas = agenda?.overdueCount ?? 0;
+  const hoy = agenda?.dueTodayCount ?? 0;
+  const mensajes = unreadSummary(sinLeer?.total ?? 0, sinLeer?.conversations ?? 0);
+
+  if (enRiesgo.length === 0 && vencidas === 0 && hoy === 0 && !mensajes) return null;
+
+  return (
+    <section className="space-y-nc-2xs">
+      <h2 className="text-xs font-medium tracking-wide text-tinta3 uppercase">
+        Requiere tu atención
+      </h2>
+
+      <ul className="divide-y divide-filete overflow-hidden rounded-lg border border-filete bg-papel2">
+        {enRiesgo.map((materia) => (
+          <li key={materia.subjectId}>
+            <Link
+              href="/faltas"
+              className="flex items-center justify-between gap-nc-sm px-nc-md py-nc-sm transition-colors duration-100 hover:bg-papel3"
+            >
+              <span className="flex min-w-0 items-center gap-nc-xs">
+                <Tag color={materia.color}>{materia.subjectName}</Tag>
+              </span>
+              <span
+                className={`shrink-0 font-mono text-sm tabular-nums ${
+                  materia.status === 'alcanzado' ? 'text-error' : 'text-aviso'
+                }`}
+              >
+                {materia.absences}/{materia.limit} faltas
+              </span>
+            </Link>
+          </li>
+        ))}
+
+        {vencidas > 0 ? (
+          <li>
+            <Link
+              href="/agenda"
+              className="flex items-center justify-between gap-nc-sm px-nc-md py-nc-sm transition-colors duration-100 hover:bg-papel3"
+            >
+              <span className="text-md text-tinta">
+                {vencidas === 1 ? '1 entrega vencida' : `${vencidas} entregas vencidas`}
+              </span>
+              <span className="shrink-0 text-sm text-error">Ver agenda →</span>
+            </Link>
+          </li>
+        ) : null}
+
+        {hoy > 0 ? (
+          <li>
+            <Link
+              href="/agenda"
+              className="flex items-center justify-between gap-nc-sm px-nc-md py-nc-sm transition-colors duration-100 hover:bg-papel3"
+            >
+              <span className="text-md text-tinta">
+                {hoy === 1 ? '1 entrega vence hoy' : `${hoy} entregas vencen hoy`}
+              </span>
+              <span className="shrink-0 text-sm text-aviso">Ver agenda →</span>
+            </Link>
+          </li>
+        ) : null}
+
+        {mensajes ? (
+          <li>
+            <Link
+              href="/mensajes"
+              data-testid="aviso-mensajes"
+              className="flex items-center justify-between gap-nc-sm px-nc-md py-nc-sm transition-colors duration-100 hover:bg-papel3"
+            >
+              <span className="text-md text-tinta">Tienes {mensajes}</span>
+              <span className="shrink-0 text-sm text-acento">Leer →</span>
+            </Link>
+          </li>
+        ) : null}
+      </ul>
+    </section>
+  );
+}
+
+/* ==========================================================================
+ * Navegación
+ * ======================================================================== */
+
+/**
+ * Las secciones, en rejilla compacta.
+ *
+ * Sin párrafo explicativo debajo de cada una: «Faltas» y «Agenda» se entienden por su
+ * nombre, y quien ya usó la aplicación una vez no vuelve a leer la explicación. La
+ * descripción de una línea se queda solo donde el nombre no basta.
+ */
+const SECCIONES = [
+  { href: '/horario', nombre: 'Horario', nota: 'Tu semana' },
+  { href: '/faltas', nombre: 'Faltas', nota: 'Conteo y límites' },
+  { href: '/agenda', nombre: 'Agenda', nota: 'Tareas y entregas' },
+  { href: '/calendario', nombre: 'Calendario', nota: 'Clases y vencimientos' },
+  { href: '/compartir', nombre: 'Compartir', nota: 'Por QR, código o enlace' },
+  { href: '/semestres', nombre: 'Semestres', nota: 'Archivo histórico' },
+  { href: '/social', nombre: 'Contactos', nota: 'Perfil y compañeros' },
+  { href: '/mensajes', nombre: 'Mensajes', nota: 'Con tus contactos' },
+  { href: '/perfil', nombre: 'Mi cuenta', nota: 'Perfil y dispositivos' },
+] as const;
+
+function Navegacion() {
+  return (
+    <nav aria-label="Secciones" className="space-y-nc-2xs">
+      <h2 className="text-xs font-medium tracking-wide text-tinta3 uppercase">Ir a</h2>
+      <Rule />
+      {/*
+       * `minmax(0, 1fr)` y no `1fr`: con `1fr` una nota larga ensancharía su columna por
+       * encima del ancho disponible y la rejilla desbordaría a lo ancho en un móvil.
+       */}
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-nc-xs pt-nc-xs">
+        {SECCIONES.map((seccion) => (
+          <li key={seccion.href}>
+            <Link
+              href={seccion.href}
+              className="block rounded-md border border-filete bg-papel2 px-nc-sm py-nc-xs transition-colors duration-100 hover:border-filete2 hover:bg-papel3"
+            >
+              <span className="block text-md font-medium text-tinta">{seccion.nombre}</span>
+              <span className="block text-xs text-tinta3">{seccion.nota}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

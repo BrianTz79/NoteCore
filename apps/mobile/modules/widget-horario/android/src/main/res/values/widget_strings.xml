@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del widget. Viven en el módulo para que viaje completo. -->
+<resources>
+  <string name="widget_titulo">PRÓXIMA CLASE</string>
+  <string name="widget_descripcion">Tu próxima clase, en la pantalla de inicio.</string>
+  <string name="widget_sin_datos">Abre NoteCore para ver tu horario</string>
+</resources>

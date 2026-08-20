@@ -77,30 +77,30 @@ export function ImportDialog({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-nc-md">
       <FormError message={error} />
 
-      <section className="space-y-2">
-        <h3 className="text-sm font-medium text-slate-300">1. Copia este texto</h3>
-        <p className="text-sm text-slate-400">
+      <section className="space-y-nc-xs">
+        <h3 className="text-sm font-medium text-tinta2">1. Copia este texto</h3>
+        <p className="text-sm text-tinta2">
           Pégalo en tu IA favorita junto con una foto de tu horario.
         </p>
         <div className="relative">
-          <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-400">
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-filete bg-papel p-nc-sm text-xs text-tinta2">
             {IMPORT_PROMPT}
           </pre>
           <button
             type="button"
             onClick={() => void copyPrompt()}
-            className="absolute right-2 top-2 rounded-lg bg-slate-800 px-2.5 py-1 text-xs text-slate-200 transition hover:bg-slate-700"
+            className="absolute right-2 top-2 rounded-lg bg-papel3 px-nc-xs py-nc-2xs text-xs text-tinta transition hover:bg-filete"
           >
             {copied ? 'Copiado' : 'Copiar'}
           </button>
         </div>
       </section>
 
-      <section className="space-y-2">
-        <h3 className="text-sm font-medium text-slate-300">2. Pega aquí la respuesta</h3>
+      <section className="space-y-nc-xs">
+        <h3 className="text-sm font-medium text-tinta2">2. Pega aquí la respuesta</h3>
         <textarea
           value={raw}
           onChange={(event) => {
@@ -110,7 +110,7 @@ export function ImportDialog({
           }}
           rows={6}
           placeholder="Pega aquí el JSON que te dio la IA…"
-          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 font-mono text-xs text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+          className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs font-mono text-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
         />
         <Button
           type="button"
@@ -123,30 +123,30 @@ export function ImportDialog({
       </section>
 
       {preview ? (
-        <section className="space-y-3">
-          <h3 className="text-sm font-medium text-slate-300">3. Revisa y confirma</h3>
+        <section className="space-y-nc-sm">
+          <h3 className="text-sm font-medium text-tinta2">3. Revisa y confirma</h3>
 
-          <p className="text-sm text-slate-400">
-            Se detectaron <strong className="text-slate-200">{preview.subjects.length}</strong>{' '}
+          <p className="text-sm text-tinta2">
+            Se detectaron <strong className="text-tinta">{preview.subjects.length}</strong>{' '}
             materias con{' '}
-            <strong className="text-slate-200">{preview.totalBlocks}</strong> sesiones.
+            <strong className="text-tinta">{preview.totalBlocks}</strong> sesiones.
           </p>
 
-          <ul className="space-y-2">
+          <ul className="space-y-nc-xs">
             {preview.subjects.map((subject) => (
               <li
                 key={subject.name}
-                className="rounded-lg border border-slate-800 bg-slate-900/60 p-3"
+                className="rounded-lg border border-filete bg-papel2 p-nc-sm"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-medium text-slate-100">{subject.name}</p>
+                <div className="flex items-start justify-between gap-nc-sm">
+                  <p className="font-medium text-tinta">{subject.name}</p>
                   {subject.conflictsWithExisting ? (
-                    <span className="shrink-0 rounded bg-amber-950/60 px-2 py-0.5 text-xs text-amber-300">
+                    <span className="shrink-0 rounded bg-aviso-fondo px-nc-xs py-nc-3xs text-xs text-aviso">
                       Ya la tienes
                     </span>
                   ) : null}
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-nc-2xs text-xs text-tinta2">
                   {subject.blocks
                     .map(
                       (block) =>
@@ -160,13 +160,13 @@ export function ImportDialog({
           </ul>
 
           {preview.rejected.length > 0 ? (
-            <details className="rounded-lg border border-amber-900/60 bg-amber-950/20 p-3">
-              <summary className="cursor-pointer text-sm text-amber-300">
+            <details className="rounded-lg border border-aviso/40 bg-aviso-fondo p-nc-sm">
+              <summary className="cursor-pointer text-sm text-aviso">
                 Se descartaron {preview.rejected.length} elementos
               </summary>
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-nc-xs space-y-nc-2xs">
                 {preview.rejected.map((item, index) => (
-                  <li key={index} className="text-xs text-amber-200/80">
+                  <li key={index} className="text-xs text-aviso">
                     <span className="font-medium">{item.location}</span>: {item.reason}
                   </li>
                 ))}
@@ -175,11 +175,11 @@ export function ImportDialog({
           ) : null}
 
           {hasSubjects ? (
-            <div className="space-y-2">
-              <p className="text-sm text-slate-400">
+            <div className="space-y-nc-xs">
+              <p className="text-sm text-tinta2">
                 Ya tienes materias en tu horario. ¿Qué quieres hacer?
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-nc-sm">
                 <Button type="button" onClick={() => void confirm('añadir')} loading={busy}>
                   Añadir a lo que tengo
                 </Button>

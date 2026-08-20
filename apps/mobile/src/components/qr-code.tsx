@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { encodeQr, qrToSvgPath, qrViewBox } from '@notecore/shared';
+import { RADIUS } from './theme';
 
 /**
  * Código QR de un enlace de compartición (FR-028).
@@ -20,7 +21,7 @@ export function QrCode({ value, size = 220 }: { value: string; size?: number }) 
   return (
     // El fondo blanco es parte del código: sobre el fondo oscuro de la app, un QR sin su
     // zona clara alrededor no lo lee ninguna cámara.
-    <View style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 8 }}>
+    <View style={{ backgroundColor: '#ffffff', borderRadius: RADIUS.lg, padding: 8 }}>
       <Svg width={size} height={size} viewBox={qrViewBox(matrix)}>
         <Rect
           x={-4}

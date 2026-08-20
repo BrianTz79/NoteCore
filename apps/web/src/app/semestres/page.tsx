@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import {
   SEMESTER_ARCHIVED_MESSAGE,
@@ -18,7 +17,7 @@ import {
 } from '@notecore/shared';
 import { semesterApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card, Field, FormError } from '@/components/ui';
+import { Button, Card, Field, FormError, ScreenHeader } from '@/components/ui';
 
 /**
  * Semestres (FR-034 a FR-038).
@@ -111,7 +110,7 @@ function Semestres() {
   }
 
   if (loading) {
-    return <p className="text-slate-400">Cargando…</p>;
+    return <p className="text-tinta2">Cargando…</p>;
   }
 
   const ordered = sortSemesters(semesters);
@@ -119,22 +118,18 @@ function Semestres() {
   const archived = ordered.filter((semester) => semester.status === 'archivado');
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <Link href="/" className="text-sm text-sky-400 hover:text-sky-300">
-          ← Inicio
-        </Link>
-        <h1 className="text-2xl font-semibold text-slate-100">Semestres</h1>
-        <p className="text-sm text-slate-400">
-          Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta.
-        </p>
-      </header>
+    <div className="space-y-nc-lg">
+      <ScreenHeader
+        title="Semestres"
+        subtitle="Al iniciar un semestre nuevo, el anterior se archiva completo y queda para consulta."
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       <FormError message={error} />
       {notice ? (
         <p
           role="status"
-          className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3.5 py-2.5 text-sm text-emerald-300"
+          className="rounded-lg border border-exito/40 bg-exito/10 px-nc-sm py-nc-xs text-sm text-exito"
         >
           {notice}
         </p>
@@ -143,7 +138,7 @@ function Semestres() {
       {current ? (
         <Card title="Semestre en curso">
           <SemesterRow semester={current} />
-          <p className="text-sm text-slate-500">{SEMESTER_CLOSE_DISCLAIMER}</p>
+          <p className="text-sm text-tinta3">{SEMESTER_CLOSE_DISCLAIMER}</p>
           <Button onClick={abrirCierre} disabled={busy}>
             Cerrar semestre e iniciar uno nuevo
           </Button>
@@ -164,16 +159,16 @@ function Semestres() {
 
       <Card title={`Archivados (${archived.length})`}>
         {archived.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta3">
             Todavía no has cerrado ningún semestre. Cuando lo hagas, aparecerá aquí para
             siempre.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="space-y-nc-sm">
             {archived.map((semester) => (
-              <li key={semester.id} className="rounded-lg border border-slate-800 p-4">
+              <li key={semester.id} className="rounded-lg border border-filete p-nc-md">
                 <SemesterRow semester={semester} />
-                <p className="mt-2 text-xs text-slate-500">{SEMESTER_ARCHIVED_MESSAGE}</p>
+                <p className="mt-nc-xs text-xs text-tinta3">{SEMESTER_ARCHIVED_MESSAGE}</p>
               </li>
             ))}
           </ul>
@@ -186,11 +181,11 @@ function Semestres() {
 /** Una fila de semestre: nombre, estado, periodo y qué contiene. */
 function SemesterRow({ semester }: { semester: Semester }) {
   return (
-    <div className="space-y-1">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-base font-medium text-slate-100">{semester.name}</span>
+    <div className="space-y-nc-2xs">
+      <div className="flex flex-wrap items-center gap-nc-xs">
+        <span className="text-base font-medium text-tinta">{semester.name}</span>
         <span
-          className="rounded-full px-2 py-0.5 text-xs font-medium"
+          className="rounded-pill px-nc-xs py-nc-3xs text-xs font-medium"
           // El color del estado viene de `shared` para que la app lo pinte igual.
           style={{
             color: SEMESTER_STATUS_COLORS[semester.status],
@@ -200,10 +195,10 @@ function SemesterRow({ semester }: { semester: Semester }) {
           {SEMESTER_STATUS_LABELS[semester.status]}
         </span>
       </div>
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta2">
         {semesterPeriod(semester.startedAt, semester.closedAt)}
       </p>
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta2">
         {semesterContentsTotal(semester.contents) === 0
           ? 'Sin contenido todavía'
           : semesterContentsSummary(semester.contents)}
@@ -238,10 +233,10 @@ function CloseDialog({
 }) {
   return (
     <Card title="Antes de cerrar, lee esto">
-      <ul className="space-y-2">
+      <ul className="space-y-nc-xs">
         {semesterCloseWarnings(effect.semester.name, effect.semester.contents).map((line) => (
-          <li key={line} className="flex gap-2 text-sm text-slate-300">
-            <span aria-hidden className="text-slate-600">
+          <li key={line} className="flex gap-nc-xs text-sm text-tinta2">
+            <span aria-hidden className="text-tinta3">
               •
             </span>
             <span>{line}</span>
@@ -258,7 +253,7 @@ function CloseDialog({
         hint="Puedes cambiarlo: es solo una etiqueta para reconocerlo."
       />
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-nc-sm">
         <Button onClick={onConfirm} loading={busy} variant="danger">
           Cerrar «{effect.semester.name}» y empezar
         </Button>

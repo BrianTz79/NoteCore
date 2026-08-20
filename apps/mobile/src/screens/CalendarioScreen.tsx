@@ -24,7 +24,7 @@ import {
 } from '@notecore/shared';
 import { calendarApi } from '../lib/api';
 import { reprogramarRecordatorios } from '../lib/notifications';
-import { Button, Card, FormError, colors } from '../components/ui';
+import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 
 /**
  * Calendario y recordatorios en la app (FR-023 a FR-027).
@@ -134,10 +134,11 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mi calendario</Text>
-        <Text style={styles.subtitle}>Tus clases y tus entregas, día a día</Text>
-      </View>
+      <ScreenHeader
+        title="Mi calendario"
+        subtitle={"Tus clases y tus entregas, día a día"}
+        onBack={onVolver}
+      />
 
       <FormError message={error} />
 
@@ -417,47 +418,47 @@ function ListaRecordatorios({ plan }: { plan: ReminderPlan | undefined }) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, gap: 16, paddingBottom: 48 },
+  content: { ...base.contenido, paddingTop: SPACE.md },
   header: { gap: 4 },
-  title: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.textoSuave, fontSize: 14 },
-  body: { color: colors.texto, fontSize: 15 },
-  muted: { color: colors.textoSuave, fontSize: 13 },
-  link: { color: colors.acentoClaro, fontSize: 14 },
-  ok: { color: colors.exito, fontSize: 13 },
-  falta: { color: colors.error, fontSize: 13 },
-  etiqueta: { color: colors.textoSuave, fontSize: 13, fontWeight: '600', marginTop: 4 },
+  title: { ...base.titulo },
+  subtitle: { ...base.cuerpo },
+  body: { color: colors.texto, fontSize: TEXT.md },
+  muted: { ...base.tenue },
+  link: { color: colors.acentoClaro, fontSize: TEXT.md },
+  ok: { color: colors.exito, fontSize: TEXT.sm },
+  falta: { color: colors.error, fontSize: TEXT.sm },
+  etiqueta: { color: colors.textoSuave, fontSize: TEXT.sm, fontWeight: '600', marginTop: 4 },
   tachado: { color: colors.textoTenue, textDecorationLine: 'line-through' },
 
   navMes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  nombreMes: { color: colors.textoFuerte, fontSize: 16, fontWeight: '600' },
+  nombreMes: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
 
   fila: { flexDirection: 'row', gap: 2 },
   cabecera: {
     flex: 1,
     textAlign: 'center',
     color: colors.textoTenue,
-    fontSize: 12,
+    fontSize: TEXT.sm,
     fontWeight: '600',
     paddingVertical: 4,
   },
   celda: {
     flex: 1,
     minHeight: 52,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     borderColor: colors.borde,
     padding: 4,
     gap: 3,
   },
-  celdaHoy: { borderColor: colors.acento, backgroundColor: '#0c1a2e' },
-  celdaSeleccionada: { borderColor: colors.acentoClaro, backgroundColor: '#0f2438' },
+  celdaHoy: { borderColor: colors.acento, backgroundColor: c.acentoTenue },
+  celdaSeleccionada: { borderColor: colors.acentoClaro, backgroundColor: c.acentoTenue },
   celdaFuera: { opacity: 0.4 },
-  celdaNumero: { color: colors.texto, fontSize: 12 },
+  celdaNumero: { color: colors.texto, fontSize: TEXT.sm },
   celdaNumeroHoy: { color: colors.acentoClaro, fontWeight: '700' },
   puntos: { flexDirection: 'row', flexWrap: 'wrap', gap: 2 },
-  punto: { width: 5, height: 5, borderRadius: 3 },
-  puntoEntrega: { width: 5, height: 5, borderRadius: 1 },
+  punto: { width: 5, height: 5, borderRadius: RADIUS.sm },
+  puntoEntrega: { width: 5, height: 5, borderRadius: RADIUS.sm },
 
   filaAjuste: {
     flexDirection: 'row',
@@ -469,34 +470,34 @@ const styles = StyleSheet.create({
   opcion: {
     borderWidth: 1,
     borderColor: colors.borde,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  opcionActiva: { borderColor: colors.acento, backgroundColor: '#0c2437' },
-  opcionTexto: { color: colors.texto, fontSize: 13 },
+  opcionActiva: { borderColor: colors.acento, backgroundColor: c.acentoTenue },
+  opcionTexto: { color: colors.texto, fontSize: TEXT.sm },
   opcionTextoActivo: { color: colors.acentoClaro, fontWeight: '600' },
 
   detalleFila: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 4 },
   detalleCuerpo: { flex: 1, gap: 2 },
-  detalleTitulo: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
-  colorDot: { width: 10, height: 10, borderRadius: 5, marginTop: 5 },
+  detalleTitulo: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  colorDot: { width: 10, height: 10, borderRadius: RADIUS.md, marginTop: 5 },
 
   recordatorio: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
     gap: 4,
   },
   alerta: {
-    color: '#fbbf24',
-    fontSize: 13,
-    borderColor: '#78350f',
+    color: c.aviso,
+    fontSize: TEXT.sm,
+    borderColor: c.aviso,
     borderWidth: 1,
-    backgroundColor: '#45170933',
-    borderRadius: 10,
+    backgroundColor: c.avisoFondo,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
-  alertaTexto: { color: '#fbbf24', fontSize: 13 },
+  alertaTexto: { color: c.aviso, fontSize: TEXT.sm },
 });

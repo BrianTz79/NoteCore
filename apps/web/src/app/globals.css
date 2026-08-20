@@ -1,5 +1,15 @@
+/* Hallmark · genre: modern-minimal · macrostructure: Workbench/Stat-Led/Letter
+ * design-system: design.md · designed-as-app · nav: N3 side-rail · footer: none
+ */
+
 /* Tailwind 4: una sola importación sustituye a las tres directivas @tailwind. */
 @import 'tailwindcss';
+
+/*
+ * Los tokens del sistema. Van después de Tailwind porque su bloque `@theme` extiende el
+ * tema por defecto; antes, Tailwind los sobrescribiría.
+ */
+@import '../../tokens.css';
 
 /*
  * Rutas donde Tailwind busca clases. En Tailwind 4 se declara aquí, en el CSS,
@@ -8,3 +18,96 @@
  */
 @source '../../src';
 @source '../../../../packages/shared/src';
+
+/* --------------------------------------------------------------------------
+ * Base
+ * ------------------------------------------------------------------------ */
+
+html,
+body {
+  /* `clip` y no `hidden`: `hidden` en la raíz rompe `position: sticky` en los hijos, y las
+   * cabeceras de pantalla del Workbench son fijas. */
+  overflow-x: clip;
+}
+
+body {
+  background: var(--color-papel);
+  color: var(--color-tinta);
+  font-family: var(--font-cuerpo);
+  font-size: var(--text-md);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  /* Un nombre de materia largo sin espacios no puede desbordar la columna en un móvil. */
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/*
+ * Cifras tabulares en todo lo monoespaciado.
+ *
+ * Es el motivo de que exista el tercer rol tipográfico: en una columna de faltas, unas
+ * cifras de ancho variable bailan y obligan a leer dígito a dígito.
+ */
+.mono,
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+ * Foco
+ * ------------------------------------------------------------------------ */
+
+/*
+ * Un solo anillo para toda la aplicación, y **nunca animado**: debe aparecer en el
+ * instante en que el foco llega, o deja de servir para navegar con teclado.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-foco);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* El foco por puntero no pinta anillo; el `:focus-visible` de arriba ya distingue. */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+ * Movimiento
+ * ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--dur-corta) !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Barras de desplazamiento
+ * ------------------------------------------------------------------------ */
+
+/*
+ * La rejilla del horario y los hilos de mensajes se desplazan dentro de su contenedor. La
+ * barra por defecto de Chrome sobre fondo oscuro es una franja clara que rompe la
+ * superficie; esta se integra sin desaparecer del todo.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-filete2) transparent;
+}

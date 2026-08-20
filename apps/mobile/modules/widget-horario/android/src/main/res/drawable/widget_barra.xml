@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por plugins/with-widget-horario.js — no editar a mano. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+  <solid android:color="@color/nc_acento" />
+  <corners android:radius="2dp" />
+</shape>

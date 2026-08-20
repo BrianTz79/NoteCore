@@ -30,7 +30,7 @@ import {
   type ServerEvent,
 } from '@notecore/shared';
 import { apiBaseUrl, messagingApi, tokenStore } from '../lib/api';
-import { Button, Card, FormError, colors } from '../components/ui';
+import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 
 /**
  * Mensajería (FR-043, FR-044).
@@ -122,10 +122,10 @@ export function MensajesScreen({
 
   return (
     <ScrollView style={styles.pantalla} contentContainerStyle={styles.contenido}>
-      <Pressable onPress={onVolver} hitSlop={8}>
-        <Text style={styles.volver}>← Volver al inicio</Text>
-      </Pressable>
-      <Text style={styles.titulo}>Mensajes</Text>
+      <ScreenHeader
+        title="Mensajes"
+        onBack={onVolver}
+      />
 
       {avisoCanal ? (
         <View style={styles.avisoCanal}>
@@ -472,26 +472,26 @@ function Burbuja({
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colors.fondo },
-  contenido: { padding: 20, gap: 16 },
-  volver: { color: colors.textoSuave, fontSize: 14 },
-  titulo: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  textoSuave: { color: colors.textoSuave, fontSize: 15, lineHeight: 21 },
+  contenido: { ...base.contenido, paddingTop: SPACE.md },
+  volver: { color: c.tinta3, fontSize: TEXT.sm, fontFamily: fuente.cuerpo },
+  titulo: { ...base.titulo },
+  textoSuave: { color: colors.textoSuave, fontSize: TEXT.md, lineHeight: 21 },
 
   avisoCanal: {
-    backgroundColor: '#422006',
-    borderColor: '#854d0e',
+    backgroundColor: c.avisoFondo,
+    borderColor: c.aviso,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
   },
   avisoCanalHilo: {
-    backgroundColor: '#422006',
-    borderBottomColor: '#854d0e',
+    backgroundColor: c.avisoFondo,
+    borderBottomColor: c.aviso,
     borderBottomWidth: 1,
     paddingHorizontal: 20,
     paddingVertical: 8,
   },
-  avisoCanalTexto: { color: '#fcd34d', fontSize: 13 },
+  avisoCanalTexto: { color: c.aviso, fontSize: TEXT.sm },
 
   lista: { gap: 8 },
   fila: {
@@ -501,22 +501,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fondo,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     padding: 12,
   },
   filaPulsada: { opacity: 0.7 },
   filaTexto: { flex: 1, gap: 2 },
-  filaNombre: { color: colors.textoFuerte, fontSize: 15, fontWeight: '600' },
-  filaPrevia: { color: colors.textoSuave, fontSize: 13 },
+  filaNombre: { color: colors.textoFuerte, fontSize: TEXT.md, fontWeight: '600' },
+  filaPrevia: { color: colors.textoSuave, fontSize: TEXT.sm },
   insignia: {
     backgroundColor: colors.acento,
-    borderRadius: 999,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 8,
     paddingVertical: 2,
     minWidth: 24,
     alignItems: 'center',
   },
-  insigniaTexto: { color: colors.textoFuerte, fontSize: 12, fontWeight: '700' },
+  insigniaTexto: { color: colors.textoFuerte, fontSize: TEXT.sm, fontWeight: '700' },
 
   cabecera: {
     paddingHorizontal: 20,
@@ -526,8 +526,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borde,
     borderBottomWidth: 1,
   },
-  cabeceraNombre: { color: colors.textoFuerte, fontSize: 20, fontWeight: '700' },
-  cabeceraUsuario: { color: colors.textoSuave, fontSize: 13 },
+  cabeceraNombre: { color: colors.textoFuerte, fontSize: TEXT.xl, fontWeight: '700' },
+  cabeceraUsuario: { color: colors.textoSuave, fontSize: TEXT.sm },
 
   errorHilo: { paddingHorizontal: 20, paddingTop: 12 },
 
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
   hiloContenido: { padding: 16, gap: 2 },
   hiloVacio: {
     color: colors.textoTenue,
-    fontSize: 14,
+    fontSize: TEXT.md,
     textAlign: 'center',
     paddingVertical: 40,
   },
@@ -547,15 +547,15 @@ const styles = StyleSheet.create({
   burbujaSeparada: { marginTop: 12 },
   burbujaAgrupada: { marginTop: 2 },
   burbujaContenedor: { maxWidth: '82%' },
-  burbuja: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 9 },
-  burbujaPropia: { backgroundColor: '#0369a1' },
+  burbuja: { borderRadius: RADIUS.lg, paddingHorizontal: 14, paddingVertical: 9 },
+  burbujaPropia: { backgroundColor: c.acento },
   burbujaAjena: { backgroundColor: colors.borde },
   burbujaBorrada: {
     backgroundColor: 'transparent',
     borderColor: colors.borde,
     borderWidth: 1,
   },
-  burbujaTexto: { color: colors.textoFuerte, fontSize: 15, lineHeight: 20 },
+  burbujaTexto: { color: colors.textoFuerte, fontSize: TEXT.md, lineHeight: 20 },
   burbujaTextoBorrado: { color: colors.textoTenue, fontStyle: 'italic' },
   meta: {
     flexDirection: 'row',
@@ -563,14 +563,14 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 3,
   },
-  metaTexto: { color: colors.textoTenue, fontSize: 11 },
+  metaTexto: { color: colors.textoTenue, fontSize: TEXT.xs },
 
   motivo: {
     borderTopColor: colors.borde,
     borderTopWidth: 1,
     padding: 20,
   },
-  motivoTexto: { color: colors.textoSuave, fontSize: 14, lineHeight: 20 },
+  motivoTexto: { color: colors.textoSuave, fontSize: TEXT.md, lineHeight: 20 },
 
   compositor: {
     flexDirection: 'row',
@@ -585,11 +585,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.tarjeta,
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 10,
+    borderRadius: RADIUS.lg,
     paddingHorizontal: 14,
     paddingVertical: 10,
     color: colors.textoFuerte,
-    fontSize: 15,
+    fontSize: TEXT.md,
     maxHeight: 120,
   },
 });

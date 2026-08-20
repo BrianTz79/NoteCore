@@ -14,9 +14,10 @@ import { scheduleApi } from '../lib/api';
 import { ScheduleGrid } from '../components/schedule-grid';
 import { SubjectForm } from '../components/subject-form';
 import { ImportDialog } from '../components/import-dialog';
-import { Button, Card, FormError, colors } from '../components/ui';
+import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
+import { actualizarWidget, fijarWidget, sePuedeFijarWidget } from '../lib/widget';
 
 /**
  * Horario semanal en la app (FR-005 a FR-010).
@@ -45,6 +46,25 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
   const { state: syncState } = useSync();
 
   /**
+   * Si se puede ofrecer colocar el widget en la pantalla de inicio (FR-051).
+   *
+   * Se pregunta al sistema en lugar de darlo por hecho: en Expo Go no hay módulo nativo, y
+   * hay lanzadores que no admiten que una app proponga fijar un widget. Ofrecer un botón
+   * que no hace nada es peor que no ofrecerlo.
+   */
+  const [sePuedeFijar, setSePuedeFijar] = useState(false);
+
+  useEffect(() => {
+    let vigente = true;
+    void sePuedeFijarWidget().then((puede) => {
+      if (vigente) setSePuedeFijar(puede);
+    });
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  /**
    * El horario, cayendo a lo guardado si no hay red (FR-048).
    *
    * Es lo que más se consulta sin conexión —"¿en qué aula toca ahora?"— y por eso se cachea
@@ -59,6 +79,10 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
       setSubjects(result.data);
       setCachedAt(result.cachedAt);
       setError(undefined);
+      // El widget de la pantalla de inicio se reconstruye con lo que se acaba de leer
+      // (FR-051). Va aquí y no en cada operación de escritura porque todas terminan
+      // llamando a `load()`: un solo punto, imposible de olvidar al añadir otra.
+      void actualizarWidget(toScheduleEntries(result.data));
     } catch (caught) {
       setError(toFormErrors(caught).general);
     } finally {
@@ -165,14 +189,13 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Mi horario</Text>
-        <Text style={styles.subtitle}>
-          {subjects.length === 0
+      <ScreenHeader
+        title="Mi horario"
+        subtitle={subjects.length === 0
             ? 'Todavía no has capturado tus clases'
             : `${subjects.length} materias · ${entries.length} sesiones`}
-        </Text>
-      </View>
+        onBack={onVolver}
+      />
 
       {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
       <SyncIndicator />
@@ -213,6 +236,21 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
           />
         </View>
       )}
+
+      {/*
+        Atajo para colocar el widget (FR-051). Va aquí, en la pantalla del horario, porque
+        es donde el estudiante ya está mirando sus clases y donde «tenerlas en la pantalla
+        de inicio» es una idea que viene sola. Quien confirma es Android, con su diálogo.
+      */}
+      {sePuedeFijar && entries.length > 0 ? (
+        <Button
+          title="Añadir el widget a mi pantalla de inicio"
+          variant="secondary"
+          onPress={() => {
+            void fijarWidget();
+          }}
+        />
+      ) : null}
 
       {loading ? (
         <Text style={styles.muted}>Cargando tu horario…</Text>
@@ -259,9 +297,19 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
                   >
                     <Text style={styles.editText}>Editar</Text>
                   </Pressable>
-                  <Pressable onPress={() => removeSubject(subject)} hitSlop={8}>
-                    <Text style={styles.deleteText}>Eliminar</Text>
-                  </Pressable>
+                  {/*
+                    Botón y no enlace de texto, al contrario que «Editar»: borrar una
+                    materia se lleva sus sesiones y sus faltas, y una acción destructiva
+                    necesita el borde que la enmarca —además del área táctil que un texto
+                    suelto no alcanza—.
+                  */}
+                  <Button
+                    title="Eliminar"
+                    variant="danger"
+                    size="sm"
+                    compacto
+                    onPress={() => removeSubject(subject)}
+                  />
                 </View>
               </View>
             ))}
@@ -275,20 +323,20 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, gap: 16, paddingBottom: 48 },
+  content: { ...base.contenido, paddingTop: SPACE.md },
   header: { gap: 4 },
-  title: { color: colors.textoFuerte, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.textoSuave, fontSize: 14 },
+  title: { ...base.titulo },
+  subtitle: { ...base.cuerpo },
   actions: { gap: 10 },
-  body: { color: colors.texto, fontSize: 15 },
-  muted: { color: colors.textoTenue, fontSize: 13 },
+  body: { color: colors.texto, fontSize: TEXT.md },
+  muted: { ...base.tenue },
   notice: {
     color: colors.exito,
-    fontSize: 14,
-    borderColor: '#065f46',
+    fontSize: TEXT.md,
+    borderColor: c.exito,
     borderWidth: 1,
-    backgroundColor: '#06402933',
-    borderRadius: 10,
+    backgroundColor: c.papel3,
+    borderRadius: RADIUS.lg,
     padding: 10,
   },
   subjectRow: {
@@ -302,8 +350,8 @@ const styles = StyleSheet.create({
   },
   subjectInfo: { flex: 1, gap: 4 },
   subjectName: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  colorDot: { width: 10, height: 10, borderRadius: 5 },
+  colorDot: { width: 10, height: 10, borderRadius: RADIUS.md },
   subjectActions: { gap: 10, alignItems: 'flex-end' },
-  editText: { color: colors.acentoClaro, fontSize: 14 },
-  deleteText: { color: colors.error, fontSize: 14 },
+  editText: { color: colors.acentoClaro, fontSize: TEXT.md },
+  deleteText: { color: colors.error, fontSize: TEXT.md },
 });

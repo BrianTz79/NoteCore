@@ -26,7 +26,7 @@ import {
 } from '@notecore/shared';
 import { socialApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
-import { Button, Card, Field, FormError } from '@/components/ui';
+import { Button, Card, Field, FormError, ScreenHeader } from '@/components/ui';
 import { QrCode } from '@/components/qr-code';
 
 /**
@@ -73,25 +73,23 @@ function Social() {
   const pendientes = pendingRequestsSummary(profile?.pendingRequestCount ?? 0);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-16">
-      <header className="space-y-2">
-        <Link href="/" className="text-sm text-slate-400 hover:text-slate-200">
-          ← Volver al inicio
-        </Link>
-        <h1 className="text-3xl font-semibold tracking-tight">Perfil y contactos</h1>
-        {pendientes ? (
-          <p
-            data-testid="aviso-pendientes"
-            className="rounded-lg border border-sky-900/60 bg-sky-950/40 px-3.5 py-2.5 text-sm text-sky-300"
-          >
-            Tienes {pendientes} esperando respuesta.
-          </p>
-        ) : null}
-      </header>
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl">
+      <ScreenHeader
+        title="Perfil y contactos"
+        back={{ href: '/', label: 'Inicio' }}
+      />
+      {pendientes ? (
+        <p
+          data-testid="aviso-pendientes"
+          className="rounded-lg border border-acento-tenue bg-acento/10 px-nc-sm py-nc-xs text-sm text-foco"
+        >
+          Tienes {pendientes} esperando respuesta.
+        </p>
+      ) : null}
 
       <FormError message={error} />
 
-      <nav className="flex flex-wrap gap-2">
+      <nav className="flex flex-wrap gap-nc-xs">
         {(
           [
             ['perfil', 'Mi perfil'],
@@ -105,10 +103,10 @@ function Social() {
             type="button"
             data-testid={`pestana-${clave}`}
             onClick={() => setPestana(clave)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+            className={`rounded-lg px-nc-md py-nc-xs text-sm font-medium transition ${
               pestana === clave
-                ? 'bg-sky-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-acento text-white'
+                : 'bg-papel3 text-tinta2 hover:bg-filete'
             }`}
           >
             {etiqueta}
@@ -186,15 +184,15 @@ function PerfilPropio({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-nc-lg">
       <Card title="Tu perfil público">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta2">
           Esto es lo que otras personas pueden ver de ti. Todo es opcional.
         </p>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <label htmlFor="bio" className="block text-sm font-medium text-slate-300">
+        <div className="space-y-nc-md">
+          <div className="space-y-nc-2xs">
+            <label htmlFor="bio" className="block text-sm font-medium text-tinta2">
               Biografía
             </label>
             <textarea
@@ -204,10 +202,10 @@ function PerfilPropio({
               maxLength={BIO_MAX_LENGTH}
               onChange={(event) => setBio(event.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+              className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
               placeholder="Cuenta algo de ti"
             />
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-tinta3">
               {bio.length} de {BIO_MAX_LENGTH}
             </p>
           </div>
@@ -241,14 +239,14 @@ function PerfilPropio({
       </Card>
 
       <Card title="Quién puede ver tu perfil">
-        <div className="space-y-3">
+        <div className="space-y-nc-sm">
           {PROFILE_VISIBILITIES.map((opcion) => (
             <label
               key={opcion}
-              className={`flex cursor-pointer gap-3 rounded-lg border p-3.5 transition ${
+              className={`flex cursor-pointer gap-nc-sm rounded-lg border p-nc-sm transition ${
                 visibility === opcion
-                  ? 'border-sky-700 bg-sky-950/30'
-                  : 'border-slate-800 hover:border-slate-700'
+                  ? 'border-filete2 bg-acento/10'
+                  : 'border-filete hover:border-filete2'
               }`}
             >
               <input
@@ -257,15 +255,15 @@ function PerfilPropio({
                 data-testid={`visibilidad-${opcion}`}
                 checked={visibility === opcion}
                 onChange={() => setVisibility(opcion)}
-                className="mt-1"
+                className="mt-nc-2xs"
               />
-              <span className="space-y-1">
-                <span className="block text-sm font-medium text-slate-200">
+              <span className="space-y-nc-2xs">
+                <span className="block text-sm font-medium text-tinta">
                   {PROFILE_VISIBILITY_LABELS[opcion]}
                 </span>
                 {/* La explicación viene de `shared`: es la que decide si el usuario entiende
                     qué está haciendo público, y debe ser idéntica en app y web (FR-045). */}
-                <span className="block text-sm text-slate-400">
+                <span className="block text-sm text-tinta2">
                   {PROFILE_VISIBILITY_HINTS[opcion]}
                 </span>
               </span>
@@ -275,12 +273,12 @@ function PerfilPropio({
 
         <FormError message={error} />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-nc-sm">
           <Button onClick={() => void guardar()} loading={guardando} data-testid="guardar-perfil">
             Guardar
           </Button>
           {guardado ? (
-            <span data-testid="perfil-guardado" className="text-sm text-emerald-400">
+            <span data-testid="perfil-guardado" className="text-sm text-exito">
               Guardado
             </span>
           ) : null}
@@ -288,23 +286,23 @@ function PerfilPropio({
       </Card>
 
       <Card title="Tu enlace y tu QR de perfil">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-tinta2">
           Compártelo para que te agreguen sin tener que buscarte.
         </p>
-        <p data-testid="resumen-conteos" className="text-slate-300">
+        <p data-testid="resumen-conteos" className="text-tinta2">
           {profileCountsSummary(profile.contactCount, profile.postCount)}
         </p>
 
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <div className="rounded-lg bg-white p-3">
+        <div className="flex flex-col items-start gap-nc-md sm:flex-row sm:items-center">
+          <div className="rounded-lg bg-white p-nc-sm">
             <QrCode value={profile.url} size={160} />
           </div>
-          <div className="space-y-2">
-            <p className="text-sm text-slate-400">Tu @usuario</p>
-            <p data-testid="mi-usuario" className="text-lg font-medium text-slate-100">
+          <div className="space-y-nc-xs">
+            <p className="text-sm text-tinta2">Tu @usuario</p>
+            <p data-testid="mi-usuario" className="text-lg font-medium text-tinta">
               @{profile.username}
             </p>
-            <p data-testid="mi-enlace" className="break-all text-sm text-slate-400">
+            <p data-testid="mi-enlace" className="break-all text-sm text-tinta2">
               {profile.url}
             </p>
             <Button
@@ -356,11 +354,11 @@ function Buscador({ onCambio }: { onCambio: () => Promise<void> }) {
 
   return (
     <Card title="Buscar personas">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-tinta2">
         Busca por @usuario o pega un enlace de perfil.
       </p>
 
-      <div className="flex gap-2">
+      <div className="flex gap-nc-xs">
         <input
           data-testid="campo-busqueda"
           value={texto}
@@ -369,7 +367,7 @@ function Buscador({ onCambio }: { onCambio: () => Promise<void> }) {
             if (event.key === 'Enter') void buscar();
           }}
           placeholder="@usuario"
-          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+          className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
         />
         <Button onClick={() => void buscar()} loading={buscando} data-testid="boton-buscar">
           Buscar
@@ -379,11 +377,11 @@ function Buscador({ onCambio }: { onCambio: () => Promise<void> }) {
       <FormError message={error} />
 
       {resultados === null ? null : resultados.length === 0 ? (
-        <p data-testid="sin-resultados" className="text-slate-400">
+        <p data-testid="sin-resultados" className="text-tinta2">
           No encontramos a nadie con ese nombre.
         </p>
       ) : (
-        <ul className="space-y-2" data-testid="resultados">
+        <ul className="space-y-nc-xs" data-testid="resultados">
           {resultados.map((resultado) => (
             <FilaUsuario key={resultado.id} usuario={resultado} onCambio={onCambio} />
           ))}
@@ -417,25 +415,25 @@ function FilaUsuario({
   return (
     <li
       data-testid={`usuario-${usuario.username}`}
-      className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3.5"
+      className="flex items-center justify-between gap-nc-sm rounded-lg border border-filete bg-papel2 p-nc-sm"
     >
       <div className="min-w-0">
         <Link
           href={`/u/${usuario.username}`}
-          className="block truncate font-medium text-slate-100 hover:text-sky-300"
+          className="block truncate font-medium text-tinta hover:text-foco"
         >
           {usuario.displayName}
         </Link>
-        <p className="truncate text-sm text-slate-400">@{usuario.username}</p>
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        <p className="truncate text-sm text-tinta2">@{usuario.username}</p>
+        {error ? <p className="text-sm text-error">{error}</p> : null}
       </div>
 
       {enviado || usuario.viewpoint === 'enviada' ? (
-        <span className="shrink-0 text-sm text-amber-400">Solicitud enviada</span>
+        <span className="shrink-0 text-sm text-aviso">Solicitud enviada</span>
       ) : usuario.viewpoint === 'aceptada' ? (
-        <span className="shrink-0 text-sm text-emerald-400">Contacto</span>
+        <span className="shrink-0 text-sm text-exito">Contacto</span>
       ) : usuario.viewpoint === 'recibida' ? (
-        <Link href={`/u/${usuario.username}`} className="shrink-0 text-sm text-sky-400">
+        <Link href={`/u/${usuario.username}`} className="shrink-0 text-sm text-acento">
           Te envió solicitud
         </Link>
       ) : (
@@ -474,7 +472,7 @@ function Contactos({
   if (vacio) {
     return (
       <Card title="Tus contactos">
-        <p data-testid="sin-contactos" className="text-slate-400">
+        <p data-testid="sin-contactos" className="text-tinta2">
           Todavía no tienes contactos. Busca a alguien por su @usuario para agregarlo.
         </p>
       </Card>
@@ -482,11 +480,11 @@ function Contactos({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-nc-lg">
       {secciones.map(([titulo, lista, clave]) =>
         lista.length === 0 ? null : (
           <Card key={clave} title={`${titulo} (${lista.length})`}>
-            <ul className="space-y-2" data-testid={`lista-${clave}`}>
+            <ul className="space-y-nc-xs" data-testid={`lista-${clave}`}>
               {sortContacts(lista).map((contacto) => (
                 <FilaContacto key={contacto.id} contacto={contacto} onCambio={onCambio} />
               ))}
@@ -541,26 +539,26 @@ function FilaContacto({
   return (
     <li
       data-testid={`contacto-${contacto.user.username}`}
-      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3.5"
+      className="flex flex-wrap items-center justify-between gap-nc-sm rounded-lg border border-filete bg-papel2 p-nc-sm"
     >
       <div className="min-w-0">
         <Link
           href={`/u/${contacto.user.username}`}
-          className="block truncate font-medium text-slate-100 hover:text-sky-300"
+          className="block truncate font-medium text-tinta hover:text-foco"
         >
           {contacto.user.displayName}
         </Link>
-        <p className="truncate text-sm text-slate-400">@{contacto.user.username}</p>
+        <p className="truncate text-sm text-tinta2">@{contacto.user.username}</p>
         <p
           className="text-sm"
           style={{ color: CONTACT_VIEWPOINT_COLORS[contacto.viewpoint] }}
         >
           {CONTACT_VIEWPOINT_LABELS[contacto.viewpoint]}
         </p>
-        {error ? <p className="text-sm text-red-400">{error}</p> : null}
+        {error ? <p className="text-sm text-error">{error}</p> : null}
       </div>
 
-      <div className="flex shrink-0 flex-wrap gap-2">
+      <div className="flex shrink-0 flex-wrap gap-nc-xs">
         {acciones.map(([action, etiqueta, variant]) => (
           <Button
             key={action}
@@ -630,7 +628,7 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-nc-lg">
       <Card title="Publicar algo">
         <textarea
           data-testid="campo-publicacion"
@@ -639,9 +637,9 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
           onChange={(event) => setTexto(event.target.value)}
           rows={3}
           placeholder="¿Qué quieres compartir?"
-          className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3.5 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-sky-700 focus:ring-2 focus:ring-sky-900/50"
+          className="w-full rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs text-tinta outline-none transition placeholder:text-tinta3 focus:border-acento focus:ring-2 focus:ring-acento-tenue"
         />
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-tinta3">
           {texto.length} de {POST_MAX_LENGTH}
         </p>
 
@@ -656,21 +654,21 @@ function Publicaciones({ onCambio }: { onCambio: () => Promise<void> }) {
         <Card>Cargando…</Card>
       ) : posts.length === 0 ? (
         <Card>
-          <p data-testid="sin-publicaciones" className="text-slate-400">
+          <p data-testid="sin-publicaciones" className="text-tinta2">
             Todavía no has publicado nada.
           </p>
         </Card>
       ) : (
         <Card title={`Tus publicaciones (${posts.length})`}>
-          <ul className="space-y-3" data-testid="lista-publicaciones">
+          <ul className="space-y-nc-sm" data-testid="lista-publicaciones">
             {posts.map((post) => (
               <li
                 key={post.id}
-                className="space-y-2 rounded-lg border border-slate-800 bg-slate-900/50 p-3.5"
+                className="space-y-nc-xs rounded-lg border border-filete bg-papel2 p-nc-sm"
               >
-                <p className="whitespace-pre-wrap text-slate-200">{post.text}</p>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-500">{relativeTime(post.createdAt)}</span>
+                <p className="whitespace-pre-wrap text-tinta">{post.text}</p>
+                <div className="flex items-center justify-between gap-nc-sm">
+                  <span className="text-sm text-tinta3">{relativeTime(post.createdAt)}</span>
                   <Button
                     variant="secondary"
                     data-testid={`borrar-post-${post.id}`}

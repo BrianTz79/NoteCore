@@ -18,7 +18,7 @@ import {
 import { agendaApi, scheduleApi, shareApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
 import { QrCode } from '@/components/qr-code';
-import { Button, Card, Field, FormError } from '@/components/ui';
+import { Button, Card, Field, FormError, ScreenHeader } from '@/components/ui';
 
 /**
  * Compartir horario y actividades (FR-028 a FR-033).
@@ -109,30 +109,23 @@ function Compartir() {
 
   if (loading) {
     return (
-      <main className="mx-auto w-full max-w-3xl px-6 py-16">
-        <p className="text-slate-500">Cargando…</p>
+      <main className="mx-auto w-full max-w-3xl px-nc-lg py-nc-3xl">
+        <p className="text-tinta3">Cargando…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-8 px-6 py-16">
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-tight">Compartir</h1>
-          <p className="text-slate-400">
-            Pasa tu horario o tus actividades a un compañero. Recibe una copia suya, que puede
-            editar sin afectar a la tuya.
-          </p>
-        </div>
-        <Link href="/" className="shrink-0 text-sm text-sky-400 hover:text-sky-300">
-          ← Inicio
-        </Link>
-      </header>
+    <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-nc-xl px-nc-lg py-nc-3xl">
+      <ScreenHeader
+        title="Compartir"
+        subtitle="Pasa tu horario o tus actividades a un compañero. Recibe una copia suya, que puede editar sin afectar a la tuya."
+        back={{ href: '/', label: 'Inicio' }}
+      />
 
       <FormError message={error} />
       {notice ? (
-        <p className="rounded-lg border border-emerald-900/60 bg-emerald-950/40 px-3.5 py-2.5 text-sm text-emerald-300">
+        <p className="rounded-lg border border-exito/40 bg-exito/10 px-nc-sm py-nc-xs text-sm text-exito">
           {notice}
         </p>
       ) : null}
@@ -154,11 +147,11 @@ function Compartir() {
         />
       ) : (
         <Card title="Compartir algo tuyo">
-          <p className="text-slate-300">
+          <p className="text-tinta2">
             Elige qué quieres compartir. Al generarlo se guarda una copia de lo que elijas, así
             que lo que edites después no cambia lo que reciba tu compañero.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-nc-sm">
             <Button
               onClick={() => setPanel({ kind: 'nuevo', shareKind: 'horario' })}
               disabled={subjects.length === 0}
@@ -174,9 +167,9 @@ function Compartir() {
             </Button>
           </div>
           {subjects.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-tinta3">
               Todavía no tienes materias.{' '}
-              <Link href="/horario" className="text-sky-400 hover:text-sky-300">
+              <Link href="/horario" className="text-acento hover:text-foco">
                 Captura tu horario
               </Link>{' '}
               para poder compartirlo.
@@ -207,11 +200,11 @@ function RecibirCard({ onAceptado }: { onAceptado: (mensaje: string) => void }) 
 
   return (
     <Card title="¿Te compartieron algo?">
-      <p className="text-slate-300">
+      <p className="text-tinta2">
         Escribe el código que te pasaron, o abre directamente el enlace que te enviaron.
       </p>
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="flex flex-wrap items-end gap-nc-sm"
         onSubmit={(event) => {
           event.preventDefault();
           if (!normalizado) {
@@ -320,7 +313,7 @@ function NuevoShareForm({
 
   return (
     <Card title={`Compartir ${SHARE_KIND_LABELS[shareKind].toLowerCase()}`}>
-      <form onSubmit={enviar} className="space-y-5">
+      <form onSubmit={enviar} className="space-y-nc-md">
         <FormError message={error} />
 
         <Field
@@ -331,32 +324,32 @@ function NuevoShareForm({
           hint="Para reconocerlo en tu lista de compartidos"
         />
 
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-300">
+        <fieldset className="space-y-nc-xs">
+          <legend className="text-sm font-medium text-tinta2">
             Qué incluir ({seleccion.length} de {opciones.length})
           </legend>
 
-          <div className="flex gap-2 pb-1">
+          <div className="flex gap-nc-xs pb-nc-2xs">
             <button
               type="button"
               onClick={() => setSeleccion(opciones.map((o) => o.id))}
-              className="text-xs text-sky-400 hover:text-sky-300"
+              className="text-xs text-acento hover:text-foco"
             >
               Todo
             </button>
             <button
               type="button"
               onClick={() => setSeleccion([])}
-              className="text-xs text-slate-500 hover:text-slate-400"
+              className="text-xs text-tinta3 hover:text-tinta2"
             >
               Nada
             </button>
           </div>
 
-          <ul className="space-y-1.5">
+          <ul className="space-y-nc-2xs">
             {opciones.map((opcion) => (
               <li key={opcion.id}>
-                <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2.5 hover:border-slate-700">
+                <label className="flex cursor-pointer items-center gap-nc-sm rounded-lg border border-filete bg-papel2 px-nc-sm py-nc-xs hover:border-filete2">
                   <input
                     type="checkbox"
                     checked={seleccion.includes(opcion.id)}
@@ -364,21 +357,21 @@ function NuevoShareForm({
                     className="size-4 accent-sky-500"
                   />
                   <span
-                    className="size-3 shrink-0 rounded-full"
+                    className="size-3 shrink-0 rounded-pill"
                     style={{ backgroundColor: opcion.color }}
                     aria-hidden
                   />
-                  <span className="flex-1 text-slate-200">{opcion.etiqueta}</span>
-                  <span className="text-sm text-slate-500">{opcion.detalle}</span>
+                  <span className="flex-1 text-tinta">{opcion.etiqueta}</span>
+                  <span className="text-sm text-tinta3">{opcion.detalle}</span>
                 </label>
               </li>
             ))}
           </ul>
 
-          {fieldError ? <p className="text-sm text-red-400">{fieldError}</p> : null}
+          {fieldError ? <p className="text-sm text-error">{fieldError}</p> : null}
         </fieldset>
 
-        <div className="flex gap-3">
+        <div className="flex gap-nc-sm">
           <Button type="submit" loading={busy} disabled={seleccion.length === 0}>
             Generar
           </Button>
@@ -412,21 +405,21 @@ function ShareGenerado({ share, onCerrar }: { share: Share; onCerrar: () => void
 
   return (
     <Card title="Listo para compartir">
-      <p className="text-slate-300">
+      <p className="text-tinta2">
         Las tres formas llevan a lo mismo. Usa la que le venga mejor a tu compañero.
       </p>
 
-      <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
+      <div className="flex flex-col items-center gap-nc-md sm:flex-row sm:items-start">
         <div className="shrink-0">
           <QrCode value={share.url} size={200} label={`Código QR de ${share.title}`} />
-          <p className="pt-2 text-center text-xs text-slate-500">Que lo escanee con la app</p>
+          <p className="pt-nc-xs text-center text-xs text-tinta3">Que lo escanee con la app</p>
         </div>
 
-        <div className="w-full space-y-4">
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium text-slate-300">Código corto</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 font-mono text-lg tracking-widest text-sky-300">
+        <div className="w-full space-y-nc-md">
+          <div className="space-y-nc-2xs">
+            <p className="text-sm font-medium text-tinta2">Código corto</p>
+            <div className="flex items-center gap-nc-xs">
+              <code className="flex-1 rounded-lg border border-filete bg-papel px-nc-sm py-nc-xs font-mono text-lg tracking-widest text-foco">
                 {formatShareCode(share.code)}
               </code>
               <Button variant="secondary" onClick={() => void copiar(share.code, 'codigo')}>
@@ -435,10 +428,10 @@ function ShareGenerado({ share, onCerrar }: { share: Share; onCerrar: () => void
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <p className="text-sm font-medium text-slate-300">Enlace</p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-lg border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-300">
+          <div className="space-y-nc-2xs">
+            <p className="text-sm font-medium text-tinta2">Enlace</p>
+            <div className="flex items-center gap-nc-xs">
+              <code className="flex-1 truncate rounded-lg border border-filete bg-papel px-nc-sm py-nc-xs text-sm text-tinta2">
                 {share.url}
               </code>
               <Button variant="secondary" onClick={() => void copiar(share.url, 'enlace')}>
@@ -447,7 +440,7 @@ function ShareGenerado({ share, onCerrar }: { share: Share; onCerrar: () => void
             </div>
           </div>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta3">
             Caduca el {new Date(share.expiresAt).toLocaleDateString('es-MX', {
               day: 'numeric',
               month: 'long',
@@ -480,24 +473,24 @@ function ListaShares({
   if (shares.length === 0) {
     return (
       <Card title="Lo que has compartido">
-        <p className="text-slate-500">Todavía no has compartido nada.</p>
+        <p className="text-tinta3">Todavía no has compartido nada.</p>
       </Card>
     );
   }
 
   return (
     <Card title={`Lo que has compartido (${shares.length})`}>
-      <ul className="space-y-3">
+      <ul className="space-y-nc-sm">
         {sortShares(shares).map((share) => (
           <li
             key={share.id}
-            className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/40 px-4 py-3"
+            className="flex flex-wrap items-center gap-nc-sm rounded-lg border border-filete bg-papel2 px-nc-md py-nc-sm"
           >
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="truncate font-medium text-slate-100">{share.title}</span>
+            <div className="min-w-0 flex-1 space-y-nc-2xs">
+              <div className="flex items-center gap-nc-xs">
+                <span className="truncate font-medium text-tinta">{share.title}</span>
                 <span
-                  className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                  className="shrink-0 rounded-pill px-nc-xs py-nc-3xs text-xs font-medium"
                   style={{
                     backgroundColor: `${SHARE_STATUS_COLORS[share.status]}22`,
                     color: SHARE_STATUS_COLORS[share.status],
@@ -506,7 +499,7 @@ function ListaShares({
                   {SHARE_STATUS_LABELS[share.status]}
                 </span>
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-tinta3">
                 {SHARE_KIND_LABELS[share.kind]} · {share.itemCount}{' '}
                 {share.kind === 'horario'
                   ? share.itemCount === 1
@@ -523,7 +516,7 @@ function ListaShares({
               </p>
             </div>
 
-            <code className="font-mono text-sm tracking-widest text-slate-400">
+            <code className="font-mono text-sm tracking-widest text-tinta2">
               {formatShareCode(share.code)}
             </code>
 

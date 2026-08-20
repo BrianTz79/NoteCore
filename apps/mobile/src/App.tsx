@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { ActivityIndicator, SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, AppState, Linking, SafeAreaView, StatusBar as RNStatusBar, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { CACHE_KEYS, toScheduleEntries, type Subject } from '@notecore/shared';
 import { AuthProvider, useAuth } from './lib/auth-context';
-import { SyncProvider } from './lib/sync-context';
+import { SyncProvider, useSyncActions } from './lib/sync-context';
+import { actualizarWidget } from './lib/widget';
 import { EntrarScreen } from './screens/EntrarScreen';
 import { RegistroScreen } from './screens/RegistroScreen';
 import { InicioScreen } from './screens/InicioScreen';
@@ -66,8 +68,51 @@ export default function App() {
   );
 }
 
+/**
+ * Mantiene el widget al día mientras la app vive (FR-051).
+ *
+ * La pantalla del horario ya lo actualiza al leer, pero eso solo cubre el caso de que
+ * alguien la abra. **El tiempo pasa aunque nadie toque nada**: un widget que dice «En 25
+ * min» a las siete sigue diciéndolo a las once si nadie lo repinta. Así que se recalcula
+ * también cada vez que la app vuelve al primer plano, con el horario que ya está en el
+ * cache —sin pedirle nada a la API, que puede no estar disponible—.
+ *
+ * El widget además se refresca solo cada media hora por su cuenta, declarado en
+ * `updatePeriodMillis`. Eso cubre los días en que la app no se abre.
+ */
+function useWidgetAlDia(hayUsuario: boolean) {
+  const sync = useSyncActions();
+  // Referencia y no estado: esto no pinta nada, y guardarlo en estado provocaría un
+  // renderizado de toda la app cada vez que el teléfono se desbloquea.
+  const ultimoRefresco = useRef(0);
+
+  useEffect(() => {
+    if (!hayUsuario) return;
+
+    async function refrescar() {
+      // Un mínimo de un minuto entre refrescos: Android manda varios eventos de
+      // `active` seguidos al desbloquear, y no hace falta reescribir el archivo en cada uno.
+      const ahora = Date.now();
+      if (ahora - ultimoRefresco.current < 60_000) return;
+      ultimoRefresco.current = ahora;
+
+      const guardado = await sync.readCache<readonly Subject[]>(CACHE_KEYS.schedule);
+      if (guardado) await actualizarWidget(toScheduleEntries(guardado.data));
+    }
+
+    void refrescar();
+
+    const suscripcion = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') void refrescar();
+    });
+
+    return () => suscripcion.remove();
+  }, [hayUsuario, sync]);
+}
+
 function Root() {
   const { user, loading } = useAuth();
+  useWidgetAlDia(user !== null);
   const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
   const [seccion, setSeccion] = useState<
     | 'inicio'
@@ -88,6 +133,31 @@ function Root() {
    * social —«escribirle a esta persona»—, y la pantalla de destino solo lo recibe.
    */
   const [conversacionInicial, setConversacionInicial] = useState<string | undefined>();
+
+  /**
+   * Tocar el widget abre el horario (criterio de verificación de la Fase 11).
+   *
+   * El widget lanza un intent con `notecore://horario`. Se atiende de dos maneras porque
+   * son dos situaciones distintas: `getInitialURL` cubre la app cerrada —el enlace ya
+   * estaba puesto cuando el proceso arrancó— y el evento `url` cubre la app en segundo
+   * plano, donde nunca hay arranque que consultar.
+   *
+   * Esto **no es** el `expo-router` que las fases anteriores fueron descartando: no hay
+   * árbol de rutas ni historial, solo un enlace del sistema que elige la sección inicial.
+   * La razón por la que ahora sí hace falta es la que aquellas notas anticipaban —«un
+   * enlace profundo del sistema»—, y llega con el widget, que es código fuera de la app.
+   */
+  useEffect(() => {
+    if (!user) return;
+
+    function abrir(url: string | null) {
+      if (url && url.startsWith('notecore://horario')) setSeccion('horario');
+    }
+
+    void Linking.getInitialURL().then(abrir);
+    const suscripcion = Linking.addEventListener('url', ({ url }) => abrir(url));
+    return () => suscripcion.remove();
+  }, [user]);
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {

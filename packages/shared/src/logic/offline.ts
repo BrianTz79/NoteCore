@@ -210,10 +210,13 @@ export function syncStatusMessage(state: SyncState, now: Date = new Date()): str
 }
 
 /**
- * El tono del indicador, para que cada cliente lo pinte con su propio sistema de color.
+ * El tono del indicador: el **significado** del estado, no un color.
  *
- * Se devuelve el **significado** y no un color: la app y la web tienen paletas distintas, y
- * un `#f59e0b` en `shared` obligaría a que ambas usaran exactamente el mismo ámbar.
+ * Hasta la Fase 11 el motivo era que cada cliente tenía su paleta. Ya no: las dos salen de
+ * `design/tokens.ts`. Pero devolver el significado sigue siendo lo correcto, y por una
+ * razón mejor: el indicador de la web es una franja con borde y fondo y el de la app un
+ * bloque con su propio relleno, así que cada uno necesita **varios** tokens del mismo tono,
+ * no uno. Un único color aquí obligaría a derivar los demás a ojo en cada cliente.
  */
 export type SyncTone = 'atencion' | 'espera' | 'ok';
 

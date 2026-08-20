@@ -6,7 +6,7 @@ import {
   scheduleRange,
   type ScheduleEntry,
 } from '@notecore/shared';
-import { colors } from './ui';
+import { RADIUS, SPACE, TEXT, c, colors, fuente } from './ui';
 
 /**
  * Vista semanal del horario en la app (FR-009).
@@ -51,7 +51,7 @@ export function ScheduleGrid({
               {hours.map((hour, index) => (
                 <Text
                   key={hour}
-                  style={[styles.hourLabel, { top: index * HOUR_HEIGHT - 6 }]}
+                  style={[styles.hourLabel, { top: index * HOUR_HEIGHT + 2 }]}
                 >
                   {String(hour).padStart(2, '0')}:00
                 </Text>
@@ -124,18 +124,20 @@ const styles = StyleSheet.create({
   container: {
     borderColor: colors.borde,
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: RADIUS.lg,
     backgroundColor: colors.tarjeta,
     padding: 8,
   },
   row: { flexDirection: 'row' },
   headerCell: { height: 28, alignItems: 'center', justifyContent: 'center' },
-  headerText: { color: colors.texto, fontSize: 13, fontWeight: '600' },
+  headerText: { color: colors.texto, fontSize: TEXT.sm, fontWeight: '600' },
   hourLabel: {
     position: 'absolute',
-    right: 6,
-    color: colors.textoTenue,
-    fontSize: 11,
+    right: SPACE.xs,
+    color: c.tinta3,
+    fontFamily: fuente.mono,
+    fontVariant: ['tabular-nums'],
+    fontSize: TEXT.xs,
   },
   dayColumn: {
     borderLeftColor: colors.borde,
@@ -154,13 +156,18 @@ const styles = StyleSheet.create({
     left: 3,
     right: 3,
     borderLeftWidth: 3,
-    borderRadius: 4,
+    borderRadius: RADIUS.sm,
     paddingHorizontal: 5,
     paddingVertical: 3,
     overflow: 'hidden',
   },
   blockPressed: { opacity: 0.7 },
-  blockTitle: { color: colors.textoFuerte, fontSize: 11, fontWeight: '600' },
-  blockTime: { color: colors.texto, fontSize: 10 },
-  blockRoom: { color: colors.textoSuave, fontSize: 10 },
+  blockTitle: { color: colors.textoFuerte, fontSize: TEXT.xs, fontWeight: '600' },
+  blockTime: {
+    color: c.tinta2,
+    fontFamily: fuente.mono,
+    fontVariant: ['tabular-nums'],
+    fontSize: TEXT.xs,
+  },
+  blockRoom: { color: colors.textoSuave, fontSize: TEXT.xs },
 });
