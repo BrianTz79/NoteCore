@@ -33,13 +33,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | | |
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real y **widget de pantalla principal**, sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
-| **Fases completadas** | 12 de 12 (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna. El plan está completo |
+| **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
+| **Fase actual** | Ninguna en curso. Hay **seis fases nuevas** (12 a 17) abiertas tras usar el producto desplegado; la [Fase 12 es P0](#fase-12--arreglos-de-producción--p0) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance**: `████████████` 100%
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-17)**: `░░░░░░` 0 de 6
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -117,9 +117,12 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 cerradas y verificadas en app y web. El **2026-08-20** se puso en producción: web y API en HTTPS
 tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la sección 6).
 
-Lo que queda ya no es construcción: subirlo a Play Store —que exige un `.aab`, no un `.apk`,
-además de la ficha de la tienda y la política de privacidad—, o abrirlo a estudiantes reales y
-ver qué piden.
+**Usarlo destapó seis cosas** que no se ven hasta que el producto está en manos de alguien.
+Están escritas como las fases 12 a 17 en la [sección 8](#8-fases-pendientes-12-a-17).
+
+Empezar por la **Fase 12**, que es P0: la sesión de la web se cae sola en producción —una
+regresión del propio despliegue, ya diagnosticada— y el botón atrás de Android echa al usuario
+de la app.
 
 ---
 
@@ -141,6 +144,16 @@ ver qué piden.
 | 9 | Offline y sincronización | P2 | ✅ | ✅ | ✅ | ✅ |
 | 10 | Mensajería | P3 | ✅ | ✅ | ✅ | ✅ |
 | 11 | Widget y pulido visual | P4 | ✅ | ✅ | ✅ | ✅ |
+| — | *Despliegue en producción (2026-08-20)* | — | ✅ | ✅ | ✅ | ✅ |
+| 12 | Arreglos de producción | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
+| 13 | Identidad visual: logo e iconos | P2 | ⬜ | — | ⬜ | ⬜ |
+| 14 | La web en pantalla grande | P1 | ⬜ | — | ⬜ | — |
+| 15 | Social en secciones propias | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
+| 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
+
+> Las fases 12 a 17 salieron de **usar el producto desplegado** (2026-08-20), no del plan
+> original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
 
 ### Regla de cierre
 
@@ -1629,3 +1642,230 @@ depuración.
 - Subir el `versionCode` en cada publicación —hoy va en `1`—
 - Política de privacidad y ficha de la tienda
 - **Respaldar `~/.notecore-release/`** en un sitio seguro
+
+---
+
+## 8. Fases pendientes (12 a 17)
+
+Estas seis fases **no venían en el plan original**: salieron de usar el producto ya desplegado,
+el 2026-08-20. Se mantiene la regla de siempre —una fase por conversación, y no se cierra hasta
+verificarla en app **y** en web—.
+
+Van ordenadas por prioridad, no por número: la **12 es P0** porque hay una sesión que se cae en
+producción ahora mismo.
+
+---
+
+### Fase 12 — Arreglos de producción · **P0**
+
+Tres fallos que afectan a quien use el producto hoy. Los tres están **diagnosticados con la
+causa exacta**, no supuestos.
+
+#### 12.1 · La sesión de la web se cierra sola (regresión del despliegue)
+
+**Síntoma**: dejas la web abierta un rato, recargas, y te pide entrar de nuevo.
+
+**Causa, ya confirmada**: la cookie de refresco se emite con `path=/auth/refresh`
+(`apps/api/src/lib/cookies.ts`), pero desde que la web habla con la API por el rewrite `/api`,
+el navegador la pide en `/api/auth/refresh`. Los paths no coinciden, **el navegador no manda la
+cookie**, y el refresco responde 401. El token de acceso dura 15 minutos: pasados esos, la
+sesión muere aunque el refresco fuese válido 30 días.
+
+Comprobado sobre producción: el refresco da **401** con el path actual y **200** forzando la
+cookie a `/api/auth/refresh`. Esa es la única diferencia entre los dos casos.
+
+**Es una regresión introducida el 2026-08-20** con el rewrite, no un fallo de la Fase 1.
+
+**Qué hay que decidir al implementarla**: el path de la cookie tiene que salir de un solo sitio
+que conozca el prefijo de la API. Ojo con la tentación de poner `path=/`: haría que el token de
+refresco viajara en *todas* las peticiones, que es justo lo que el path estrecho evita.
+
+**Verificación**: entrar en la web, esperar a que el token de acceso caduque (>15 min),
+recargar y **seguir dentro**. En la app no debe cambiar nada: usa cabeceras, no cookies.
+
+#### 12.2 · El botón atrás de Android cierra la app
+
+**Síntoma**: estás en Horario, pulsas atrás para volver, y sales al escritorio del teléfono.
+
+**Causa, ya confirmada**: no hay **ni un solo** `BackHandler` en `apps/mobile/src`. La app
+gestiona la navegación con estado propio, y Android, al no ver a nadie atender el botón, aplica
+lo suyo: cerrar la actividad.
+
+**Qué hay que decidir**: qué significa "atrás" en cada pantalla —volver al inicio, cerrar un
+diálogo abierto, salir de una conversación— y qué pasa **en el inicio**, donde sí debe salir de
+la app. El patrón habitual es pedir confirmación o exigir dos pulsaciones seguidas, para que un
+toque accidental no te eche.
+
+**Verificación**: recorrer las 11 pantallas de la app pulsando atrás en cada una y comprobar
+que ninguna salta al escritorio salvo el inicio.
+
+#### 12.3 · La web no emite cabeceras de seguridad *(hecho el 2026-08-20)*
+
+Ya arreglado al desplegar, se anota aquí porque pertenece al mismo grupo. `helmet` cubría la
+API pero no las páginas de Next: sin `X-Frame-Options`, NoteCore se podía embeber en un iframe
+invisible para recoger las pulsaciones del usuario.
+
+---
+
+### Fase 13 — Identidad visual: logo e iconos · P2
+
+Hoy la app usa el icono por defecto de Expo y la web no tiene favicon propio.
+
+**Dirección elegida** (2026-08-20): **el ouroboros formando una C**. La serpiente mordiéndose
+la cola dibuja la C de *Core*, y el hueco interior deja ver los renglones de una hoja. Une la
+mascota de OuroCore con el nombre del producto y sobrevive al tamaño de una pestaña, donde el
+anillo se sigue leyendo aunque el detalle interior se pierda.
+
+Se pidió además una **demo del monograma NC entrelazado** para comparar antes de cerrar la
+decisión: está publicada en
+<https://claude.ai/code/artifact/ceb8654f-fb76-4a4f-bfbb-f1e928d3cbc9>, con los dos dibujos a
+128, 48 y 16 píxeles —el de 16 es el que decide, porque es el de la pestaña—. El logo se dibuja en **SVG**, no como imagen de mapa de bits: es lo que permite
+derivar todos los tamaños del mismo archivo sin que se vea borroso en ninguno.
+
+**Dónde acaba usándose**:
+
+| Destino | Formato | Nota |
+|---|---|---|
+| Icono de la app | PNG desde el SVG, varios tamaños | Android exige el icono adaptativo en capas |
+| Favicon | SVG + PNG de respaldo | El SVG permite que cambie con el tema claro/oscuro |
+| Pantalla de entrada | SVG en línea | Web y app, desde `shared` |
+
+**Lo que hay que cuidar**: el icono adaptativo de Android **recorta en círculo** en muchos
+lanzadores. Un logo que ya es circular pierde el borde si se dibuja al límite: hay que dejarle
+aire. Y a 16px en la pestaña, cualquier detalle interior desaparece — conviene mirarlo a ese
+tamaño antes de darlo por bueno, no solo en grande.
+
+**Verificación**: verlo instalado en el lanzador de Android, en la pestaña del navegador a
+tamaño real, y en la pantalla de entrada de los dos clientes.
+
+---
+
+### Fase 14 — La web en pantalla grande · P1
+
+**Síntoma**: en una laptop o un escritorio la web se ve igual que en el teléfono, con todo el
+contenido en una columna estrecha y el resto de la pantalla vacío.
+
+**Causa, ya medida**: en toda la web hay **9 clases responsive** (`sm:`, `md:`, `lg:`), y el
+contenedor está fijo en `max-w-3xl` —768px—. En una pantalla de 1920px se desperdicia más del
+60% del ancho. Tampoco existe **ningún componente de navegación**: `apps/web/src/components/`
+no tiene ni barra lateral ni navbar; cada pantalla se alcanza volviendo al inicio.
+
+**Qué hay que decidir**: barra lateral fija o navbar superior. La lateral aprovecha mejor una
+pantalla ancha —el alto es lo que sobra en 16:9— pero hay que resolver qué hace en el teléfono,
+donde no cabe. Sea cual sea, en móvil la web **no debe empeorar**: hoy funciona bien ahí.
+
+**Ojo con esto**: la Fase 11 dejó las medidas con prefijo `nc-` porque en Tailwind 4
+`--spacing-*` redefine también las anchuras nombradas (`max-w-md` pasó de 28rem a 1rem y el
+formulario de entrada colapsó al ancho de una letra). Cualquier medida nueva tiene que respetar
+esa convención.
+
+**Verificación**: las 12 pantallas de la web en un navegador ancho y en uno estrecho. La app no
+se toca.
+
+---
+
+### Fase 15 — Social en secciones propias · P2
+
+**Síntoma**: el botón se llama «Contactos» pero dentro está todo: tu perfil, la búsqueda, las
+solicitudes, los perfiles ajenos y las publicaciones. No se encuentra el perfil propio, y no
+hay forma de ver un muro de publicaciones.
+
+**Causa, ya medida**: `SocialScreen.tsx` son **968 líneas** con siete bloques dentro
+(`PerfilPropio`, `Buscador`, `FilaUsuario`, `Contactos`, `FilaContacto`, `PerfilAjeno`,
+`Publicaciones`). En la web, `social/page.tsx` son otras 687. Todo lo que la Fase 8 construyó
+está ahí; el problema **no es que falte, es que no se encuentra**.
+
+**Lo que pediste, separado**:
+
+1. **Mi perfil** — verlo como lo ven los demás, accesible de inmediato
+2. **Ajustes del perfil** — biografía, carrera, escuela, edad y visibilidad. Es
+   configuración, y mezclarla con el perfil es lo que hace que ninguno de los dos se entienda
+3. **Contactos** — solo contactos, solicitudes y búsqueda
+4. **Muro de publicaciones** — lo que publican tus contactos, que hoy no existe como vista
+
+**Ojo con esto**: la Fase 8 dejó una regla que no se puede aflojar al reorganizar —lo que la
+visibilidad no alcanza **no se manda**, no se manda y se oculta en el cliente—. Al montar el
+muro, un cambio descuidado en la consulta puede empezar a devolver publicaciones que el
+receptor no debería ver. Es el Principio III, y toca verificarlo mirando la respuesta de la
+API, no la pantalla.
+
+**Verificación**: las cuatro secciones en app y web, y una comprobación con dos cuentas de que
+el muro no filtra nada que la visibilidad no permita.
+
+---
+
+### Fase 16 — Widgets: familia y densidad · P3
+
+**Síntoma**: el widget ocupa mucho para lo poco que muestra, y el nombre de la materia se lee
+pequeño para algo que debe entenderse de una ojeada.
+
+**Causa, ya medida**: el nombre de la materia va a **17sp**, y el layout tiene un
+`layout_weight="1"` en el bloque central que **estira el hueco vertical** hasta llenar la
+altura reservada — de ahí el espacio vacío bajo el aula. El widget se declara con
+`targetCellWidth="4"` y `targetCellHeight="2"`.
+
+**Dos cosas, no una**:
+
+1. **Encoger y agrandar el actual**: menos alto, y el nombre de la materia mucho más grande.
+   El resto de la información se subordina a ese dato
+2. **Una familia de widgets**, para quien quiera más: el día completo, las faltas cerca del
+   límite, lo que vence pronto
+
+**Ojo con esto** (todo aprendido en la Fase 11, cuesta caro reaprenderlo):
+
+- Un `RemoteViews` **no puede inflar `android.view.View`**: el lanzador responde «Class not
+  allowed to be inflated» y el widget entero deja de cargar. Por eso la barra de color es un
+  `ImageView`
+- El widget **no decide qué mostrar**: la regla vive en `shared` y la ejecuta la app, que le
+  deja el resultado ya resuelto. Un widget nuevo tiene que seguir el mismo camino, o la regla
+  acabará escrita en dos idiomas y una copia envejecerá sin que nadie lo note
+- El widget corre en el proceso del lanzador: no tiene JavaScript, ni sesión, ni forma de
+  llamar a la API
+- Los widgets nuevos **también deben borrarse al cerrar sesión**, como el actual
+
+**Verificación**: los widgets colocados en el lanzador real, con el diálogo de fijado del
+sistema (arrastrarlos no se puede sintetizar de forma fiable).
+
+---
+
+### Fase 17 — Actualización de la app sin tienda · P3
+
+**Situación**: publicar en Play Store cuesta 25 USD y por ahora no se va a hacer, así que la
+app se instala a mano. Sin un mecanismo propio, cada versión nueva exige avisar a cada usuario
+y que reinstale.
+
+**Enfoque elegido** (2026-08-20): **actualizador de APK propio**, aislado tras un interruptor.
+La API expone cuál es la última versión y dónde está el APK; la app compara al abrir, avisa
+cuando hay una nueva y ofrece descargarla.
+
+Se descartó **Expo Updates**: actualiza JavaScript al vuelo, pero **no puede tocar código
+nativo** —el widget, la cámara—, así que seguirían haciendo falta APKs nuevos para esos cambios
+y acabarías manteniendo dos mecanismos.
+
+**El requisito de que sea fácil de quitar es parte del diseño, no un extra**: todo vive en un
+módulo propio con un interruptor de configuración. Al subir a Play Store se apaga con una
+variable y el resto de la app no se entera. Las tiendas **prohíben** que una app se
+autoactualice por fuera, así que esto no puede quedar enredado en el resto del código.
+
+**Lo que hay que cuidar**:
+
+- Instalar un APK exige el permiso `REQUEST_INSTALL_PACKAGES`, que **Play Store revisa con
+  lupa**. Debe entrar condicionado al interruptor, no fijo en el manifiesto
+- La versión que decide es el **`versionCode`**, no el nombre visible. Hoy va en `1` y **hay
+  que subirlo en cada publicación**, o el actualizador no verá nada nuevo
+- El APK descargado debe verificarse antes de instalarlo. Se genera un `.sha256` junto al
+  binario; comprobarlo es lo que impide instalar una descarga corrompida o alterada
+- Android solo acepta la actualización si el APK nuevo está **firmado con la misma clave**. Es
+  otra razón para respaldar `~/.notecore-release/`
+
+**Verificación**: instalar una versión con `versionCode` bajo, publicar una más alta, y ver el
+ciclo entero —aviso, descarga, instalación— en un teléfono real. Y comprobar que **con el
+interruptor apagado no queda rastro**: ni permiso en el manifiesto, ni aviso, ni peticiones.
+
+---
+
+### Orden sugerido
+
+**12 primero**, sin discusión: hay una sesión que se cae en producción y un botón atrás que
+echa al usuario de la app. La **14** va después porque afecta a cualquiera que abra la web en
+una laptop. El resto —13, 15, 16, 17— son mejoras que pueden ir en el orden que prefieras.
