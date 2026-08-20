@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { loginSchema, toFormErrors, type FormErrors } from '@notecore/shared';
 import { useAuth } from '@/lib/auth-context';
 import { Button, Field, FormError } from '@/components/ui';
+import { Logo } from '@/components/logo';
 
 export default function EntrarPage() {
   const router = useRouter();
@@ -47,6 +48,10 @@ export default function EntrarPage() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-nc-xl px-nc-lg py-nc-3xl">
       <header className="space-y-nc-xs">
+        <div className="flex items-center gap-nc-xs">
+          <Logo size={32} />
+          <span className="text-lg font-semibold tracking-tight">NoteCore</span>
+        </div>
         <h1 className="text-3xl font-semibold tracking-tight">Bienvenido de vuelta</h1>
         <p className="text-tinta2">Entra para ver tu horario y tu agenda.</p>
       </header>

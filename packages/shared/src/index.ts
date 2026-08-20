@@ -54,3 +54,4 @@ export * from './api/social.js';
 export * from './api/messaging.js';
 export * from './api/live.js';
 export * from './design/tokens.js';
+export * from './design/logo.js';

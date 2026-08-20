@@ -11,6 +11,7 @@ import {
 import { loginSchema, toFormErrors, type FormErrors } from '@notecore/shared';
 import { useAuth } from '../lib/auth-context';
 import { Button, Field, FormError, SPACE, TEXT, base, colors } from '../components/ui';
+import { Logo } from '../components/logo';
 
 export function EntrarScreen({ onIrARegistro }: { onIrARegistro: () => void }) {
   const { login } = useAuth();
@@ -49,7 +50,10 @@ export function EntrarScreen({ onIrARegistro }: { onIrARegistro: () => void }) {
     >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <Text style={styles.title}>NoteCore</Text>
+          <View style={styles.marca}>
+            <Logo size={28} />
+            <Text style={styles.title}>NoteCore</Text>
+          </View>
           <Text style={styles.subtitle}>Entra para ver tu horario y tu agenda.</Text>
         </View>
 
@@ -96,6 +100,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { flexGrow: 1, justifyContent: 'center', padding: SPACE.md, gap: SPACE.xl },
   header: { gap: 6 },
+  marca: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   title: { ...base.titulo, fontSize: TEXT['3xl'] },
   subtitle: { ...base.cuerpo },
   form: { gap: 16 },

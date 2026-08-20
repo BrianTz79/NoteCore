@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Logo de NoteCore: una serpiente mordiéndose la cola forma una C alrededor de una hoja con renglones">
+  <rect width="64" height="64" fill="#0b0f18"/>
+  <path d="M 46 15.5 A 21 21 0 1 0 52 30" fill="none" stroke="#5aa9ff" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="52" cy="30" r="5.2" fill="#5aa9ff"/>
+  <circle cx="53.6" cy="28.6" r="1.35" fill="#0b0f18"/>
+  <g stroke="#f2f5fa" stroke-width="3.6" stroke-linecap="round">
+    <line x1="23" y1="26" x2="41" y2="26"/>
+    <line x1="23" y1="34" x2="41" y2="34"/>
+    <line x1="23" y1="42" x2="34" y2="42"/>
+  </g>
+</svg>

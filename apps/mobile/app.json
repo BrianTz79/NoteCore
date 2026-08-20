@@ -7,6 +7,7 @@
     "scheme": "notecore",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "platforms": [
       "android"
     ],
@@ -14,7 +15,8 @@
       "package": "net.ourocore.notecore",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0f172a"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b0f18"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"

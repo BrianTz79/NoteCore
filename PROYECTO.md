@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 12 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 13 cerrada y verificada)
 
 ---
 
@@ -32,14 +32,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real y **widget de pantalla principal**, sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 12 cerrada** el 2026-08-20. Quedan **seis fases** (13 a 18); la siguiente por prioridad es la [14](#fase-14--la-web-en-pantalla-grande--p1) (P1) |
+| **Fase actual** | Ninguna en curso. **Fase 13 cerrada** el 2026-08-20. Quedan **cinco fases** (14 a 18); la siguiente por prioridad es la [14](#fase-14--la-web-en-pantalla-grande--p1) (P1) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `█░░░░░░` 1 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `██░░░░░` 2 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -111,6 +111,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   en `shared` y la ejecuta la app, que le deja el resultado resuelto —por eso la web, la app y la
   pantalla de inicio del teléfono dicen lo mismo a la misma hora—
 
+- **Fase 13 cerrada**: identidad visual con el logo del ouroboros formando una C, en el icono de
+  la app, el favicon de la web y la pantalla de entrada de los dos clientes. La geometría vive
+  **una sola vez** en `packages/shared/src/design/logo.ts` —como datos, no como componente, igual
+  que el QR de la Fase 6—, y cada cliente la pinta con su propio motor tomando el color de su
+  propio sistema de diseño. El icono adaptativo de Android se generó con el dibujo **al 62% del
+  lienzo** para no perder el borde en el recorte circular, verificado instalando el APK y abriendo
+  el cajón de aplicaciones del emulador real
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -121,14 +129,17 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
 escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-**La Fase 12 está cerrada y verificada** (2026-08-20). La API se redesplegó con
-`WEB_API_PREFIX=/api` y el APK se recompiló, se firmó con la clave de siempre y se dejó en
-`_apk/`. El detalle de la verificación está en el [historial](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20).
+**Las fases 12 y 13 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
+`WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
+formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada. El APK se
+recompiló, se firmó con la clave de siempre y quedó en `_apk/`. El detalle de cada una está en el
+historial: [Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
+[Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20).
 
 **La siguiente por prioridad es la [Fase 14](#fase-14--la-web-en-pantalla-grande--p1)** (P1): la
-web se ve en una columna estrecha en cualquier laptop. Después, la 13, 15, 16, 17 y 18 pueden ir
-en el orden que se prefiera —de ellas, la **18 (cuatrimestres)** es la que más se nota si quien
-usa NoteCore no cursa por semestres—.
+web se ve en una columna estrecha en cualquier laptop. Después, la 15, 16, 17 y 18 pueden ir en
+el orden que se prefiera —de ellas, la **18 (cuatrimestres)** es la que más se nota si quien usa
+NoteCore no cursa por semestres—.
 
 ---
 
@@ -152,7 +163,7 @@ usa NoteCore no cursa por semestres—.
 | 11 | Widget y pulido visual | P4 | ✅ | ✅ | ✅ | ✅ |
 | — | *Despliegue en producción (2026-08-20)* | — | ✅ | ✅ | ✅ | ✅ |
 | 12 | Arreglos de producción | **P0** | ✅ | ✅ | ✅ | ✅ |
-| 13 | Identidad visual: logo e iconos | P2 | ⬜ | — | ⬜ | ⬜ |
+| 13 | Identidad visual: logo e iconos | P2 | ✅ | — | ✅ | ✅ |
 | 14 | La web en pantalla grande | P1 | ⬜ | — | ⬜ | — |
 | 15 | Social en secciones propias | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
@@ -175,6 +186,76 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 13 — Identidad visual: logo e iconos · cerrada el 2026-08-20
+
+**Entregado**: el logo de NoteCore —el ouroboros formando una C— en los tres destinos donde
+antes no había marca propia: el icono de la app Android (legacy y adaptativo), el favicon de
+la web, y la pantalla de entrada de los dos clientes.
+
+**La geometría vive una sola vez, en `shared`.** `packages/shared` no exporta componentes
+React —solo tipos, esquemas, lógica y tokens—, así que el patrón que ya dejó el QR de la Fase 6
+es el que se repitió aquí: los números del dibujo (el arco del anillo, el círculo de la
+cabeza, los tres renglones) están en
+[`design/logo.ts`](packages/shared/src/design/logo.ts), y cada cliente lo pinta con su propio
+motor —`react-native-svg` en la app, `<svg>` nativo en la web—, tomando el color de su propio
+sistema de diseño (`COLOR` en la app, las clases de `tokens.css` en la web) en vez de
+recibirlo fijo desde `shared`. Fijar ahí un color habría sido exactamente la clase de
+duplicación que este archivo existe para evitar.
+
+**El icono adaptativo se generó con aire de sobra a propósito.** La advertencia que dejó
+escrita esta misma fase antes de empezar —el recorte circular de Android se come el borde de
+un dibujo que ya toca el límite— se resolvió escalando el anillo a un 62% del lienzo antes de
+exportarlo; Expo añade además su propio margen sobre eso al empaquetar el icono adaptativo. El
+resultado, comprobado en el cajón de aplicaciones del emulador, es un anillo cómodo dentro del
+círculo, sin ningún trazo cortado.
+
+**Cómo se generaron los PNG sin tocar ningún `package.json`**: no había ni `sharp` ni
+`rsvg-convert` ni `cairosvg` en el entorno, y esta fase no es motivo para dejar una dependencia
+de rasterizado permanente en el repo por tres imágenes. Se usó el mismo camino que ya usan las
+suites Playwright de las fases 8 a 11 —Chromium ya estaba en caché, sin que `playwright` viva
+en ningún `package.json` del monorepo—: un script Node desechable, fuera del repositorio,
+que pintó el SVG en una página y capturó el lienzo. `apps/mobile/assets/icon.png` (1024×1024,
+fondo sólido) y `apps/mobile/assets/adaptive-icon.png` (1024×1024, fondo transparente real,
+comprobado por `colorType` en la cabecera PNG y componiendo sobre `#0b0f18` antes de darlo por
+bueno) para la app; `apps/web/src/app/icon.png` (32×32) como respaldo del favicon.
+
+**El favicon es SVG con respaldo, sin tocar `layout.tsx`.** Next.js App Router sirve
+automáticamente cualquier `icon.svg` o `icon.png` colocado en `apps/web/src/app/` —confirmado
+en la documentación empaquetada del propio `node_modules/next`, no de memoria, porque
+`apps/web/AGENTS.md` advierte que esta versión de Next puede diferir de lo entrenado—: el build
+de producción generó los dos `<link rel="icon">`, el SVG con `sizes="any"` primero y el PNG
+32×32 detrás, sin necesidad de tocar el `<head>` a mano.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| La geometría del logo vive en `shared` como datos, no como componente | `shared` no exporta JSX —los dos clientes tienen motores de dibujo SVG distintos—; el patrón ya lo fijó el `QrCode` de la Fase 6. Sin esto, el trazo del anillo se habría escrito dos veces y habría podido divergir en silencio, igual que la paleta antes de la Fase 11 |
+| Los colores del logo **no están en `shared`**, cada cliente los toma de su propio sistema | Fijar `#5aa9ff` dentro de `logo.ts` habría sido una copia más del token `acento`, exactamente lo que el sistema de diseño de la Fase 11 existe para evitar |
+| El icono adaptativo se generó con el dibujo al 62% del lienzo | La zona segura de un icono adaptativo de Android es un círculo inscrito; un logo ya circular que toca el borde pierde el filo al recortarse, la advertencia que esta fase dejó escrita para sí misma antes de empezar |
+| Los PNG se generaron con un script desechable de Playwright, fuera del repo | No había rasterizador de SVG en el entorno, y tres imágenes no son motivo para fijar una dependencia nueva en ningún `package.json`. El mismo camino —Chromium ya cacheado, `playwright` sin vivir en ningún manifiesto— es el que usan las suites de verificación de las fases 8 a 11 |
+| El favicon es un `icon.svg` de convención de Next, no una ruta generada a mano | Next.js ya resuelve `rel`, `sizes` y `type` a partir del archivo; escribirlo en `layout.tsx` habría sido una segunda fuente de verdad para algo que el *file convention* ya resuelve solo |
+
+**Verificación (2026-08-20)**:
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| Los tres paquetes tocados | `npm run typecheck` en `shared`, `web` y `mobile` | Los tres, limpio |
+| Build de producción de la web | `next build` | Compila; `/icon.png` e `/icon.svg` aparecen como rutas propias |
+| Favicon servido | `curl` sobre `/entrar` con el servidor de producción arrancado | `<link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml">` y el PNG 32×32 detrás |
+| Logo en la pantalla de entrada, web | Captura de un navegador real a 480px | El anillo junto a «NoteCore», sin desbordar la cabecera |
+| Icono adaptativo, transparencia real | Cabecera PNG (`colorType: 6`) y composición sobre `#0b0f18` antes de exportar | Fondo realmente transparente, no blanco disimulado |
+| `expo prebuild` | Regenera `apps/mobile/android/` desde `app.json` | Los mipmaps de `ic_launcher` y `ic_launcher_foreground` salen del logo nuevo |
+| APK de release recompilado | Receta de la Fase 12: `EXPO_PUBLIC_API_URL` + `createBundleReleaseJsAndAssets --rerun-tasks` + `assembleRelease` | Compila limpio |
+| Firma del APK | `apksigner verify --print-certs`, comparado byte a byte con el de `_apk/` | **Mismo SHA-256** de certificado que el APK anterior |
+| **Icono en el cajón de aplicaciones del emulador real** | APK instalado, cajón abierto, captura de pantalla | El ouroboros, recortado en círculo por el lanzador, **sin perder el anillo ni el detalle** |
+| **Pantalla de entrada en la app real** | APK contra la API de producción, captura de pantalla | El mismo logo junto a «NoteCore», idéntico al de la web —misma geometría de `shared`— |
+
+El APK verificado reemplazó al anterior en `_apk/`, con el mismo SHA-256 de certificado
+comprobado antes de copiarlo.
+
+---
 
 #### Fase 12 — Arreglos de producción · cerrada el 2026-08-20
 
@@ -1807,7 +1888,7 @@ invisible para recoger las pulsaciones del usuario.
 
 ---
 
-### Fase 13 — Identidad visual: logo e iconos · P2
+### Fase 13 — Identidad visual: logo e iconos · P2 ✅ *(cerrada el 2026-08-20)*
 
 Hoy la app usa el icono por defecto de Expo y la web no tiene favicon propio.
 
@@ -1837,6 +1918,9 @@ tamaño antes de darlo por bueno, no solo en grande.
 
 **Verificación**: verlo instalado en el lanzador de Android, en la pestaña del navegador a
 tamaño real, y en la pantalla de entrada de los dos clientes.
+
+**Cómo se resolvió y se verificó** (2026-08-20): ver el
+[historial](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20).
 
 ---
 
