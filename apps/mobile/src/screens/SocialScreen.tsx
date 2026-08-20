@@ -35,6 +35,7 @@ import {
   type UserSearchResult,
 } from '@notecore/shared';
 import { socialApi } from '../lib/api';
+import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, Field, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { QrCode } from '../components/qr-code';
 import { QrScanner } from '../components/qr-scanner';
@@ -67,6 +68,26 @@ export function SocialScreen({
 
   /** Perfil ajeno abierto, si lo hay. Se muestra encima en lugar de navegar a otra ruta. */
   const [verPerfil, setVerPerfil] = useState<string | null>(null);
+
+  /**
+   * Atrás deshace un paso cada vez (Fase 12.2): primero el perfil ajeno, luego la pestaña.
+   *
+   * La pestaña cuenta como paso porque cambiarla es lo que hizo el usuario para llegar
+   * donde está; devolverlo al inicio desde «contactos» se saltaría ese paso. El perfil
+   * ajeno recarga al cerrarse, igual que hace su propia flecha, porque desde ahí se pueden
+   * mandar o aceptar solicitudes y la lista de detrás quedaría vieja.
+   */
+  useBotonAtras([
+    {
+      cuando: verPerfil !== null,
+      hacer: () => {
+        setVerPerfil(null);
+        void cargar();
+      },
+    },
+    { cuando: pestana !== 'perfil', hacer: () => setPestana('perfil') },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const cargar = useCallback(async () => {
     try {

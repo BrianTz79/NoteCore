@@ -15,6 +15,7 @@ import {
   type SemesterCloseEffect,
 } from '@notecore/shared';
 import { semesterApi } from '../lib/api';
+import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, Field, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 
 /**
@@ -35,6 +36,17 @@ export function SemestresScreen({ onVolver }: { onVolver: () => void }) {
   const [effect, setEffect] = useState<SemesterCloseEffect>();
   const [newName, setNewName] = useState('');
   const [nameError, setNameError] = useState<string>();
+
+  /**
+   * Atrás cancela el cierre de semestre antes de salir (Fase 12.2).
+   *
+   * Cerrar un semestre archiva datos y no se deshace, así que atrás sobre ese aviso debe
+   * significar lo mismo que su botón «Cancelar»: retirar la pregunta, nunca responderla.
+   */
+  useBotonAtras([
+    { cuando: effect !== undefined, hacer: () => setEffect(undefined) },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const load = useCallback(async () => {
     try {

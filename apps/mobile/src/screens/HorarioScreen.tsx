@@ -18,6 +18,7 @@ import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, co
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
 import { actualizarWidget, fijarWidget, sePuedeFijarWidget } from '../lib/widget';
+import { useBotonAtras } from '../lib/boton-atras';
 
 /**
  * Horario semanal en la app (FR-005 a FR-010).
@@ -41,6 +42,17 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
   const [notice, setNotice] = useState<string>();
   /** De cuándo es el horario que se está viendo, si viene del cache (FR-048). */
   const [cachedAt, setCachedAt] = useState<Instant | null>(null);
+
+  /**
+   * Atrás cierra el formulario abierto antes de salir de la pantalla (Fase 12.2).
+   *
+   * Los paneles ocupan la pantalla entera, así que para el usuario son un paso más del
+   * recorrido: atrás tiene que deshacer ese paso, no los dos de golpe.
+   */
+  useBotonAtras([
+    { cuando: panel.kind !== 'ninguno', hacer: () => setPanel({ kind: 'ninguno' }) },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const sync = useSyncActions();
   const { state: syncState } = useSync();

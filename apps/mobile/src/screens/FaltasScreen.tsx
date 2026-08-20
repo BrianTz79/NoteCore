@@ -23,6 +23,7 @@ import { attendanceApi } from '../lib/api';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSyncActions } from '../lib/sync-context';
+import { useBotonAtras } from '../lib/boton-atras';
 
 /**
  * Control de faltas en la app (FR-011 a FR-017).
@@ -44,6 +45,14 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
   const [notice, setNotice] = useState<string>();
   /** De cuándo es el panel que se está viendo, si viene del cache (FR-048). */
   const [cachedAt, setCachedAt] = useState<Instant | null>(null);
+
+  /**
+   * Atrás vuelve al inicio (Fase 12.2).
+   *
+   * Esta pantalla no abre capas: el día que se está marcando se cambia con las flechas, sin
+   * salir de la vista. Un solo paso, entonces —y sin el hook, Android cerraría la app—.
+   */
+  useBotonAtras([{ cuando: true, hacer: onVolver }]);
 
   const sync = useSyncActions();
 

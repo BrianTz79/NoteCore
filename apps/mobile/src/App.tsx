@@ -3,6 +3,7 @@ import { ActivityIndicator, AppState, Linking, SafeAreaView, StatusBar as RNStat
 import { StatusBar } from 'expo-status-bar';
 import { CACHE_KEYS, toScheduleEntries, type Subject } from '@notecore/shared';
 import { AuthProvider, useAuth } from './lib/auth-context';
+import { useBotonAtras, useSalirDeLaApp } from './lib/boton-atras';
 import { SyncProvider, useSyncActions } from './lib/sync-context';
 import { actualizarWidget } from './lib/widget';
 import { EntrarScreen } from './screens/EntrarScreen';
@@ -158,6 +159,45 @@ function Root() {
     const suscripcion = Linking.addEventListener('url', ({ url }) => abrir(url));
     return () => suscripcion.remove();
   }, [user]);
+
+  /**
+   * El botón atrás de Android para las pantallas que no lo declaran ellas mismas
+   * (Fase 12.2).
+   *
+   * **Aquí no se resuelve "volver al inicio"**, aunque a primera vista sea el sitio
+   * evidente. Android llama a los escuchas en **orden inverso al registro** —el último
+   * registrado manda, y se para en el primero que devuelve `true`—, y en React los efectos
+   * del hijo corren **antes** que los del padre. Es decir: la pantalla registra el suyo
+   * primero y esta raíz después, así que un escucha aquí ganaría a la pantalla y atrás
+   * saltaría al inicio **sin cerrar** el formulario que estuviera abierto.
+   *
+   * Cada pantalla termina su propia escalera llamando a `onVolver`, que es exactamente
+   * volver al inicio. Con eso el salto entre pantallas ya está cubierto, y de un solo modo.
+   *
+   * Lo que sí queda aquí es el registro, porque `RegistroScreen` no tiene sección propia:
+   * es una de las dos caras de la pantalla sin sesión, y quien alterna entre ellas es este
+   * componente.
+   */
+  useBotonAtras([
+    { cuando: user === null && pantalla === 'registro', hacer: () => setPantalla('entrar') },
+  ]);
+  // Nótese que esta escalera **no** lleva un paso final `cuando: true`, a diferencia de las
+  // de las pantallas: fuera del registro tiene que dejar pasar la pulsación para que
+  // `useSalirDeLaApp` pueda cerrar la app. Las pantallas sí lo llevan, y por eso desde una
+  // sección nunca se sale de golpe.
+
+
+  /**
+   * Los dos únicos sitios desde los que se sale de la app: el inicio con sesión abierta y la
+   * pantalla de entrar sin ella. En ambos, atrás pide una segunda pulsación.
+   *
+   * Va **después** del hook de arriba a propósito: por el orden inverso de Android, este se
+   * consulta primero, y así en el registro la pulsación la atiende el paso de arriba —que
+   * consume el evento— en lugar de empezar a contar pulsaciones para salir.
+   */
+  useSalirDeLaApp(
+    (user !== null && seccion === 'inicio') || (user === null && pantalla === 'entrar'),
+  );
 
   // Mientras se restaura la sesión guardada, para no parpadear entre pantallas.
   if (loading) {

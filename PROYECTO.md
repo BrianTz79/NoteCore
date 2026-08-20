@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (desplegado en producción)
+> Última actualización: **2026-08-20** (Fase 12 cerrada y verificada)
 
 ---
 
@@ -34,12 +34,12 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real y **widget de pantalla principal**, sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. Hay **seis fases nuevas** (12 a 17) abiertas tras usar el producto desplegado; la [Fase 12 es P0](#fase-12--arreglos-de-producción--p0) |
+| **Fase actual** | Ninguna en curso. **Fase 12 cerrada** el 2026-08-20. Quedan **seis fases** (13 a 18); la siguiente por prioridad es la [14](#fase-14--la-web-en-pantalla-grande--p1) (P1) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-17)**: `░░░░░░` 0 de 6
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `█░░░░░░` 1 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -117,12 +117,18 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 cerradas y verificadas en app y web. El **2026-08-20** se puso en producción: web y API en HTTPS
 tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la sección 6).
 
-**Usarlo destapó seis cosas** que no se ven hasta que el producto está en manos de alguien.
-Están escritas como las fases 12 a 17 en la [sección 8](#8-fases-pendientes-12-a-17).
+**Usarlo destapó seis cosas** que no se ven hasta que el producto está en manos de alguien, y ese
+mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
+escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-Empezar por la **Fase 12**, que es P0: la sesión de la web se cae sola en producción —una
-regresión del propio despliegue, ya diagnosticada— y el botón atrás de Android echa al usuario
-de la app.
+**La Fase 12 está cerrada y verificada** (2026-08-20). La API se redesplegó con
+`WEB_API_PREFIX=/api` y el APK se recompiló, se firmó con la clave de siempre y se dejó en
+`_apk/`. El detalle de la verificación está en el [historial](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20).
+
+**La siguiente por prioridad es la [Fase 14](#fase-14--la-web-en-pantalla-grande--p1)** (P1): la
+web se ve en una columna estrecha en cualquier laptop. Después, la 13, 15, 16, 17 y 18 pueden ir
+en el orden que se prefiera —de ellas, la **18 (cuatrimestres)** es la que más se nota si quien
+usa NoteCore no cursa por semestres—.
 
 ---
 
@@ -145,15 +151,20 @@ de la app.
 | 10 | Mensajería | P3 | ✅ | ✅ | ✅ | ✅ |
 | 11 | Widget y pulido visual | P4 | ✅ | ✅ | ✅ | ✅ |
 | — | *Despliegue en producción (2026-08-20)* | — | ✅ | ✅ | ✅ | ✅ |
-| 12 | Arreglos de producción | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
+| 12 | Arreglos de producción | **P0** | ✅ | ✅ | ✅ | ✅ |
 | 13 | Identidad visual: logo e iconos | P2 | ⬜ | — | ⬜ | ⬜ |
 | 14 | La web en pantalla grande | P1 | ⬜ | — | ⬜ | — |
 | 15 | Social en secciones propias | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
 | 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
+| 18 | Cuatrimestres además de semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 
-> Las fases 12 a 17 salieron de **usar el producto desplegado** (2026-08-20), no del plan
+> Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
 > original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
+>
+> **Van por prioridad, no por número.** La 18 se numeró así por llegar la última, pero es P2:
+> entra antes que la 13, la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
+> los enlaces del documento, sin ganar nada.
 
 ### Regla de cierre
 
@@ -164,6 +175,57 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 12 — Arreglos de producción · cerrada el 2026-08-20
+
+**Entregado**: los tres fallos que afectaban a quien usara el producto ese día. El 12.3 (cabeceras
+de seguridad de la web) ya se había resuelto al desplegar; esta fase cerró el **12.1** y el
+**12.2**.
+
+**12.1 · La sesión de la web se cerraba sola.** El path de la cookie de refresco sale ahora de una
+sola función, `refreshCookiePath()` en [`apps/api/src/lib/cookies.ts`](apps/api/src/lib/cookies.ts),
+que compone el prefijo público de la API (`WEB_API_PREFIX`) con la ruta de refresco. Se descartó
+`path=/`, que habría hecho viajar el token de refresco en todas las peticiones. Al cerrar sesión se
+barre además la cookie que quedó en el path anterior.
+
+**12.2 · El botón atrás cerraba la app.** Un hook compartido,
+[`useBotonAtras`](apps/mobile/src/lib/boton-atras.ts), al que cada pantalla declara su escalera de
+pasos; atrás deshace **uno** —primero la capa abierta, después volver al inicio—. En el inicio y en
+la pantalla de entrar, `useSalirDeLaApp` exige **dos pulsaciones** con un aviso.
+
+**Lo que se aprendió probándolo, que no salía de leer el código**:
+
+- **Consumir el evento "por si acaso" bloquea la salida.** La primera versión devolvía `true`
+  siempre, incluso cuando ningún paso de la escalera aplicaba. React Native solo llama a
+  `exitApp()` si **ningún** escucha devuelve `true`, así que la escalera de `App.tsx` —que fuera
+  del registro no hace nada— le ganaba a `useSalirDeLaApp` y **la app no se podía cerrar**. Ahora
+  una escalera sin paso aplicable devuelve `false` y deja pasar la pulsación. Las pantallas sí
+  llevan un paso final `cuando: true`, y por eso desde una sección nunca se sale de golpe.
+  **El typecheck no detecta esto**: solo aparece ejecutando la app
+- **Android consulta los escuchas en orden inverso al registro**, y en React los efectos del hijo
+  corren antes que los del padre. Por eso la raíz **no** resuelve "volver al inicio": un escucha
+  allí ganaría al de la pantalla y atrás saltaría al inicio sin cerrar el formulario abierto.
+  Comprobado leyendo `BackHandler.android.js` de la versión instalada
+- **Al compilar el APK hay que pasarle `EXPO_PUBLIC_API_URL`.** Gradle no lee el `.env` de la raíz,
+  así que un `assembleRelease` a secas incrusta `http://localhost:3101` y la app no conecta con
+  nada. Y si solo se exporta la variable, Gradle da la tarea de empaquetado por actualizada y **no
+  la rehace**: hace falta `./gradlew :app:createBundleReleaseJsAndAssets --rerun-tasks`
+
+**Verificación (2026-08-20)**:
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| Cookie con el path correcto | Registro por `notecore.ourocore.net/api`, leyendo `Set-Cookie` | `Path=/api/auth/refresh` |
+| Refresco con solo cookies | `POST /api/auth/refresh` sin cabeceras | **200** (antes 401) |
+| Sesión sobrevive al token caducado | Quitando la cookie de acceso: `/auth/me` → refresco → `/auth/me` | **401 → 200 → 200** |
+| Barrido de la cookie vieja | `POST /api/auth/logout` | Borra los dos paths |
+| La app no se ve afectada | Login `x-notecore-client: mobile` contra la API directa | **0 cookies**, `/auth/me` y refresco 200 |
+| Atrás en las 8 secciones | APK release en el emulador, `KEYCODE_BACK` en cada una | Vuelve al inicio, ninguna cierra la app |
+| Atrás cierra la capa interna | Formulario de materia abierto en Horario | Cierra el formulario y **deja Horario** |
+| Atrás en el inicio | Dos pulsaciones, con y sin sesión | 1ª avisa y se queda · 2ª sale al lanzador |
+
+El APK verificado quedó en `_apk/`, firmado con la misma clave que el anterior —comprobado que el
+SHA-256 del certificado coincide—, así que se instala encima sin desinstalar.
 
 #### Fase 11 — Widget y pulido visual · cerrada el 2026-08-20
 
@@ -1645,10 +1707,10 @@ depuración.
 
 ---
 
-## 8. Fases pendientes (12 a 17)
+## 8. Fases pendientes (12 a 18)
 
-Estas seis fases **no venían en el plan original**: salieron de usar el producto ya desplegado,
-el 2026-08-20. Se mantiene la regla de siempre —una fase por conversación, y no se cierra hasta
+Estas siete fases **no venían en el plan original**: seis salieron de usar el producto ya
+desplegado, el 2026-08-20, y la última (**18, cuatrimestres**) se pidió el mismo día. Se mantiene la regla de siempre —una fase por conversación, y no se cierra hasta
 verificarla en app **y** en web—.
 
 Van ordenadas por prioridad, no por número: la **12 es P0** porque hay una sesión que se cae en
@@ -1656,9 +1718,9 @@ producción ahora mismo.
 
 ---
 
-### Fase 12 — Arreglos de producción · **P0**
+### Fase 12 — Arreglos de producción · **P0** ✅ *(cerrada el 2026-08-20)*
 
-Tres fallos que afectan a quien use el producto hoy. Los tres están **diagnosticados con la
+Tres fallos que afectaban a quien usara el producto ese día. Los tres están **diagnosticados con la
 causa exacta**, no supuestos.
 
 #### 12.1 · La sesión de la web se cierra sola (regresión del despliegue)
@@ -1680,8 +1742,22 @@ cookie a `/api/auth/refresh`. Esa es la única diferencia entre los dos casos.
 que conozca el prefijo de la API. Ojo con la tentación de poner `path=/`: haría que el token de
 refresco viajara en *todas* las peticiones, que es justo lo que el path estrecho evita.
 
-**Verificación**: entrar en la web, esperar a que el token de acceso caduque (>15 min),
-recargar y **seguir dentro**. En la app no debe cambiar nada: usa cabeceras, no cookies.
+**Cómo se resolvió** *(2026-08-20)*: una variable nueva, **`WEB_API_PREFIX`**, dice bajo qué
+prefijo alcanza **el navegador** a la API —vacía en desarrollo, `/api` en producción— y una sola
+función, `refreshCookiePath()` en
+[`apps/api/src/lib/cookies.ts`](apps/api/src/lib/cookies.ts), la compone con la ruta de refresco.
+Escribir y borrar la cookie usan esa misma función, porque una cookie **solo se borra si el path
+del borrado coincide con el del alta**. Se descartó `path=/` por lo que ya advertía el párrafo de
+arriba. Al cerrar sesión se barre además la cookie que quedó en el path anterior: no se envía
+nunca —por eso fallaba—, pero seguiría en el navegador 30 días.
+
+La variable va **emparejada con `NEXT_PUBLIC_API_URL`**, y así está anotado en `.env.example` y en
+`infra/docker-compose.yml`: si una cambia sin la otra, el fallo vuelve exactamente igual.
+
+**Verificación** *(hecha el 2026-08-20)*: API redesplegada con `WEB_API_PREFIX=/api`. Sobre
+producción: la cookie sale con `Path=/api/auth/refresh`, el refresco responde **200** donde antes
+daba 401, y el ciclo con el token de acceso caducado da **401 → refresco 200 → 200**. La app,
+comprobada aparte, **no recibe ni una cookie** y su ciclo por cabecera sigue igual.
 
 #### 12.2 · El botón atrás de Android cierra la app
 
@@ -1696,8 +1772,32 @@ diálogo abierto, salir de una conversación— y qué pasa **en el inicio**, do
 la app. El patrón habitual es pedir confirmación o exigir dos pulsaciones seguidas, para que un
 toque accidental no te eche.
 
-**Verificación**: recorrer las 11 pantallas de la app pulsando atrás en cada una y comprobar
-que ninguna salta al escritorio salvo el inicio.
+**Cómo se resolvió** *(2026-08-20)*: un hook compartido,
+[`useBotonAtras`](apps/mobile/src/lib/boton-atras.ts), al que cada pantalla le declara su
+**escalera** —una lista de pasos con su condición, y se ejecuta el primero que se cumple—. Atrás
+significa lo mismo que la flecha de la cabecera: deshacer **un** paso. Primero la capa abierta
+dentro de la pantalla (el formulario, el detalle del día, el hilo, el perfil ajeno), y solo
+cuando no queda ninguna, volver al inicio. En el inicio y en la pantalla de entrar, un segundo
+hook —`useSalirDeLaApp`— pide **dos pulsaciones seguidas** con un aviso, porque el borde inferior
+del teléfono es donde más roces accidentales hay.
+
+**El detalle que casi sale mal, y por qué queda anotado**: Android llama a los escuchas del botón
+atrás **en orden inverso al registro** y se detiene en el primero que devuelve `true`; y en React
+los efectos del hijo corren **antes** que los del padre. Es decir, un escucha puesto en `App.tsx`
+para "volver al inicio" **ganaría** al de la pantalla, y atrás saltaría al inicio sin cerrar el
+formulario abierto. Por eso la raíz **no** resuelve ese salto: cada pantalla termina su propia
+escalera llamando a `onVolver`, que es exactamente volver al inicio. Verificado leyendo
+`BackHandler.android.js` de la versión de React Native instalada, no por costumbre.
+
+**Verificación** *(hecha el 2026-08-20)*: APK release instalado en el emulador. Atrás en las ocho
+secciones vuelve al inicio y **ninguna cierra la app**; con el formulario de materia abierto,
+atrás lo cierra y **deja Horario**; en el inicio, la primera pulsación avisa y la segunda sale al
+lanzador.
+
+**Probarlo destapó un fallo que el typecheck no ve**: la primera versión consumía el evento
+siempre, y eso **impedía cerrar la app** —React Native solo llama a `exitApp()` si ningún escucha
+devuelve `true`—. Está explicado en el
+[historial](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20).
 
 #### 12.3 · La web no emite cabeceras de seguridad *(hecho el 2026-08-20)*
 
@@ -1864,8 +1964,82 @@ interruptor apagado no queda rastro**: ni permiso en el manifiesto, ni aviso, ni
 
 ---
 
+### Fase 18 — Cuatrimestres además de semestres · P2
+
+**Lo que se pidió** (2026-08-20): que quien estudia por **cuatrimestres** —cuatro meses— pueda
+llevar su periodo como tal. **El semestre sigue siendo el tipo principal y el que viene por
+defecto**; el cuatrimestre es la alternativa para quien la necesite.
+
+**Qué hay hoy, medido antes de escribir esto**: la Fase 3 dejó las semanas del periodo como un
+**ajuste editable** —`DEFAULT_SEMESTER_WEEKS = 16`, entre `MIN_SEMESTER_WEEKS` 1 y
+`MAX_SEMESTER_WEEKS` 52, con su propia ruta `PATCH /attendance/semester-weeks`—, y el límite de
+faltas se calcula sobre ese número
+([`packages/shared/src/logic/attendance.ts`](packages/shared/src/logic/attendance.ts)).
+
+Conviene decirlo claro porque cambia el tamaño de la fase: **la aritmética ya funciona**. Alguien
+que estudie por cuatrimestres puede poner 12 semanas hoy mismo y su límite de faltas saldrá bien.
+Lo que falta no es el cálculo, es todo lo demás:
+
+1. **El periodo no sabe lo que es.** `Semester` no guarda su tipo, así que las semanas correctas
+   hay que ponerlas a mano en cada periodo nuevo y nada las propone
+2. **La interfaz solo dice «semestre»**, en las tres capas y en decenas de textos. A quien cursa
+   un cuatrimestre el producto le habla de algo que no está cursando
+3. **El nombre sugerido al cerrar** deriva de la convención semestral (de «2026-1» sale
+   «2026-2»), que en un plantel cuatrimestral no es la que se usa
+
+#### Decisiones ya tomadas (2026-08-20)
+
+**El tipo va en el periodo, no en la cuenta.** Un campo en `Semester`, elegido al crearlo. La
+alternativa —un ajuste del usuario, «yo estudio por cuatrimestres»— era más simple pero tiene un
+defecto que no se ve hasta que pasa: al cambiarlo se reetiquetaría **también el histórico ya
+cerrado**, y un periodo archivado se cerró bajo el régimen que tenía. Con el tipo en el periodo,
+un estudiante que cambia de plan o de escuela conserva sus semestres antiguos como semestres.
+
+**El vocabulario cambia en la interfaz, no en el modelo.** Las pantallas dicen «cuatrimestre»
+cuando el periodo lo es; la base de datos, las rutas y los tipos de `shared` siguen diciendo
+`semester`. Renombrar a un término neutro sería más coherente sobre el papel, pero es una
+migración sobre **datos que ya están en producción** y que toca los tres clientes, a cambio de
+cero diferencia para quien usa el producto. Si algún día se hace, es su propia fase.
+
+#### Qué hay que decidir al implementarla
+
+- **Cuántas semanas trae un cuatrimestre por defecto.** El semestre son 16 por la duración
+  habitual del TecNM. Para el cuatrimestre hay que fijar el equivalente y dejarlo, como el otro,
+  **editable**: el calendario real varía por plantel, y ese es justo el motivo por el que las
+  semanas fueron editables desde la Fase 3
+- **Cómo se nombra el periodo siguiente al cerrar.** `suggestedName` deriva hoy de la convención
+  semestral. La propuesta tiene que salir del tipo del periodo que se cierra —y seguir siendo
+  **una propuesta editable**, que es lo que ya prometía la Fase 7
+- **Dónde vive la palabra.** Si «semestre» y «cuatrimestre» se escriben sueltas en cada pantalla,
+  la web y la app acabarán diciendo cosas distintas del mismo periodo. La etiqueta sale de
+  `shared`, junto a `SEMESTER_STATUS_LABELS`, que ya resuelve exactamente este problema para los
+  estados
+
+#### Ojo con esto
+
+- **El límite de faltas no cambia de naturaleza.** Sigue siendo el 20% de las sesiones y sigue
+  siendo **orientativo**, con la recomendación visible de confirmarlo con el profesor
+  (Principio VII). Un cuatrimestre tiene menos sesiones, así que su límite es **más bajo y cada
+  falta pesa más** — el aviso de «queda una sola falta» de `absenceStatus` importa aún más aquí
+- **Los periodos ya archivados son semestres y deben seguir siéndolo.** La migración que añada el
+  campo tiene que dejarlos en `semestre`, no en un valor vacío que las pantallas tengan que
+  adivinar. Es el Principio VI: ninguna operación de rutina toca el historial
+- **La compartición cruza tipos.** Un compartido de horario puede viajar de alguien con
+  cuatrimestre a alguien con semestre. Como compartir **es copia y no sincronización**, lo que
+  llega se incorpora al periodo activo de quien recibe, con las semanas de **ese** periodo — no
+  las del origen
+
+**Verificación**: crear un cuatrimestre y un semestre en la misma cuenta y comprobar en **app y
+web** que cada uno se nombra como lo que es, que su límite de faltas sale de sus propias semanas,
+y que un periodo archivado antes de esta fase sigue apareciendo como semestre.
+
+---
+
 ### Orden sugerido
 
 **12 primero**, sin discusión: hay una sesión que se cae en producción y un botón atrás que
 echa al usuario de la app. La **14** va después porque afecta a cualquiera que abra la web en
-una laptop. El resto —13, 15, 16, 17— son mejoras que pueden ir en el orden que prefieras.
+una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el orden que prefieras.
+
+De ese resto, la **18** es la que más se nota si quien va a usar NoteCore cursa cuatrimestres:
+hasta que entre, el producto le habla de semestres. Es P2, como la 13 y la 15.

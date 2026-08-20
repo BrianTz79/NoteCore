@@ -22,6 +22,7 @@ import { AgendaForm } from '../components/agenda-form';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
+import { useBotonAtras } from '../lib/boton-atras';
 
 /**
  * Agenda en la app (FR-018 a FR-022).
@@ -43,6 +44,12 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
   const [notice, setNotice] = useState<string>();
   /** De cuándo es lo que se está viendo, si viene del cache (FR-048). */
   const [cachedAt, setCachedAt] = useState<Instant | null>(null);
+
+  /** Atrás cierra el formulario antes de salir de la agenda (Fase 12.2). */
+  useBotonAtras([
+    { cuando: panel.kind !== 'ninguno', hacer: () => setPanel({ kind: 'ninguno' }) },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const sync = useSyncActions();
   const { state: syncState } = useSync();

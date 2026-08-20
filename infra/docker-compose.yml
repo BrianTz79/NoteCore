@@ -48,6 +48,10 @@ services:
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
       # URL pública de la web: la base de los enlaces de compartición y de los QR.
       WEB_URL: ${WEB_URL:-}
+      # Prefijo por el que el NAVEGADOR alcanza la API (`/api` en producción, por el
+      # rewrite de Next). Define el path de la cookie de refresco: si no coincide con la
+      # URL que pide el navegador, la cookie no viaja y la sesión de la web se cae.
+      WEB_API_PREFIX: ${WEB_API_PREFIX:-}
     ports:
       - '${API_PORT:-3101}:3101'
     depends_on:

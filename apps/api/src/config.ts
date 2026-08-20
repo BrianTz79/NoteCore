@@ -42,6 +42,26 @@ const envSchema = z.object({
   COOKIE_DOMAIN: z.string().optional(),
 
   /**
+   * Prefijo bajo el que **el navegador** alcanza la API desde la web.
+   *
+   * En producción la web habla con la API por un rewrite del mismo origen
+   * (`notecore.ourocore.net/api/...` → `api:3101/...`), así que el navegador pide el
+   * refresco en `/api/auth/refresh`, no en `/auth/refresh`. La cookie de refresco lleva un
+   * `path` estrecho a propósito, y un path que no coincide con la URL pedida **no se
+   * envía**: el refresco respondía 401 y la sesión moría a los 15 minutos.
+   *
+   * Vacío en desarrollo, donde la web llama a la API sin prefijo. La app **no se ve
+   * afectada** en ningún caso: manda el token por cabecera, no por cookie.
+   */
+  WEB_API_PREFIX: z
+    .string()
+    .default('')
+    .refine(
+      (value) => value === '' || (value.startsWith('/') && !value.endsWith('/')),
+      'WEB_API_PREFIX debe empezar por "/" y no terminar en "/" (por ejemplo: /api)',
+    ),
+
+  /**
    * URL pública de la web, base de los enlaces de compartición (FR-028).
    *
    * La compone el servidor y no cada cliente: el enlace es lo que se codifica en el QR, así
@@ -91,6 +111,7 @@ function loadConfig() {
     accessTokenSeconds: env.ACCESS_TOKEN_MINUTES * 60,
     refreshTokenSeconds: env.REFRESH_TOKEN_DAYS * 24 * 60 * 60,
     cookieDomain: env.COOKIE_DOMAIN && env.COOKIE_DOMAIN.length > 0 ? env.COOKIE_DOMAIN : null,
+    webApiPrefix: env.WEB_API_PREFIX,
   } as const;
 }
 

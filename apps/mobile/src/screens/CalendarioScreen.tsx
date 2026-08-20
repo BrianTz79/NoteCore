@@ -24,6 +24,7 @@ import {
 } from '@notecore/shared';
 import { calendarApi } from '../lib/api';
 import { reprogramarRecordatorios } from '../lib/notifications';
+import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 
 /**
@@ -49,6 +50,18 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+
+  /**
+   * Atrás cierra el detalle del día antes de salir del calendario (Fase 12.2).
+   *
+   * El detalle se despliega bajo la rejilla en lugar de ocupar otra pantalla —así se puede
+   * saltar de día en día sin perder el mes de vista—, pero para el usuario sigue siendo algo
+   * que abrió, y atrás es la forma natural de cerrarlo.
+   */
+  useBotonAtras([
+    { cuando: diaAbierto !== undefined, hacer: () => setDiaAbierto(undefined) },
+    { cuando: true, hacer: onVolver },
+  ]);
   const [avisoPermiso, setAvisoPermiso] = useState(false);
 
   const cargarMes = useCallback(async (mesActual: string) => {

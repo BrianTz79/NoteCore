@@ -22,6 +22,7 @@ import {
   type Subject,
 } from '@notecore/shared';
 import { agendaApi, scheduleApi, shareApi } from '../lib/api';
+import { useBotonAtras } from '../lib/boton-atras';
 import { QrCode } from '../components/qr-code';
 import { QrScanner } from '../components/qr-scanner';
 import { Button, Card, Field, FormError, RADIUS, SPACE, TEXT, base, colors } from '../components/ui';
@@ -51,6 +52,18 @@ export function CompartirScreen({ onVolver }: { onVolver: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
+
+  /**
+   * Atrás cierra el panel abierto antes de salir de compartir (Fase 12.2).
+   *
+   * Importa más aquí que en otras pantallas por el escáner: sale a pantalla completa con la
+   * cámara encendida, y sin atender el botón, salir de ahí exigía encontrar el botón de
+   * cancelar mientras la cámara ocupa todo.
+   */
+  useBotonAtras([
+    { cuando: panel.kind !== 'ninguno', hacer: () => setPanel({ kind: 'ninguno' }) },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const load = useCallback(async () => {
     try {

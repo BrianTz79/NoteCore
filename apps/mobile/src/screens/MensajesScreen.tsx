@@ -30,6 +30,7 @@ import {
   type ServerEvent,
 } from '@notecore/shared';
 import { apiBaseUrl, messagingApi, tokenStore } from '../lib/api';
+import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 
 /**
@@ -60,6 +61,18 @@ export function MensajesScreen({
   const [error, setError] = useState<string | undefined>();
   const [estadoCanal, setEstadoCanal] = useState<LiveStatus>('conectando');
   const [ultimoEvento, setUltimoEvento] = useState<ServerEvent | null>(null);
+
+  /**
+   * Atrás cierra el hilo y devuelve a la bandeja (Fase 12.2).
+   *
+   * Hace lo mismo que la flecha del hilo, incluido el caso de haber llegado desde un perfil:
+   * también entonces atrás deja la bandeja, no el inicio. El hilo se abrió estando dentro de
+   * mensajes, así que salir de él es volver a la lista.
+   */
+  useBotonAtras([
+    { cuando: abierta !== null, hacer: () => setAbierta(null) },
+    { cuando: true, hacer: onVolver },
+  ]);
 
   const cargarLista = useCallback(async () => {
     try {
