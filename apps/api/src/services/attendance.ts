@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import {
+  DEFAULT_SEMESTER_KIND,
   DEFAULT_SEMESTER_WEEKS,
   absenceStatus,
   calculateAbsenceLimit,
@@ -12,6 +13,7 @@ import {
   type CalendarDate,
   type DayAttendance,
   type MarkAbsencesParsed,
+  type SemesterKind,
   type SetAbsenceLimitInput,
   type SubjectAttendance,
   type UpdateAbsenceParsed,
@@ -21,8 +23,8 @@ import { db } from '../db/client.js';
 import {
   absenceRecords,
   scheduleBlocks,
+  semesters,
   subjects,
-  userSettings,
   type AbsenceRecordRow,
 } from '../db/schema.js';
 import { errors } from '../lib/errors.js';
@@ -78,29 +80,44 @@ function toAbsenceRecord(
 }
 
 /**
- * Semanas del semestre del usuario, creando sus ajustes si aún no los tiene.
+ * Semanas del periodo consultado y su tipo (Fase 18).
  *
- * Se crea al vuelo en vez de al registrarse para no tener que migrar las cuentas que ya
- * existen ni acordarse de insertarla en el alta.
+ * Las semanas salen del propio periodo desde la Fase 18, no de un ajuste global de la cuenta.
+ * Es lo que hace que un cuatrimestre de 12 semanas y un semestre archivado de 16 convivan sin
+ * pisarse: con el ajuste único, poner las semanas del uno recalculaba el límite del otro, y un
+ * periodo cerrado se cursó con las semanas que tenía (Principio VI).
  */
-export async function getSemesterWeeks(userId: string): Promise<number> {
-  const row = await db.query.userSettings.findFirst({
-    where: eq(userSettings.userId, userId),
+async function getPeriodo(
+  userId: string,
+  semesterId: string,
+): Promise<{ weeks: number; kind: SemesterKind }> {
+  const row = await db.query.semesters.findFirst({
+    where: and(eq(semesters.id, semesterId), eq(semesters.userId, userId)),
   });
 
-  return row?.semesterWeeks ?? DEFAULT_SEMESTER_WEEKS;
+  // Sin fila —un identificador que no es de este usuario— se cae al valor por defecto en vez
+  // de reventar: quien consulta lo que no es suyo no verá materias de todos modos, porque el
+  // resto de la consulta filtra por `userId` (Principio III).
+  return {
+    weeks: row?.weeks ?? DEFAULT_SEMESTER_WEEKS,
+    kind: (row?.kind as SemesterKind | undefined) ?? DEFAULT_SEMESTER_KIND,
+  };
 }
 
-/** Fija las semanas del semestre (FR-013). Crea la fila de ajustes si no existía. */
+/**
+ * Fija las semanas del periodo activo (FR-013).
+ *
+ * Escribe en el periodo, no en `user_settings`: el ajuste global dejó de decidir nada en la
+ * Fase 18. El destino es siempre el **activo** —lo resuelve `getCurrentSemesterId`, no un
+ * identificador del cliente—, así que un archivado no puede tocarse por esta vía: mover sus
+ * semanas recalcularía su límite de faltas años después de haberlo cursado (FR-037).
+ */
 export async function setSemesterWeeks(userId: string, weeks: number): Promise<void> {
+  const semesterId = await getCurrentSemesterId(userId);
   await db
-    .insert(userSettings)
-    .values({ userId, semesterWeeks: weeks, updatedAt: new Date() })
-    // Si el usuario ya tenía ajustes, se actualizan en lugar de fallar por clave duplicada.
-    .onConflictDoUpdate({
-      target: userSettings.userId,
-      set: { semesterWeeks: weeks, updatedAt: new Date() },
-    });
+    .update(semesters)
+    .set({ weeks, updatedAt: new Date() })
+    .where(and(eq(semesters.id, semesterId), eq(semesters.userId, userId)));
 }
 
 /**
@@ -113,8 +130,8 @@ export async function getSummary(
   userId: string,
   semesterId?: string,
 ): Promise<AttendanceSummary> {
-  const semesterWeeks = await getSemesterWeeks(userId);
   const scope = semesterId ?? (await getCurrentSemesterId(userId));
+  const { weeks: semesterWeeks, kind: semesterKind } = await getPeriodo(userId, scope);
 
   const subjectRows = await db
     .select()
@@ -123,7 +140,7 @@ export async function getSummary(
     .orderBy(asc(subjects.name));
 
   if (subjectRows.length === 0) {
-    return { subjects: [], semesterWeeks };
+    return { subjects: [], semesterWeeks, semesterKind };
   }
 
   // Sesiones semanales por materia, para estimar el total del semestre.
@@ -183,7 +200,7 @@ export async function getSummary(
     };
   });
 
-  return { subjects: summary, semesterWeeks };
+  return { subjects: summary, semesterWeeks, semesterKind };
 }
 
 /**

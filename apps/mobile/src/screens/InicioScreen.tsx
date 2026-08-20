@@ -147,7 +147,7 @@ export function InicioScreen({
           { nombre: 'Agenda', nota: 'Tareas y entregas', ir: onIrAAgenda },
           { nombre: 'Calendario', nota: 'Clases y vencimientos', ir: onIrACalendario },
           { nombre: 'Compartir', nota: 'Por QR, código o enlace', ir: onIrACompartir },
-          { nombre: 'Semestres', nota: 'Archivo histórico', ir: onIrASemestres },
+          { nombre: 'Periodos', nota: 'Semestres y archivo', ir: onIrASemestres },
           { nombre: 'Contactos', nota: 'Perfil y compañeros', ir: onIrASocial },
           { nombre: 'Mensajes', nota: 'Con tus contactos', ir: onIrAMensajes },
         ]}

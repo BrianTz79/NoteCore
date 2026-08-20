@@ -11,12 +11,14 @@ import {
   MIN_SEMESTER_WEEKS,
   absenceStatusMessage,
   formatCalendarDate,
+  semesterKindLabel,
   toFormErrors,
   todayCalendarDate,
   type AttendanceSummary,
   type CalendarDate,
   type DayAttendance,
   type Instant,
+  type SemesterKind,
   type SubjectAttendance,
 } from '@notecore/shared';
 import { attendanceApi } from '@/lib/api';
@@ -140,7 +142,7 @@ function Faltas() {
       <ScreenHeader
         title="Mis faltas"
         subtitle={summary?.subjects.length
-              ? `${summary.subjects.length} materias · semestre de ${summary.semesterWeeks} semanas`
+              ? `${summary.subjects.length} materias · ${semesterKindLabel(summary.semesterKind).singular} de ${summary.semesterWeeks} semanas`
               : 'Registra tus inasistencias y vigila tu margen'}
         back={{ href: '/', label: 'Inicio' }}
       />
@@ -287,6 +289,7 @@ function Faltas() {
                 <SubjectRow
                   key={subject.subjectId}
                   subject={subject}
+                  kind={summary.semesterKind}
                   busy={busy}
                   onLimitChange={async (limit) => {
                     setBusy(true);
@@ -314,8 +317,8 @@ function Faltas() {
             </p>
           </Card>
 
-          {/* ── Semanas del semestre ─────────────────────────────────────── */}
-          <Card title="Semanas del semestre">
+          {/* ── Semanas del periodo (Fase 18: semestre o cuatrimestre) ────── */}
+          <Card title={`Semanas del ${semesterKindLabel(summary?.semesterKind).singular}`}>
             <p className="text-sm text-tinta2">
               Los totales y los límites sugeridos se calculan multiplicando tus clases
               semanales por este número. Ajústalo al calendario de tu escuela.
@@ -335,7 +338,9 @@ function Faltas() {
                     setBusy(true);
                     try {
                       setSummary(await attendanceApi.setSemesterWeeks({ weeks }));
-                      setNotice(`Semestre de ${weeks} semanas.`);
+                      setNotice(
+                        `${semesterKindLabel(summary?.semesterKind).titulo} de ${weeks} semanas.`,
+                      );
                     } catch (caught) {
                       setError(toFormErrors(caught).general);
                     } finally {
@@ -357,10 +362,13 @@ function Faltas() {
 /** Una materia del panel: conteo, barra de avance y límite editable. */
 function SubjectRow({
   subject,
+  kind,
   busy,
   onLimitChange,
 }: {
   subject: SubjectAttendance;
+  /** Tipo del periodo, para decir "en el cuatrimestre" y no "en el semestre" (Fase 18). */
+  kind: SemesterKind;
   busy: boolean;
   onLimitChange: (limit: number | null) => Promise<void>;
 }) {
@@ -420,8 +428,8 @@ function SubjectRow({
 
       <div className="flex flex-wrap items-center gap-nc-xs text-sm text-tinta3">
         <span>
-          {subject.sessionsPerWeek} por semana · {subject.totalSessions} en el semestre ·
-          sugerido {subject.suggestedLimit}
+          {subject.sessionsPerWeek} por semana · {subject.totalSessions} en{' '}
+          {semesterKindLabel(kind).conArticulo} · sugerido {subject.suggestedLimit}
         </span>
 
         {editing ? (

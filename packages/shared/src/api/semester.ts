@@ -59,8 +59,13 @@ export function createSemesterApi(client: ApiClient) {
       return client.post<SemesterCloseResult>(SEMESTER_ROUTES.close, input);
     },
 
-    /** Renombra un semestre activo. Los archivados no se modifican (FR-037). */
-    rename(id: string, input: RenameSemesterInput): Promise<Semester> {
+    /**
+     * Edita el periodo activo: nombre, tipo o semanas (FR-034, Fase 18).
+     *
+     * Los archivados no se modifican en nada (FR-037): el servidor lo rechaza, y no es una
+     * comprobación que el cliente pueda saltarse.
+     */
+    update(id: string, input: RenameSemesterInput): Promise<Semester> {
       return client.patch<Semester>(SEMESTER_ROUTES.byId(id), input);
     },
   };

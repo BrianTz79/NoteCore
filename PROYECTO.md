@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 15 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 18 cerrada y verificada)
 
 ---
 
@@ -32,14 +32,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de semestres con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 15 cerrada** el 2026-08-20. Quedan **tres fases** (16, 17 y 18); la siguiente por prioridad es la [18](#fase-18--cuatrimestres-además-de-semestres--p2) (P2), y luego la [16](#fase-16--widgets-familia-y-densidad--p3) y la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) (P3) |
+| **Fase actual** | Ninguna en curso. **Fase 18 cerrada** el 2026-08-20. Quedan **dos fases**, ambas P3: la [16](#fase-16--widgets-familia-y-densidad--p3) y la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███░░░░` 3 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `█████░░` 5 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -135,6 +135,17 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   "contacto" que puedan divergir; verificado con tres cuentas contra la API real, incluido que lo
   que la visibilidad no permite **no viaja en la respuesta**
 
+- **Fase 18 cerrada**: quien cursa **cuatrimestres** lleva su periodo como tal, en app y web. El
+  tipo va en el **periodo** y no en la cuenta: si fuera un ajuste del usuario, cambiarlo
+  reetiquetaría también el historial ya cerrado, y un archivado se cursó bajo el régimen que
+  tenía. Medir antes de empezar cambió el tamaño de la fase por segunda vez: las semanas del
+  periodo eran un ajuste **global** (`user_settings.semester_weeks`), así que un cuatrimestre de
+  12 semanas habría recalculado el límite de faltas del semestre archivado; se movieron a
+  `semesters.weeks`, y la migración copió el valor de cada usuario a sus periodos para que ningún
+  límite existente cambiara de número —verificado sobre los 239 periodos reales, cero
+  discrepancias—. La palabra sale de `SEMESTER_KIND_LABELS` en `shared`, junto a la de los estados,
+  para que web y app no puedan llamar distinto al mismo periodo
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -145,7 +156,7 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
 escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-**Las fases 12 a 15 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
+**Las fases 12 a 15 y la 18 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
 `WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
 formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada; la 14 le dio
 a la web una barra lateral de escritorio y ensanchó las doce pantallas; la 15 partió la sección
@@ -154,7 +165,8 @@ recompiló para la 15, firmado con la clave de siempre. El detalle de cada una e
 [Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
 [Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20),
 [Fase 14](#fase-14--la-web-en-pantalla-grande--cerrada-el-2026-08-20),
-[Fase 15](#fase-15--social-en-secciones-propias--cerrada-el-2026-08-20).
+[Fase 15](#fase-15--social-en-secciones-propias--cerrada-el-2026-08-20),
+[Fase 18](#fase-18--cuatrimestres-además-de-semestres--cerrada-el-2026-08-20).
 
 **Cerrar una fase no la despliega.** La web sirve una imagen de Docker: mientras no se
 reconstruya (`docker compose --env-file .env -f infra/docker-compose.yml build web && … up -d
@@ -192,13 +204,13 @@ es.
 | 15 | Social en secciones propias | P2 | ✅ | ✅ | ✅ | ✅ |
 | 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
 | 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
-| 18 | Cuatrimestres además de semestres | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 18 | Cuatrimestres además de semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 
 > Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
 > original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
 >
-> **Van por prioridad, no por número.** La 18 se numeró así por llegar la última, pero es P2:
-> entra antes que la 13, la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
+> **Van por prioridad, no por número.** La 18 se numeró así por llegar la última, pero era P2 y
+> por eso se hizo antes que la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
 > los enlaces del documento, sin ganar nada.
 
 ### Regla de cierre
@@ -210,6 +222,67 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 18 — Cuatrimestres además de semestres · cerrada el 2026-08-20
+
+**Entregado**: quien cursa **cuatrimestres** lleva su periodo como tal, en app y web. El semestre
+sigue siendo el tipo principal y el que viene por defecto.
+
+**Lo que se midió antes de escribir código volvió a cambiar el tamaño de la fase.** La fase estaba
+escrita sobre el supuesto de que la aritmética ya funcionaba —y es cierto: `MIN/MAX_SEMESTER_WEEKS`
+llevaban editables desde la Fase 3—. Lo que no estaba escrito es **dónde vivían esas semanas**: en
+`user_settings.semester_weeks`, un ajuste **global de la cuenta**. Con un solo tipo de periodo eso
+nunca dio problema. Con dos, sí: alguien con un semestre archivado de 16 semanas que abre un
+cuatrimestre y pone 12 habría **recalculado el límite de faltas del archivado**, años después de
+haberlo cursado. Las semanas se movieron a `semesters.weeks`, y esa mudanza —no el campo `kind`—
+fue la mitad del trabajo de la fase.
+
+**El tipo va en el periodo, no en la cuenta.** Un ajuste del usuario habría sido más simple, pero
+al cambiarlo reetiquetaría **también el histórico ya cerrado**. Con el tipo en el periodo, quien
+cambia de plan o de escuela conserva sus semestres antiguos como semestres (Principio VI).
+
+**El vocabulario cambia en la interfaz, no en el modelo.** La tabla sigue llamándose `semesters`,
+las rutas `/semesters` y los tipos `Semester`. Renombrar a un término neutro es una migración sobre
+datos en producción que toca los tres clientes, a cambio de cero diferencia para quien usa el
+producto. La palabra sale de `SEMESTER_KIND_LABELS` en `shared` —junto a `SEMESTER_STATUS_LABELS`,
+que ya resolvía este mismo problema para los estados—, con las cuatro formas que piden las
+pantallas: singular, plural, con artículo y con mayúscula inicial.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Cuatrimestre = **12 semanas** por defecto | Los cuatro meses de clase efectivos. Editable, como el semestre: hay planteles de 15 |
+| Nombre siguiente con **N de 1 a 3** en cuatrimestres | De "2026-2" sale "2026-3", no "2027-1". Con la regla semestral, quien cursa tres periodos al año vería un nombre equivocado cada tercer cierre |
+| Cambiar el tipo **no toca las semanas** | Quien corrige la etiqueta puede tener sus semanas ya ajustadas a mano; sobrescribirlas le borraría el ajuste sin avisar |
+| Cambiar de tipo **al cerrar** sí propone las del tipo nuevo | Arrastrar 16 semanas de un semestre a un cuatrimestre daría un límite de faltas un tercio más alto del que le toca, y el estudiante no tendría por qué sospecharlo |
+| El primero de una cuenta nace **semestre** | Crear la cuenta ya pide bastante; es un dato que se corrige en dos toques y que la mayoría no necesita tocar |
+| El mensaje de archivado **nombra el tipo** | «Este cuatrimestre está archivado». Decirle «semestre» a quien no cursa uno le habla de algo que no está cursando |
+
+**La compartición no necesitó cambios.** Se comprobó antes de tocar nada: `share.ts` ya resuelve el
+destino con `getCurrentSemesterId` **del receptor**, y el `payload` no lleva semanas ni tipo. Un
+compartido que viaja de un cuatrimestre a un semestre se incorpora al periodo activo de quien
+recibe, con las semanas de **ese** periodo — que es exactamente lo que la fase pedía.
+
+**Verificación**:
+
+| Qué | Cómo | Resultado |
+|---|---|---|
+| Los cuatro paquetes | `npm run typecheck` en la raíz | `shared`, `api`, `web` y `mobile`, limpio |
+| Migración sobre datos reales | 239 periodos y 311 usuarios en la base de producción | `kind` = `semestre` en los 239; los 12 usuarios con 18/20 semanas **conservaron su número**, comparado fila a fila contra el estado previo: **cero discrepancias** |
+| Límite de faltas por tipo | API real: materia de 5 sesiones/semana | Semestre de 16 → 80 sesiones, límite 16. Cuatrimestre de 12 → 60 sesiones, límite 12 |
+| Cambiar tipo sin tocar semanas | `PATCH /semesters/:id` con solo `kind` | Pasó a cuatrimestre **conservando las 16**; el número solo cambió al pedirlo |
+| Nombre propuesto en cuatrimestres | `GET /semesters/close-effect` sobre un cuatrimestre «2026-2» | Propone **«2026-3»**, no «2027-1» |
+| Cambio de régimen al cerrar | Cerrar un cuatrimestre de 12 abriendo un semestre | El nuevo arrancó con **16 semanas propias**, no con las 12 heredadas |
+| Archivado en solo lectura | `PATCH` sobre el cuatrimestre ya archivado | 409 con **«Este cuatrimestre está archivado»** — nombra el tipo con el que se cerró |
+| **Web, navegador real** | Sesión iniciada, `/semestres` y `/faltas`, cambiando el tipo por el desplegable y guardando las semanas con su botón | «Cuatrimestre en curso», «Semanas del cuatrimestre», «48 en el cuatrimestre · sugerido 9», y el archivado como «Cuatrimestre de 12 semanas» |
+| **App Android, emulador real** | APK de release contra la API, sesión iniciada, ciclo completo por toques | Chips de tipo, cambio a semestre y vuelta, panel de faltas en vocabulario de cuatrimestre, y el cierre entero: «Se archivó «2026-2» y empezó «2026-3», cuatrimestre vacío de 12 semanas» |
+| Aviso del Principio VII | Visible en los dos clientes junto al límite | Intacto: el límite sigue siendo **orientativo**, con la recomendación de confirmarlo con el profesor |
+
+Las cuentas de prueba se borraron al terminar; los 311 usuarios reales y sus 239 periodos quedaron
+intactos.
+
+---
 
 #### Fase 15 — Social en secciones propias · cerrada el 2026-08-20
 
@@ -2192,7 +2265,7 @@ interruptor apagado no queda rastro**: ni permiso en el manifiesto, ni aviso, ni
 
 ---
 
-### Fase 18 — Cuatrimestres además de semestres · P2
+### Fase 18 — Cuatrimestres además de semestres · P2 ✅ *(cerrada el 2026-08-20)*
 
 **Lo que se pidió** (2026-08-20): que quien estudia por **cuatrimestres** —cuatro meses— pueda
 llevar su periodo como tal. **El semestre sigue siendo el tipo principal y el que viene por
@@ -2229,19 +2302,21 @@ cuando el periodo lo es; la base de datos, las rutas y los tipos de `shared` sig
 migración sobre **datos que ya están en producción** y que toca los tres clientes, a cambio de
 cero diferencia para quien usa el producto. Si algún día se hace, es su propia fase.
 
-#### Qué hay que decidir al implementarla
+#### Lo que se decidió al implementarla (2026-08-20)
 
-- **Cuántas semanas trae un cuatrimestre por defecto.** El semestre son 16 por la duración
-  habitual del TecNM. Para el cuatrimestre hay que fijar el equivalente y dejarlo, como el otro,
-  **editable**: el calendario real varía por plantel, y ese es justo el motivo por el que las
-  semanas fueron editables desde la Fase 3
-- **Cómo se nombra el periodo siguiente al cerrar.** `suggestedName` deriva hoy de la convención
-  semestral. La propuesta tiene que salir del tipo del periodo que se cierra —y seguir siendo
-  **una propuesta editable**, que es lo que ya prometía la Fase 7
-- **Dónde vive la palabra.** Si «semestre» y «cuatrimestre» se escriben sueltas en cada pantalla,
-  la web y la app acabarán diciendo cosas distintas del mismo periodo. La etiqueta sale de
-  `shared`, junto a `SEMESTER_STATUS_LABELS`, que ya resuelve exactamente este problema para los
-  estados
+- **Un cuatrimestre trae 12 semanas** por defecto: los cuatro meses de clase efectivos. Como las
+  del semestre, es una propuesta **editable** —hay planteles que cursan quince—, y sale de
+  `defaultWeeksForKind` en `shared` para que web y app no propongan números distintos
+- **El nombre siguiente sale del tipo del periodo que se cierra.** `periodsPerYear` decide cuántos
+  periodos tiene el año —dos o tres—, así que de un cuatrimestre «2026-2» sale «2026-3» y del
+  último del año sale «AAAA+1-1». Sigue siendo **una propuesta editable**, como prometía la Fase 7
+- **La palabra vive en `SEMESTER_KIND_LABELS`**, junto a `SEMESTER_STATUS_LABELS`, con las cuatro
+  formas que piden las pantallas: singular, plural, con artículo y con mayúscula inicial
+- **Las semanas se mudaron al periodo**, algo que esta fase no tenía escrito y que resultó ser la
+  mitad del trabajo. Estaban en `user_settings.semester_weeks`, un ajuste global de la cuenta: con
+  dos tipos conviviendo, ajustar las de un cuatrimestre habría recalculado el límite de faltas de
+  un semestre ya archivado. Ahora van en `semesters.weeks`, y la migración copió el valor de cada
+  usuario a sus periodos para que ningún límite existente cambiara de número
 
 #### Ojo con esto
 

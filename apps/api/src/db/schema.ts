@@ -115,6 +115,30 @@ export const semesters = pgTable(
     /** Nombre que le puso el estudiante: "2026-1", "Quinto semestre". */
     name: text('name').notNull(),
     /**
+     * `semestre` o `cuatrimestre`, tal como los define `SEMESTER_KINDS` en `shared`.
+     *
+     * Va en el periodo y no en los ajustes del usuario: si fuera de la cuenta, cambiarlo
+     * reetiquetaría también los periodos ya cerrados, y un archivado se cursó bajo el régimen
+     * que tenía (Principio VI). Por defecto `semestre`, que es lo que eran todos los periodos
+     * anteriores a la Fase 18 y lo que siguen siendo.
+     *
+     * El modelo mantiene el nombre `semesters` para la tabla y `semester_id` para las
+     * referencias: el vocabulario cambia en la interfaz, no en el esquema. Renombrar a un
+     * término neutro tocaría los tres clientes y datos ya en producción sin diferencia alguna
+     * para quien usa el producto.
+     */
+    kind: text('kind').notNull().default('semestre'),
+    /**
+     * Semanas de clase de este periodo, base del límite sugerido (FR-013).
+     *
+     * Estuvo en `user_settings` hasta la Fase 18, como ajuste único de la cuenta. Con dos
+     * tipos de periodo conviviendo eso deja de servir: poner 12 semanas al abrir un
+     * cuatrimestre recalcularía también el límite del semestre archivado. La migración copió
+     * el valor global de cada usuario a sus periodos, así que ningún límite existente cambió
+     * de número.
+     */
+    weeks: integer('weeks').notNull().default(16),
+    /**
      * `activo` o `archivado`, tal como los define `SEMESTER_STATUSES` en `shared`.
      *
      * A diferencia de la caducidad de un compartido, este estado sí se guarda: no se deriva
@@ -378,10 +402,13 @@ export const userSettings = pgTable('user_settings', {
     .primaryKey()
     .references(() => users.id, { onDelete: 'cascade' }),
   /**
-   * Semanas de clase del semestre, base del límite sugerido (FR-013).
+   * Semanas de clase por defecto, heredado de antes de la Fase 18.
    *
-   * Es un ajuste del usuario porque el calendario varía por plantel y periodo. La Fase 7 lo
-   * sustituirá por las fechas reales del semestre.
+   * Desde la Fase 18 las semanas que cuentan son las del propio periodo
+   * (`semesters.weeks`). Esta columna se conserva porque la migración la usó como origen del
+   * valor de cada periodo existente, y borrarla habría destruido ese dato en el mismo paso
+   * que lo copiaba. No la lee ningún cálculo: si alguien la cambiara a mano, ningún límite se
+   * movería.
    */
   semesterWeeks: integer('semester_weeks').notNull().default(16),
   /**

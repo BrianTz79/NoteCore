@@ -1,14 +1,17 @@
 import { and, asc, count, eq } from 'drizzle-orm';
 import {
+  DEFAULT_SEMESTER_KIND,
   defaultSemesterName,
+  defaultWeeksForKind,
   suggestNextSemesterName,
   type CloseSemesterParsed,
   type CalendarDate,
-  type RenameSemesterInput,
+  type RenameSemesterParsed,
   type Semester,
   type SemesterCloseEffect,
   type SemesterCloseResult,
   type SemesterContents,
+  type SemesterKind,
   type SemesterStatus,
 } from '@notecore/shared';
 import { db } from '../db/client.js';
@@ -95,6 +98,8 @@ async function toSemester(userId: string, row: SemesterRow): Promise<Semester> {
   return {
     id: row.id,
     name: row.name,
+    kind: row.kind as SemesterKind,
+    weeks: row.weeks,
     status: row.status as SemesterStatus,
     startedAt: toCalendarDateValue(row.startedAt),
     closedAt: row.closedAt === null ? null : toCalendarDateValue(row.closedAt),
@@ -121,11 +126,20 @@ export async function getCurrentSemesterRow(userId: string): Promise<SemesterRow
   if (existing) return existing;
 
   const now = new Date();
+  /**
+   * El primero de una cuenta nace como semestre, que es el tipo por defecto (Fase 18).
+   *
+   * Quien curse cuatrimestres lo cambia desde la pantalla de periodos, o lo elige al cerrar
+   * el primero. No se pregunta en el registro: crear la cuenta ya pide bastante, y este es un
+   * dato que se corrige en dos toques y que la mayoría no necesita tocar.
+   */
   const created = await db
     .insert(semesters)
     .values({
       userId,
-      name: defaultSemesterName(now.getFullYear(), now.getMonth() + 1),
+      name: defaultSemesterName(now.getFullYear(), now.getMonth() + 1, DEFAULT_SEMESTER_KIND),
+      kind: DEFAULT_SEMESTER_KIND,
+      weeks: defaultWeeksForKind(DEFAULT_SEMESTER_KIND),
       status: 'activo',
       startedAt: today(),
     })
@@ -198,9 +212,27 @@ export async function getSemester(userId: string, semesterId: string): Promise<S
 export async function getCloseEffect(userId: string): Promise<SemesterCloseEffect> {
   const current = await getCurrentSemesterRow(userId);
 
+  /**
+   * El tipo propuesto es el del periodo que se cierra, y de él sale el nombre siguiente.
+   *
+   * Por eso `suggestNextSemesterName` recibe el tipo: en un régimen cuatrimestral el año
+   * tiene tres periodos, así que de "2026-3" sale "2027-1" y no "2026-4". Con la regla
+   * semestral a secas, quien cursa cuatrimestres vería un nombre equivocado cada tercer
+   * cierre.
+   */
+  const kind = current.kind as SemesterKind;
+
   return {
     semester: await toSemester(userId, current),
-    suggestedName: suggestNextSemesterName(current.name),
+    suggestedName: suggestNextSemesterName(current.name, kind),
+    suggestedKind: kind,
+    /**
+     * Las semanas propuestas son las **del periodo que se cierra**, no las por defecto del
+     * tipo: quien ajustó su semestre a 18 semanas porque su plantel es así, lo más probable
+     * es que el siguiente también las tenga. Sigue siendo editable, y si cambia de tipo al
+     * cerrar, el cliente propone las del tipo nuevo.
+     */
+    suggestedWeeks: current.weeks,
   };
 }
 
@@ -250,11 +282,33 @@ export async function closeSemester(
       throw errors.validacion('Ese semestre ya está cerrado.');
     }
 
+    /**
+     * El tipo del periodo nuevo: el que pidió el cliente, o el del que se cierra.
+     *
+     * Heredarlo es lo habitual —se sigue en el mismo régimen—, pero se puede cambiar aquí
+     * porque cerrar es justo el momento en que alguien cambia de escuela o de plan. El
+     * periodo archivado conserva el suyo: nada de esto lo toca (Principio VI).
+     */
+    const kind: SemesterKind = input.kind ?? (current.kind as SemesterKind);
+
+    /**
+     * Las semanas: las que pidió el cliente, o un valor derivado del tipo.
+     *
+     * Cuando no vienen, se heredan las del periodo que se cierra sólo si el tipo no cambió.
+     * Al cambiar de régimen esa herencia sería un error: arrastrar las 16 semanas de un
+     * semestre a un cuatrimestre le daría un límite de faltas un tercio más alto del que le
+     * toca, y el estudiante no tendría por qué sospecharlo.
+     */
+    const weeks =
+      input.weeks ?? (kind === (current.kind as SemesterKind) ? current.weeks : defaultWeeksForKind(kind));
+
     const created = await tx
       .insert(semesters)
       .values({
         userId,
         name: input.name,
+        kind,
+        weeks,
         status: 'activo',
         startedAt: closedOn,
       })
@@ -272,28 +326,39 @@ export async function closeSemester(
 }
 
 /**
- * Renombra un semestre (FR-034).
+ * Edita el periodo activo: su nombre, su tipo o sus semanas (FR-034, Fase 18).
  *
- * Solo el activo: un semestre archivado no se modifica ni en el nombre (FR-037). Podría
- * parecer inofensivo, pero es la excepción por la que empiezan todas: en cuanto una escritura
- * se permite sobre el historial, la protección deja de ser una regla y pasa a ser una lista
- * de casos.
+ * Solo el activo: un periodo archivado no se modifica en nada, ni siquiera en el nombre
+ * (FR-037). Podría parecer inofensivo, pero es la excepción por la que empiezan todas: en
+ * cuanto una escritura se permite sobre el historial, la protección deja de ser una regla y
+ * pasa a ser una lista de casos.
+ *
+ * Cambiar el tipo **no** recalcula las semanas. Quien corrige la etiqueta puede tener ya sus
+ * semanas ajustadas a mano, y sobrescribirlas con el valor por defecto del tipo le borraría
+ * ese ajuste sin decírselo. Si quiere las del tipo nuevo, las pone: siguen siendo editables.
  */
-export async function renameSemester(
+export async function updateSemester(
   userId: string,
   semesterId: string,
-  input: RenameSemesterInput,
+  input: RenameSemesterParsed,
 ): Promise<Semester> {
   const row = await db.query.semesters.findFirst({
     where: and(eq(semesters.id, semesterId), eq(semesters.userId, userId)),
   });
 
   if (!row) throw errors.noEncontrado('Ese semestre no existe.');
-  if (row.status !== 'activo') throw errors.semestreArchivado();
+  if (row.status !== 'activo') throw errors.semestreArchivado(row.kind as SemesterKind);
+
+  const patch: { name?: string; kind?: SemesterKind; weeks?: number; updatedAt: Date } = {
+    updatedAt: new Date(),
+  };
+  if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.kind !== undefined) patch.kind = input.kind;
+  if (input.weeks !== undefined) patch.weeks = input.weeks;
 
   await db
     .update(semesters)
-    .set({ name: input.name.trim(), updatedAt: new Date() })
+    .set(patch)
     .where(and(eq(semesters.id, semesterId), eq(semesters.userId, userId)));
 
   return getSemester(userId, semesterId);
@@ -315,5 +380,5 @@ export async function assertSemesterWritable(
   });
 
   if (!row) throw errors.noEncontrado('Ese semestre no existe.');
-  if (row.status !== 'activo') throw errors.semestreArchivado();
+  if (row.status !== 'activo') throw errors.semestreArchivado(row.kind as SemesterKind);
 }

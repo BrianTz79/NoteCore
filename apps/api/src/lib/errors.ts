@@ -3,9 +3,11 @@ import {
   MESSAGING_BLOCKED_MESSAGES,
   SEMESTER_ARCHIVED_MESSAGE,
   SHARE_UNAVAILABLE_MESSAGES,
+  semesterArchivedMessage,
   type ApiErrorCode,
   type FieldError,
   type MessagingBlockedReason,
+  type SemesterKind,
   type ShareUnavailableReason,
 } from '@notecore/shared';
 
@@ -78,16 +80,22 @@ export const errors = {
     ]),
 
   /**
-   * Se intentó modificar algo de un semestre archivado (FR-037).
+   * Se intentó modificar algo de un periodo archivado (FR-037).
    *
-   * 409 y no 403: no es una cuestión de permisos —el semestre es del propio usuario— sino de
+   * 409 y no 403: no es una cuestión de permisos —el periodo es del propio usuario— sino de
    * estado. El recurso existe y es suyo; lo que no procede es escribir en él.
    *
    * El mensaje sale de `shared` para que la app y la web expliquen lo mismo que ya escriben
-   * en sus propias pantallas de solo lectura.
+   * en sus propias pantallas de solo lectura, y nombra el tipo del periodo cuando se conoce:
+   * a quien cursa un cuatrimestre, decirle que "este semestre está archivado" le habla de
+   * algo que no está cursando (Fase 18).
    */
-  semestreArchivado: () =>
-    new AppError('semestre_archivado', SEMESTER_ARCHIVED_MESSAGE, 409),
+  semestreArchivado: (kind?: SemesterKind) =>
+    new AppError(
+      'semestre_archivado',
+      kind === undefined ? SEMESTER_ARCHIVED_MESSAGE : semesterArchivedMessage(kind),
+      409,
+    ),
 
   /**
    * Se intentó escribir a quien no se puede (FR-044).

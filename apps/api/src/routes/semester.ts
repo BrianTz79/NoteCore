@@ -51,7 +51,11 @@ export const semesterRoutes: FastifyPluginAsync = async (app) => {
     return reply.code(201).send(result);
   });
 
-  /** Renombra el semestre activo. Los archivados no se modifican (FR-037). */
+  /**
+   * Edita el periodo activo: nombre, tipo o semanas (FR-034, Fase 18).
+   *
+   * Los archivados no se modifican en nada (FR-037).
+   */
   app.patch<{ Params: { id: string } }>(
     SEMESTER_ROUTES.byId(':id'),
     { preHandler: requireAuth },
@@ -60,7 +64,7 @@ export const semesterRoutes: FastifyPluginAsync = async (app) => {
       if (!parsed.success) throw errors.noEncontrado('Ese semestre no existe.');
 
       const input = parseBody(renameSemesterSchema, request.body);
-      return semester.renameSemester(authOf(request).userId, parsed.data, input);
+      return semester.updateSemester(authOf(request).userId, parsed.data, input);
     },
   );
 };

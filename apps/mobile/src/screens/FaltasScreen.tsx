@@ -11,12 +11,14 @@ import {
   addDays,
   cacheAgeMessage,
   formatCalendarDate,
+  semesterKindLabel,
   toFormErrors,
   todayCalendarDate,
   type AttendanceSummary,
   type CalendarDate,
   type DayAttendance,
   type Instant,
+  type SemesterKind,
   type SubjectAttendance,
 } from '@notecore/shared';
 import { attendanceApi } from '../lib/api';
@@ -199,7 +201,7 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
       <ScreenHeader
         title="Mis faltas"
         subtitle={summary?.subjects.length
-            ? `${summary.subjects.length} materias · semestre de ${summary.semesterWeeks} semanas`
+            ? `${summary.subjects.length} materias · ${semesterKindLabel(summary.semesterKind).singular} de ${summary.semesterWeeks} semanas`
             : 'Registra tus inasistencias y vigila tu margen'}
         onBack={onVolver}
       />
@@ -353,6 +355,7 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
               <SubjectRow
                 key={subject.subjectId}
                 subject={subject}
+                kind={summary.semesterKind}
                 busy={busy}
                 onLimitChange={(limit) => cambiarLimite(subject, limit)}
               />
@@ -363,8 +366,8 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
             <Text style={styles.disclaimer}>{ABSENCE_LIMIT_DISCLAIMER}</Text>
           </Card>
 
-          {/* ── Semanas del semestre ─────────────────────────────────────── */}
-          <Card title="Semanas del semestre">
+          {/* ── Semanas del periodo (Fase 18: semestre o cuatrimestre) ────── */}
+          <Card title={`Semanas del ${semesterKindLabel(summary?.semesterKind).singular}`}>
             <Text style={styles.muted}>
               Los totales y los límites sugeridos se calculan multiplicando tus clases
               semanales por este número. Ajústalo al calendario de tu escuela.
@@ -377,7 +380,9 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
                   setBusy(true);
                   try {
                     setSummary(await attendanceApi.setSemesterWeeks({ weeks }));
-                    setNotice(`Semestre de ${weeks} semanas.`);
+                    setNotice(
+                      `${semesterKindLabel(summary?.semesterKind).titulo} de ${weeks} semanas.`,
+                    );
                   } catch (caught) {
                     setError(toFormErrors(caught).general);
                   } finally {
@@ -398,10 +403,13 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
 /** Una materia del panel: conteo, barra de avance y límite editable. */
 function SubjectRow({
   subject,
+  kind,
   busy,
   onLimitChange,
 }: {
   subject: SubjectAttendance;
+  /** Tipo del periodo, para decir "en el cuatrimestre" y no "en el semestre" (Fase 18). */
+  kind: SemesterKind;
   busy: boolean;
   onLimitChange: (limit: number | null) => Promise<void>;
 }) {
@@ -445,8 +453,8 @@ function SubjectRow({
       </Text>
 
       <Text style={styles.tenue}>
-        {subject.sessionsPerWeek} por semana · {subject.totalSessions} en el semestre ·
-        sugerido {subject.suggestedLimit}
+        {subject.sessionsPerWeek} por semana · {subject.totalSessions} en{' '}
+        {semesterKindLabel(kind).conArticulo} · sugerido {subject.suggestedLimit}
       </Text>
 
       {editing ? (
@@ -496,7 +504,7 @@ function SubjectRow({
   );
 }
 
-/** Ajuste de las semanas del semestre, confirmado con un botón. */
+/** Ajuste de las semanas del periodo, confirmado con un botón. */
 function SemesterWeeks({
   value,
   busy,

@@ -12,7 +12,7 @@ export const SECCIONES = [
   { href: '/agenda', nombre: 'Agenda', nota: 'Tareas y entregas' },
   { href: '/calendario', nombre: 'Calendario', nota: 'Clases y vencimientos' },
   { href: '/compartir', nombre: 'Compartir', nota: 'Por QR, código o enlace' },
-  { href: '/semestres', nombre: 'Semestres', nota: 'Archivo histórico' },
+  { href: '/semestres', nombre: 'Periodos', nota: 'Semestres y archivo' },
   { href: '/social', nombre: 'Contactos', nota: 'Perfil y compañeros' },
   { href: '/mensajes', nombre: 'Mensajes', nota: 'Con tus contactos' },
   { href: '/perfil', nombre: 'Mi cuenta', nota: 'Perfil y dispositivos' },

@@ -7,6 +7,7 @@
 import type { EntityId, Weekday } from './common.js';
 import type { Instant } from './auth.js';
 import type { ClockTime } from './schedule.js';
+import type { SemesterKind } from './semester.js';
 
 /**
  * Fecha de calendario en formato `YYYY-MM-DD`.
@@ -128,6 +129,14 @@ export interface SubjectAttendance {
  */
 export interface AttendanceSummary {
   readonly subjects: readonly SubjectAttendance[];
-  /** Semanas del semestre con las que se calcularon los totales. */
+  /** Semanas del periodo con las que se calcularon los totales. */
   readonly semesterWeeks: number;
+  /**
+   * Si el periodo es semestre o cuatrimestre (Fase 18).
+   *
+   * Viaja con el panel porque es lo que decide cómo se nombra en pantalla: "Semanas del
+   * cuatrimestre", "18 en el cuatrimestre". Sin él, el panel de faltas tendría que pedir el
+   * periodo por separado solo para saber cómo llamarlo.
+   */
+  readonly semesterKind: SemesterKind;
 }

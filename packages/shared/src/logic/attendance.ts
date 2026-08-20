@@ -7,6 +7,7 @@
  */
 
 import type { AbsenceStatus } from '../types/attendance.js';
+import type { SemesterKind } from '../types/semester.js';
 import { COLOR } from '../design/tokens.js';
 
 /**
@@ -71,15 +72,34 @@ export const ABSENCE_LIMIT_DISCLAIMER =
  * 16 semanas es la duración habitual de un semestre en el TecNM. Es un ajuste editable por
  * el usuario: el calendario real varía por plantel y por periodo.
  *
- * FR-013 mide el límite sobre las sesiones del semestre, pero el semestre como entidad —con
- * sus fechas— no llega hasta la Fase 7. Hasta entonces el total se estima multiplicando las
- * sesiones semanales del horario por este número.
+ * El total de sesiones se estima multiplicando las sesiones semanales del horario por este
+ * número.
  */
 export const DEFAULT_SEMESTER_WEEKS = 16;
 
-/** Mínimo y máximo aceptados para las semanas del semestre. */
+/**
+ * Semanas de clase de un cuatrimestre, por defecto (Fase 18).
+ *
+ * Doce son los cuatro meses de clase efectivos del régimen cuatrimestral. Como las del
+ * semestre, es una propuesta **editable**: hay planteles que cursan cuatrimestres de quince
+ * semanas, y esa variación es justo el motivo por el que este número nunca fue fijo.
+ */
+export const DEFAULT_QUARTER_WEEKS = 12;
+
+/** Mínimo y máximo aceptados para las semanas del periodo, sea del tipo que sea. */
 export const MIN_SEMESTER_WEEKS = 1;
 export const MAX_SEMESTER_WEEKS = 52;
+
+/**
+ * Semanas que se proponen para un periodo nuevo, según su tipo.
+ *
+ * Vive junto al resto del cálculo de faltas y no en cada cliente porque es lo que decide el
+ * límite sugerido: si la web propusiera 12 y la app 15, el mismo cuatrimestre arrancaría con
+ * dos límites distintos según dónde se creara.
+ */
+export function defaultWeeksForKind(kind: SemesterKind): number {
+  return kind === 'cuatrimestre' ? DEFAULT_QUARTER_WEEKS : DEFAULT_SEMESTER_WEEKS;
+}
 
 /**
  * Proporción del límite a partir de la cual se avisa al estudiante (FR-016).

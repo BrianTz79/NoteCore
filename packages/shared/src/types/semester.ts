@@ -52,6 +52,62 @@ export const SEMESTER_STATUS_COLORS: Readonly<Record<SemesterStatus, string>> = 
   archivado: COLOR.tinta3,
 };
 
+/**
+ * Tipo de periodo académico (Fase 18).
+ *
+ * El semestre es el principal y el que viene por defecto; el cuatrimestre es la alternativa
+ * para quien cursa periodos de cuatro meses.
+ *
+ * El tipo vive en el **periodo** y no en la cuenta, y esa es la decisión que sostiene el
+ * resto: si fuera un ajuste del usuario —"yo estudio por cuatrimestres"—, cambiarlo
+ * reetiquetaría también el historial ya cerrado, y un periodo archivado se cerró bajo el
+ * régimen que tenía. Con el tipo en el periodo, quien cambia de plan o de escuela conserva
+ * sus semestres antiguos como semestres (Principio VI).
+ */
+export const SEMESTER_KINDS = ['semestre', 'cuatrimestre'] as const;
+export type SemesterKind = (typeof SEMESTER_KINDS)[number];
+
+/** El tipo que se propone al crear un periodo si nadie elige otro. */
+export const DEFAULT_SEMESTER_KIND: SemesterKind = 'semestre';
+
+/**
+ * Cómo se nombra cada tipo de periodo en la interfaz.
+ *
+ * Sale de aquí por lo mismo que `SEMESTER_STATUS_LABELS`: si «semestre» y «cuatrimestre» se
+ * escribieran sueltas en cada pantalla, la web y la app acabarían diciendo cosas distintas
+ * del mismo periodo. En singular, en plural, y con artículo para las frases que lo piden.
+ *
+ * El modelo sigue diciendo `semester` —la base de datos, las rutas y los tipos—: el
+ * vocabulario cambia en la interfaz, no en el esquema. Renombrar a un término neutro sería
+ * más coherente sobre el papel, pero es una migración sobre datos que ya están en producción
+ * y que toca los tres clientes, a cambio de cero diferencia para quien usa el producto.
+ */
+export interface SemesterKindLabel {
+  /** "semestre" / "cuatrimestre". Para frases: "Semanas del {singular}". */
+  readonly singular: string;
+  /** "semestres" / "cuatrimestres". */
+  readonly plural: string;
+  /** "el semestre" / "el cuatrimestre". */
+  readonly conArticulo: string;
+  /** Con la inicial en mayúscula, para títulos: "Semestre en curso". */
+  readonly titulo: string;
+}
+
+export const SEMESTER_KIND_LABELS: Readonly<Record<SemesterKind, SemesterKindLabel>> = {
+  semestre: {
+    singular: 'semestre',
+    plural: 'semestres',
+    conArticulo: 'el semestre',
+    titulo: 'Semestre',
+  },
+  cuatrimestre: {
+    singular: 'cuatrimestre',
+    plural: 'cuatrimestres',
+    conArticulo: 'el cuatrimestre',
+    titulo: 'Cuatrimestre',
+  },
+};
+
 /** Longitud máxima del nombre de un semestre. Es una etiqueta corta: "2026-2", "Quinto". */
 export const SEMESTER_NAME_MAX_LENGTH = 40;
 
@@ -66,7 +122,26 @@ export interface Semester {
   readonly id: EntityId;
   /** Nombre que le puso el estudiante: "2026-1", "Quinto semestre". */
   readonly name: string;
+  /**
+   * Semestre o cuatrimestre (Fase 18). Decide cómo lo nombran las pantallas.
+   *
+   * Los periodos creados antes de la Fase 18 son `semestre`, y siguen siéndolo: la migración
+   * que añadió el campo no los dejó en un valor vacío que las pantallas tuvieran que
+   * adivinar (Principio VI).
+   */
+  readonly kind: SemesterKind;
   readonly status: SemesterStatus;
+  /**
+   * Semanas de clase de este periodo, base del límite de faltas sugerido (FR-013).
+   *
+   * Va en el periodo y no en la cuenta desde la Fase 18: con dos tipos conviviendo, un ajuste
+   * global significaría que poner 12 semanas en el cuatrimestre nuevo recalcularía también el
+   * límite del semestre archivado, y un periodo cerrado se cursó con las semanas que tenía.
+   *
+   * Es **editable** y lo sigue siendo, sea cual sea el tipo: el calendario real varía por
+   * plantel, que es justo el motivo por el que las semanas fueron editables desde la Fase 3.
+   */
+  readonly weeks: number;
   readonly startedAt: CalendarDate;
   /** Día en que se cerró. `null` mientras siga activo. */
   readonly closedAt: CalendarDate | null;
@@ -106,6 +181,16 @@ export interface SemesterCloseEffect {
    * quiera y la convención del plantel no siempre es numérica.
    */
   readonly suggestedName: string;
+  /**
+   * Tipo propuesto para el que arranca: el mismo que el que se cierra.
+   *
+   * Es una propuesta y no una herencia forzada —quien cambia de escuela puede pasar de
+   * semestres a cuatrimestres—, pero lo habitual es seguir en el mismo régimen, y proponer
+   * lo contrario obligaría a corregirlo en cada cierre.
+   */
+  readonly suggestedKind: SemesterKind;
+  /** Semanas propuestas para el que arranca: las del tipo propuesto, editables. */
+  readonly suggestedWeeks: number;
 }
 
 /**
