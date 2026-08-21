@@ -1,7 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Textos del widget. Viven en el módulo para que viaje completo. -->
+<!--
+  Textos de la familia de widgets. Viven en el módulo para que viaje completo.
+
+  Aquí solo está lo **fijo**: el nombre con el que cada widget aparece en el menú del
+  lanzador y el mensaje de "abre la app". Todo lo que depende de los datos —los títulos,
+  los resúmenes, los mensajes de vacío— lo redacta `packages/shared/src/logic/widgets.ts` y
+  llega ya resuelto. Si estuviera aquí, la misma situación se leería distinto en la app y
+  en la pantalla de inicio.
+-->
 <resources>
   <string name="widget_titulo">PRÓXIMA CLASE</string>
   <string name="widget_descripcion">Tu próxima clase, en la pantalla de inicio.</string>
-  <string name="widget_sin_datos">Abre NoteCore para ver tu horario</string>
+  <!--
+    El compacto mide una celda de alto y su texto va a 24sp: «Abre NoteCore para ver tu
+    horario» se cortaba en «Abre NoteCore par…». Dos palabras dicen lo mismo y caben.
+  -->
+  <string name="widget_sin_datos">Abre NoteCore</string>
+
+  <string name="widget_dia_descripcion">Las clases que te quedan hoy.</string>
+  <string name="widget_faltas_descripcion">Las materias cerca del límite de faltas.</string>
+  <string name="widget_agenda_descripcion">Lo que vence pronto en tu agenda.</string>
+
+  <!-- Nombres visibles en el menú de widgets del lanzador. -->
+  <string name="widget_nombre_horario">NoteCore · Próxima clase</string>
+  <string name="widget_nombre_dia">NoteCore · Hoy</string>
+  <string name="widget_nombre_faltas">NoteCore · Faltas</string>
+  <string name="widget_nombre_agenda">NoteCore · Vence pronto</string>
+
+  <!--
+    Se ve mientras la app no ha guardado nada todavía, o justo después de cerrar sesión.
+
+    Los títulos están aquí duplicados de `widgets.ts` **solo para el estado vacío**: sin
+    datos no hay JSON del que leerlos, y la alternativa era poner el nombre de la clave en
+    mayúsculas —«DIA», «AGENDA»—, que es como se llaman por dentro y no como los llama el
+    widget cuando funciona. Un widget que cambia de nombre al cerrar sesión parece otro.
+  -->
+  <string name="widget_lista_sin_datos">Abre NoteCore</string>
+  <string name="widget_lista_titulo_dia">HOY</string>
+  <string name="widget_lista_titulo_faltas">FALTAS</string>
+  <string name="widget_lista_titulo_agenda">VENCE PRONTO</string>
 </resources>

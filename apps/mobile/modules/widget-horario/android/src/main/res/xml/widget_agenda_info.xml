@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget de lista «agenda» (Fase 16).
+
+  3×2 es el tamaño que dan tres filas legibles: por debajo de ~30dp por fila el nombre de
+  una materia deja de leerse a la distancia a la que se mira una pantalla de inicio. Se
+  puede redimensionar en los dos ejes porque aquí la altura extra sí se usa —el proveedor
+  no estira huecos, reparte las filas—.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:initialLayout="@layout/widget_lista"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_agenda_descripcion"
+    android:previewLayout="@layout/widget_lista"
+    android:updatePeriodMillis="1800000" />

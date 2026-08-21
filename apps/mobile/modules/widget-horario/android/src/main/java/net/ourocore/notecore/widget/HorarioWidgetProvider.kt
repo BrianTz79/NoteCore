@@ -1,23 +1,32 @@
 package net.ourocore.notecore.widget
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
-import android.view.View
 import android.widget.RemoteViews
 import org.json.JSONObject
 
 /**
- * Widget de pantalla principal: la clase en curso o la próxima (FR-051).
+ * Widget compacto: la clase en curso o la próxima (FR-051).
  *
  * Este archivo **no decide qué clase mostrar**. Esa regla vive en
  * packages/shared/src/logic/next-class.ts y la ejecuta la app, que escribe el resultado ya
  * resuelto donde este proveedor lo lee. Es el Principio II: la lógica no se duplica en un
  * cliente, y menos en un lenguaje donde nadie la revisaría al cambiarla.
+ *
+ * ## Qué cambió en la Fase 16
+ *
+ * Encogió de 4×2 celdas a **3×1** y el nombre de la materia pasó de 17sp a 24sp: el
+ * síntoma que abrió la fase era que ocupaba mucho para lo poco que mostraba. El aula y el
+ * pie de "quedan N clases" se fueron al widget «Hoy», que es donde el día completo tiene
+ * sitio; aquí la hora y el aula van juntas en una línea que redacta `widgetLineaCompacta`
+ * en `shared`.
+ *
+ * También dejó de ser el único: ahora es la cabeza de una familia de cuatro. Los otros
+ * tres —[DiaWidgetProvider], [FaltasWidgetProvider] y [AgendaWidgetProvider]— comparten
+ * layout y pintor, y se refrescan con este en el mismo broadcast.
  */
 class HorarioWidgetProvider : AppWidgetProvider() {
 
@@ -34,20 +43,63 @@ class HorarioWidgetProvider : AppWidgetProvider() {
   companion object {
     /** Donde la app deja el estado ya resuelto. Debe coincidir con WidgetHorarioModule. */
     const val PREFS = "notecore_widget"
-    const val CLAVE = "snapshot"
 
     /**
-     * Repinta todos los widgets colocados.
+     * Clave del widget compacto.
      *
-     * La llama el módulo nativo cada vez que la app guarda un estado nuevo. Si no hay
-     * ninguno colocado, `ids` viene vacío y no se hace nada.
+     * Sigue siendo `snapshot` y no se renombró en la Fase 16 a propósito: quien actualice
+     * la app con el widget ya colocado tiene ese valor escrito en su teléfono, y cambiar
+     * la clave le habría dejado el widget en blanco hasta la siguiente sincronización.
+     */
+    const val CLAVE = "snapshot"
+
+    /** Clave del estado de los tres widgets de lista, guardado junto (Fase 16). */
+    const val CLAVE_FAMILIA = "familia"
+
+    /**
+     * Repinta **todos los widgets colocados de las cuatro clases**.
+     *
+     * La llama el módulo nativo cada vez que la app guarda un estado nuevo. Van juntos y no
+     * uno por uno porque los cuatro salen del mismo `widgetFamily()`: refrescarlos por
+     * separado abriría la ventana en la que el widget del día ya cambió y el de faltas
+     * todavía no.
+     *
+     * Si de una clase no hay ninguno colocado, sus `ids` vienen vacíos y no se hace nada.
      */
     fun refrescarTodos(context: Context) {
       val manager = AppWidgetManager.getInstance(context)
-      val ids = manager.getAppWidgetIds(
-        ComponentName(context, HorarioWidgetProvider::class.java),
-      )
-      val vista = construirVista(context)
+
+      refrescarClase(context, manager, HorarioWidgetProvider::class.java) {
+        construirVista(context)
+      }
+      refrescarClase(context, manager, DiaWidgetProvider::class.java) {
+        DiaWidgetProvider.construirVista(context)
+      }
+      refrescarClase(context, manager, FaltasWidgetProvider::class.java) {
+        FaltasWidgetProvider.construirVista(context)
+      }
+      refrescarClase(context, manager, AgendaWidgetProvider::class.java) {
+        AgendaWidgetProvider.construirVista(context)
+      }
+    }
+
+    /**
+     * Repinta los widgets de una clase, construyendo la vista **una sola vez**.
+     *
+     * La vista se construye fuera del bucle a propósito: leer y parsear el JSON por cada
+     * widget colocado es trabajo repetido en el hilo principal del receptor, y con cuatro
+     * clases y varios widgets de cada una se nota.
+     */
+    private fun refrescarClase(
+      context: Context,
+      manager: AppWidgetManager,
+      clase: Class<*>,
+      construir: () -> RemoteViews,
+    ) {
+      val ids = manager.getAppWidgetIds(ComponentName(context, clase))
+      if (ids.isEmpty()) return
+
+      val vista = construir()
       for (id in ids) manager.updateAppWidget(id, vista)
     }
 
@@ -64,7 +116,7 @@ class HorarioWidgetProvider : AppWidgetProvider() {
         pintarVacio(vista, context.getString(R.string.widget_sin_datos))
       } else {
         try {
-          pintar(vista, JSONObject(json))
+          pintar(context, vista, JSONObject(json))
         } catch (e: Exception) {
           // Un JSON ilegible se trata como ausencia de datos: el widget nunca debe
           // reventar el lanzador del teléfono.
@@ -74,25 +126,10 @@ class HorarioWidgetProvider : AppWidgetProvider() {
 
       // Tocar cualquier parte del widget abre la app en el horario (criterio de
       // verificación de la Fase 11: "el widget abre la vista correspondiente").
-      /*
-       * La actividad se resuelve por el esquema `notecore://` y no por su clase.
-       *
-       * Este módulo no puede importar `MainActivity`: vive en su propia biblioteca de
-       * Android y la app depende de él, no al revés. El intent implícito con el esquema
-       * que el manifiesto ya registra hace el mismo trabajo sin invertir la dependencia.
-       */
-      val intent = Intent(Intent.ACTION_VIEW).apply {
-        setPackage(context.packageName)
-        data = android.net.Uri.parse("notecore://horario")
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-      }
-      val pending = PendingIntent.getActivity(
-        context,
-        0,
-        intent,
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+      vista.setOnClickPendingIntent(
+        R.id.widget_raiz,
+        PintorDeListas.intentHacia(context, "notecore://horario"),
       )
-      vista.setOnClickPendingIntent(R.id.widget_raiz, pending)
 
       return vista
     }
@@ -101,51 +138,42 @@ class HorarioWidgetProvider : AppWidgetProvider() {
       vista.setTextViewText(R.id.widget_materia, mensaje)
       vista.setTextViewText(R.id.widget_hora, "")
       vista.setTextViewText(R.id.widget_cuando, "")
-      vista.setViewVisibility(R.id.widget_aula, View.GONE)
-      vista.setTextViewText(R.id.widget_pie, "")
     }
 
-    private fun pintar(vista: RemoteViews, datos: JSONObject) {
+    private fun pintar(context: Context, vista: RemoteViews, datos: JSONObject) {
       val materia = datos.optString("subjectName", "")
 
       if (materia.isEmpty()) {
-        pintarVacio(vista, datos.optString("whenLabel", ""))
+        // `subjectShort` y no `whenLabel`: lo acorta `widgetMateriaCorta` en shared, porque
+        // este hueco va a 24sp y «Sin horario todavía» no cabe entero.
+        pintarVacio(vista, datos.optString("subjectShort", ""))
         return
       }
 
       vista.setTextViewText(R.id.widget_materia, materia)
-      vista.setTextViewText(R.id.widget_hora, datos.optString("timeRange", ""))
-      vista.setTextViewText(R.id.widget_cuando, datos.optString("whenLabel", ""))
+      // `whenShort` y no `whenLabel`: lo acorta `widgetCuandoCorto` en shared para que
+      // «Ahora mismo» no le robe el ancho a la materia. Ver la nota de esa función.
+      vista.setTextViewText(R.id.widget_cuando, datos.optString("whenShort", ""))
 
-      val aula = datos.optString("room", "")
-      if (aula.isEmpty() || aula == "null") {
-        vista.setViewVisibility(R.id.widget_aula, View.GONE)
-      } else {
-        vista.setViewVisibility(R.id.widget_aula, View.VISIBLE)
-        vista.setTextViewText(R.id.widget_aula, aula)
-      }
+      // La hora y el aula llegan ya compuestas en una línea: las redacta
+      // `widgetLineaCompacta` en shared, para que este archivo no decida qué recortar
+      // cuando el aula es larga.
+      vista.setTextViewText(R.id.widget_hora, datos.optString("compactLine", ""))
 
       // El color de la materia es dato que viene de la base de datos, no un token: se
       // aplica al vuelo sobre la barra lateral.
-      val color = datos.optString("color", "")
-      if (color.startsWith("#")) {
+      PintorDeListas.aplicarColorDeFondo(vista, R.id.widget_barra, datos.optString("color", ""))
+
+      // Verde si la clase está ocurriendo, acento si aún no. Lo decide `widgetColorCuando`
+      // en shared, que es la misma señal que usa el inicio de la app.
+      val colorCuando = datos.optString("whenColor", "")
+      if (colorCuando.startsWith("#")) {
         try {
-          vista.setInt(R.id.widget_barra, "setBackgroundColor", Color.parseColor(color))
+          vista.setTextColor(R.id.widget_cuando, Color.parseColor(colorCuando))
         } catch (e: IllegalArgumentException) {
-          // Un color inválido deja la barra con el acento del drawable. No es motivo
-          // para no mostrar la clase.
+          // Se queda con el acento del layout. No es motivo para no mostrar la clase.
         }
       }
-
-      val quedan = datos.optInt("remainingToday", 0)
-      vista.setTextViewText(
-        R.id.widget_pie,
-        when (quedan) {
-          0 -> "No quedan clases hoy"
-          1 -> "Queda 1 clase hoy"
-          else -> "Quedan $quedan clases hoy"
-        },
-      )
     }
   }
 }

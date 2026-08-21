@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 18 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 16 cerrada y verificada)
 
 ---
 
@@ -32,14 +32,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, **widget de pantalla principal** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 18 cerrada** el 2026-08-20. Quedan **dos fases**, ambas P3: la [16](#fase-16--widgets-familia-y-densidad--p3) y la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) |
+| **Fase actual** | Ninguna en curso. **Fase 16 cerrada** el 2026-08-20. Queda **una fase**, P3: la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `█████░░` 5 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `██████░` 6 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -146,6 +146,17 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   discrepancias—. La palabra sale de `SEMESTER_KIND_LABELS` en `shared`, junto a la de los estados,
   para que web y app no puedan llamar distinto al mismo periodo
 
+- **Fase 16 cerrada**: el widget de la Fase 11 **encogió a la mitad** —de `4×2` celdas a `3×1`—
+  con el nombre de la materia al doble de tamaño, y ahora encabeza una **familia de cuatro**:
+  «Próxima clase», «Hoy», «Faltas» y «Vence pronto». El hueco vacío que motivó la fase no venía
+  del tamaño declarado sino de un `layout_weight` que estiraba el espacio vertical, así que
+  encogerlo sin quitarlo no habría servido de nada. Las tres reglas nuevas viven en
+  `widgets.ts` de `shared` y las ejecuta la app: los widgets siguen sin decidir nada. Las tres
+  filas son **tres layouts con ids numerados** y no tres `include` del mismo, porque un
+  `RemoteViews` direcciona por id global y las tres copias habrían mostrado el texto de la
+  primera. Verificado con los cuatro colocados en el lanzador real, cada uno abriendo su
+  sección, y borrándose los cuatro al cerrar sesión
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -156,16 +167,18 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
 escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
 
-**Las fases 12 a 15 y la 18 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
+**Las fases 12 a 16 y la 18 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
 `WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
 formando una C— en el icono de la app, el favicon de la web y la pantalla de entrada; la 14 le dio
 a la web una barra lateral de escritorio y ensanchó las doce pantallas; la 15 partió la sección
-social en Muro, Mi perfil, Contactos y Ajustes, y construyó el muro, que no existía. El APK se
-recompiló para la 15, firmado con la clave de siempre. El detalle de cada una está en el historial:
+social en Muro, Mi perfil, Contactos y Ajustes, y construyó el muro, que no existía. la 16 encogió el widget de la próxima clase y le dio tres hermanos —el día, las faltas y lo que
+vence pronto—. El APK se recompiló para la 15 y para la 16, firmado con la clave de siempre. El
+detalle de cada una está en el historial:
 [Fase 12](#fase-12--arreglos-de-producción--cerrada-el-2026-08-20),
 [Fase 13](#fase-13--identidad-visual-logo-e-iconos--cerrada-el-2026-08-20),
 [Fase 14](#fase-14--la-web-en-pantalla-grande--cerrada-el-2026-08-20),
 [Fase 15](#fase-15--social-en-secciones-propias--cerrada-el-2026-08-20),
+[Fase 16](#fase-16--widgets-familia-y-densidad--cerrada-el-2026-08-20),
 [Fase 18](#fase-18--cuatrimestres-además-de-semestres--cerrada-el-2026-08-20).
 
 **Cerrar una fase no la despliega.** La web sirve una imagen de Docker: mientras no se
@@ -174,8 +187,9 @@ web`), producción muestra el código anterior aunque el commit ya esté en `mai
 fases 13 y 14, y el síntoma —«la página no la veo cambiada»— parece caché del navegador y no lo
 es.
 
-**Quedan tres fases, 16 a 18, y pueden ir en el orden que se prefiera** —de ellas, la
-**18 (cuatrimestres)** es la que más se nota si quien usa NoteCore no cursa por semestres—.
+**Queda una fase: la [17](#fase-17--actualización-de-la-app-sin-tienda--p3)**, que es la que
+permite entregar versiones nuevas sin pedirle a cada usuario que reinstale a mano. Hasta que
+entre, cada APK nuevo se distribuye avisando uno por uno.
 
 ---
 
@@ -202,7 +216,7 @@ es.
 | 13 | Identidad visual: logo e iconos | P2 | ✅ | — | ✅ | ✅ |
 | 14 | La web en pantalla grande | P1 | ✅ | — | ✅ | — |
 | 15 | Social en secciones propias | P2 | ✅ | ✅ | ✅ | ✅ |
-| 16 | Widgets: familia y densidad | P3 | ⬜ | ⬜ | — | ⬜ |
+| 16 | Widgets: familia y densidad | P3 | ✅ | — | — | ✅ |
 | 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
 | 18 | Cuatrimestres además de semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 
@@ -222,6 +236,84 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 16 — Widgets: familia y densidad · cerrada el 2026-08-20
+
+**Entregado**: el widget de la Fase 11 **encogió a la mitad** y con el nombre de la materia al
+doble de tamaño, y ahora es la cabeza de una **familia de cuatro**: «Próxima clase», «Hoy»,
+«Faltas» y «Vence pronto». Los cuatro se ofrecen desde la pantalla del horario, cada uno abre
+su sección al tocarlo, y los cuatro se borran al cerrar sesión.
+
+**El síntoma tenía dos causas, y solo una era el tamaño.** El widget se declaraba con
+`targetCellHeight="2"` pero el hueco vacío bajo el aula no venía de eso: venía de un
+`layout_weight="1"` en el bloque central que **estiraba el espacio vertical** hasta llenar la
+altura reservada. Encogerlo a `3×1` sin quitar ese peso habría dejado el mismo hueco, más
+apretado. Ahora la altura la fija el contenido, el nombre de la materia va a **24sp** —de 17sp—,
+y el aula y el pie de «quedan N clases» se fueron al widget «Hoy», que es donde el día completo
+tiene sitio.
+
+**El widget compacto acabó necesitando textos propios, y viven en `shared`.** A 24sp, «Ahora
+mismo» ocupaba ~80dp del ancho y dejaba «Cálculo Integral» en «Cálculo Int…»: el reloj se comía
+el dato al que se subordina. Se añadieron `widgetCuandoCorto()` —«Ahora»— y
+`widgetMateriaCorta()` —«Sin horario»— **en `shared`, no en Kotlin**: acortar es una decisión de
+redacción, y en el inicio de la app y de la web sigue apareciendo el texto largo, donde sí hay
+sitio. El Kotlin recibe las dos versiones ya resueltas y solo elige la que su layout admite.
+
+**Tres widgets nuevos, un solo pintor.** «Hoy», «Faltas» y «Vence pronto» comparten forma
+—encabezado, hasta tres filas, pie— así que comparten layout y comparten `PintorDeListas`. Tres
+copias habrían divergido a la primera corrección hecha en una y olvidada en las otras dos, que
+es exactamente lo que pasó con la paleta antes de la Fase 11.
+
+**Ninguno decide nada.** Las tres reglas nuevas viven en
+`packages/shared/src/logic/widgets.ts` —`widgetDia()`, `widgetFaltas()`, `widgetAgenda()`— y
+las ejecuta la app, que deja el resultado ya resuelto a texto y a color donde el Kotlin lo lee.
+Es el mismo reparto de la Fase 11, extendido: **la app decide, el widget pinta**.
+
+**Decisiones de diseño**:
+
+| Decisión | Por qué |
+|---|---|
+| Las tres filas son **tres archivos de layout con ids numerados**, no tres `include` del mismo | Se intentó primero con `<include layout="@layout/widget_fila" android:id="@+id/fila_2"/>` y **no sirve para un `RemoteViews`**: el `android:id` del include renombra el contenedor, no las vistas de dentro. Las tres copias seguirían teniendo el mismo `fila_titulo`, y `setTextViewText` —que direcciona por id global, sin recorrer el árbol— escribiría siempre en la primera. Las tres filas mostrarían el mismo texto |
+| **Tres filas** y un pie de «y N más», no una lista con adaptador | Un `RemoteViewsService` con `ListView` daría filas ilimitadas, pero exige un servicio en el manifiesto, un factory en su propio hilo y un ciclo de actualización aparte. Para tres filas fijas, tres layouts cuestan menos y no añaden un proceso que mantener. Por debajo de ~30dp por fila el nombre de una materia deja de leerse a la distancia a la que se mira una pantalla de inicio, que es de reojo |
+| El widget de faltas muestra **solo lo que está en riesgo** | Un widget que enseñara las nueve materias, la mayoría en verde, no dice nada de un vistazo: hay que leerlo entero para descubrir que no pasa nada. Cuando ninguna está en riesgo lo dice en una línea. Es el criterio del inicio de la Fase 11: nada se muestra por completitud |
+| El `PendingIntent` lleva el **hash de la ruta** como `requestCode` | Con el `0` fijo que tenía el widget original, los cuatro compartirían el mismo `PendingIntent` y `FLAG_UPDATE_CURRENT` haría que el último en crearse reescribiera el destino de todos: los cuatro abrirían la misma pantalla. Verificado en el emulador que cada uno abre la suya |
+| La agenda se ordena por **`daysUntilDue`**, no con `sortByDueDate` | `sortByDueDate` compara la cadena `dueDate`, y en la pantalla de agenda basta porque ahí se ve la fecha entera. El widget muestra «Venció hace 2 días» / «Vence en 3 días», es decir `daysUntilDue`, y ordenar por un dato distinto del que se lee produce una lista que parece desordenada aunque no lo esté |
+| La **cola de cada fila cede el ancho al título** (`maxWidth="72dp"`) | Sin eso, «Química Orgánica» se llevaba media fila y el título se cortaba en «Reporte de reacci…», que es el dato por el que esa línea está en el widget. Se midió en el emulador: con 96dp todavía se cortaban, con 72dp «Reporte de reacciones» cabe entero y la materia se lee como «Química Or…», que se entiende |
+| El puente **recuerda la última fuente conocida** de cada dato | Los cuatro widgets se guardan juntos porque salen del mismo `widgetFamily()`, pero no todas las pantallas tienen las tres fuentes: `FaltasScreen` solo conoce las faltas. Sin esa memoria, entrar a faltas después del inicio llamaría con el horario en `null` y **borraría** el widget de la próxima clase. Omitir un parámetro conserva; nunca borra |
+| El refresco de las tres fuentes vive en la **raíz de la app**, no en una pantalla | Abrir la app no es pasar por el inicio: **arranca en la sección donde se quedó**. Quien la cierra en «Mensajes» la vuelve a abrir ahí, y sin un refresco en la raíz sus cuatro widgets se quedarían con lo que dijeran la última vez que visitó las pantallas que los alimentan |
+| El estado vacío saca sus títulos de **`res/values`** | Sin datos no hay JSON del que leer el título, y lo que hacía antes era `clave.uppercase()`: eso ponía «DIA» —sin tilde— y «AGENDA» en la cabecera, que son los nombres internos de las claves. Un widget que cambia de nombre al cerrar sesión parece otro widget |
+| La clave del widget compacto **sigue llamándose `snapshot`** | Quien actualice la app con el widget ya colocado tiene ese valor escrito en su teléfono. Renombrarla le habría dejado el widget en blanco hasta la siguiente sincronización, por una limpieza que no se ve desde fuera |
+
+**Verificación** (2026-08-20, emulador Android con APK de release firmado + la misma cuenta en
+la web):
+
+- **Los cuatro widgets se colocaron desde la app**, con el diálogo de fijado del sistema, y
+  Android los reconoce como cuatro proveedores distintos (`dumpsys appwidget`) con sus tamaños:
+  el compacto a `resizeMode=1` y 12801 de alto, los tres de lista a `resizeMode=3` y 28161
+- **«Hoy»** mostró «4 clases», tres filas con la barra del color de cada materia, «ahora» en la
+  que estaba en curso, «Lab 2» en la que tiene aula, y **«y 1 más»** por la cuarta
+- **«Faltas»** mostró «3 en riesgo» filtrando las dos materias en verde, con la que superó el
+  límite **en rojo** y las dos cercanas en ámbar. Al borrar las faltas por la API y reabrir la
+  app, pasó a **«Ninguna materia en riesgo»**; al volver a marcarlas, a «2 en riesgo»
+- **«Vence pronto»** mostró «2 vencidas» y las ordenó por lo que vence antes: «Venció hace 3
+  días», «Venció ayer», «Vence en 2 días» —las dos vencidas en rojo—
+- **El compacto** mostró «Cálculo Integral» entero a 24sp con «Ahora» **en verde**, porque esa
+  clase estaba en curso
+- **Cada widget abre su sección**: el compacto y «Hoy» en «Mi horario», «Faltas» en «Mis
+  faltas», «Vence pronto» en «Mi agenda». Son cuatro `PendingIntent` distintos, no uno
+- **Al cerrar sesión los cuatro se borraron**: ni una materia, ni una falta, ni una entrega del
+  usuario anterior quedó visible en la pantalla de inicio (Principio III)
+- **La web dice lo mismo que el widget** con la misma cuenta: «Física General 3/3 alcanzado» y
+  «Química Orgánica 2/3 cerca», y la agenda con las mismas palabras —«Venció hace 3 días»—
+  porque ambos llaman a `dueDateMessage` en `shared`
+- El typecheck de los cuatro paquetes y el build de producción de Next pasan limpios
+
+**Ojo con esto para la próxima fase**: `expo prebuild` **reescribe `apps/mobile/tsconfig.json`**
+—lo reformatea y le borra dos entradas de `include` y un comentario—. No es un cambio de la
+fase; hay que revertirlo con `git checkout` antes del commit. Y Gradle **no rastrea `src/` como
+entrada**: tras editar TypeScript hay que borrar `android/app/build/generated/assets` y
+`android/app/build/intermediates/merged_assets` o el APK sale con el bundle anterior, sin avisar
+—costó tres verificaciones en falso—.
 
 #### Fase 18 — Cuatrimestres además de semestres · cerrada el 2026-08-20
 
@@ -2195,7 +2287,11 @@ el muro no filtra nada que la visibilidad no permita.
 
 ---
 
-### Fase 16 — Widgets: familia y densidad · P3
+### Fase 16 — Widgets: familia y densidad · P3 ✅ *(cerrada el 2026-08-20)*
+
+> Cerrada y verificada. El detalle de lo que se entregó, las decisiones y la verificación están
+> en el [historial](#fase-16--widgets-familia-y-densidad--cerrada-el-2026-08-20). Lo de abajo es
+> el enunciado con el que se abrió, que se conserva porque es el diagnóstico que la originó.
 
 **Síntoma**: el widget ocupa mucho para lo poco que muestra, y el nombre de la materia se lee
 pequeño para algo que debe entenderse de una ojeada.
@@ -2344,5 +2440,5 @@ y que un periodo archivado antes de esta fase sigue apareciendo como semestre.
 echa al usuario de la app. La **14** va después porque afecta a cualquiera que abra la web en
 una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el orden que prefieras.
 
-De ese resto, la **18** es la que más se nota si quien va a usar NoteCore cursa cuatrimestres:
-hasta que entre, el producto le habla de semestres. Es P2, como la 13 y la 15.
+**Ese orden ya se cumplió salvo la 17**, que es la única que queda. Las demás se cerraron el
+2026-08-20 en el orden 12 → 13 → 14 → 15 → 18 → 16.

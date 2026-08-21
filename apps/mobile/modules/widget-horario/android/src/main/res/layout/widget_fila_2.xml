@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Fila 2 de los widgets de lista (Fase 16).
+
+  ## Por qué hay tres archivos casi idénticos en lugar de un `include` repetido
+
+  Se intentó primero con `<include layout="@layout/widget_fila" android:id="@+id/fila_2"/>`
+  y **no sirve para un RemoteViews**: el `android:id` del include renombra el contenedor,
+  no las vistas de dentro. Las tres copias seguirían teniendo el mismo `fila_titulo`, y
+  `setTextViewText(R.id.fila_titulo, …)` —que direcciona por id global, sin árbol que
+  recorrer— escribiría siempre en la primera. Las tres filas mostrarían el mismo texto.
+
+  Los ids llevan el número por eso. El archivo lo genera el mismo bloque de código para
+  las tres, así que no puede descuadrarse una respecto a las otras.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fila_2_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:orientation="horizontal"
+    android:layout_marginTop="6dp"
+    android:gravity="center_vertical"
+    android:baselineAligned="false">
+
+  <!--
+    ImageView y no View: `android.view.View` no está entre las clases que un RemoteViews
+    puede inflar —el lanzador responde «Class not allowed to be inflated» y el widget
+    entero deja de cargar—. Es la lección que costó cara en la Fase 11.
+  -->
+  <ImageView
+      android:id="@+id/fila_2_barra"
+      android:layout_width="3dp"
+      android:layout_height="match_parent"
+      android:contentDescription="@null"
+      android:background="@drawable/widget_barra" />
+
+  <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:layout_marginStart="8dp">
+
+    <TextView
+        android:id="@+id/fila_2_titulo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/nc_tinta"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/fila_2_detalle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/nc_tinta3"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:maxLines="1"
+        android:ellipsize="end" />
+  </LinearLayout>
+
+  <!--
+    La cola cede el ancho al título, no al revés.
+
+    Sin `layout_weight="0"` y sin el `maxWidth`, un nombre de materia largo —«Química
+    Orgánica»— se lleva media fila y el título se corta en «Reporte de reacci…», que es el
+    dato por el que esa línea está en el widget. La cola es contexto: se recorta ella
+    primero.
+
+    72dp y no más: medido en el emulador, con 96dp los títulos todavía se cortaban en un
+    widget de tres celdas de ancho, que es el tamaño con el que se coloca. «Química
+    Orgán…» se entiende; «Reporte de reacci…» no dice de qué es el reporte.
+  -->
+  <TextView
+      android:id="@+id/fila_2_cola"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_weight="0"
+      android:maxWidth="72dp"
+      android:layout_marginStart="6dp"
+      android:textColor="@color/nc_tinta3"
+      android:textSize="11sp"
+      android:fontFamily="monospace"
+      android:maxLines="1"
+      android:ellipsize="end" />
+</LinearLayout>

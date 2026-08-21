@@ -33,6 +33,7 @@ export * from './logic/form-errors.js';
 export * from './logic/dates.js';
 export * from './logic/schedule.js';
 export * from './logic/next-class.js';
+export * from './logic/widgets.js';
 export * from './logic/schedule-import.js';
 export * from './logic/calendar.js';
 export * from './logic/share.js';

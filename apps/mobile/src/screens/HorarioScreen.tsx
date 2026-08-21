@@ -17,7 +17,13 @@ import { ImportDialog } from '../components/import-dialog';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
-import { actualizarWidget, fijarWidget, sePuedeFijarWidget } from '../lib/widget';
+import {
+  CLASES_DE_WIDGET,
+  WIDGETS,
+  actualizarWidget,
+  fijarWidget,
+  sePuedeFijarWidget,
+} from '../lib/widget';
 import { useBotonAtras } from '../lib/boton-atras';
 
 /**
@@ -250,18 +256,33 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
       )}
 
       {/*
-        Atajo para colocar el widget (FR-051). Va aquí, en la pantalla del horario, porque
-        es donde el estudiante ya está mirando sus clases y donde «tenerlas en la pantalla
-        de inicio» es una idea que viene sola. Quien confirma es Android, con su diálogo.
+        Atajo para colocar los widgets (FR-051, Fase 16). Va aquí, en la pantalla del
+        horario, porque es donde el estudiante ya está mirando sus clases y donde «tenerlas
+        en la pantalla de inicio» es una idea que viene sola. Quien confirma es Android,
+        con su diálogo.
+
+        Desde la Fase 16 son cuatro y no uno, así que se listan con su nombre y lo que
+        muestra cada uno: un botón único llamado «Añadir el widget» ya no diría cuál, y
+        elegir a ciegas entre cuatro es peor que no poder elegir.
       */}
       {sePuedeFijar && entries.length > 0 ? (
-        <Button
-          title="Añadir el widget a mi pantalla de inicio"
-          variant="secondary"
-          onPress={() => {
-            void fijarWidget();
-          }}
-        />
+        <Card title="Widgets para tu pantalla de inicio">
+          {CLASES_DE_WIDGET.map((clase) => (
+            <View key={clase} style={styles.widgetRow}>
+              <View style={styles.widgetInfo}>
+                <Text style={styles.body}>{WIDGETS[clase].nombre}</Text>
+                <Text style={styles.muted}>{WIDGETS[clase].descripcion}</Text>
+              </View>
+              <Button
+                title="Añadir"
+                variant="secondary"
+                onPress={() => {
+                  void fijarWidget(clase);
+                }}
+              />
+            </View>
+          ))}
+        </Card>
       ) : null}
 
       {loading ? (
@@ -364,6 +385,21 @@ const styles = StyleSheet.create({
   subjectName: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   colorDot: { width: 10, height: 10, borderRadius: RADIUS.md },
   subjectActions: { gap: 10, alignItems: 'flex-end' },
+  /*
+   * Las filas de la lista de widgets. Repiten la forma de `subjectRow` a propósito: son
+   * la misma cosa en la misma pantalla —una lista de elementos con su acción a la
+   * derecha— y darles una forma distinta las haría parecer dos secciones sin relación.
+   */
+  widgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    borderTopColor: colors.borde,
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
+  widgetInfo: { flex: 1, gap: 2 },
   editText: { color: colors.acentoClaro, fontSize: TEXT.md },
   deleteText: { color: colors.error, fontSize: TEXT.md },
 });

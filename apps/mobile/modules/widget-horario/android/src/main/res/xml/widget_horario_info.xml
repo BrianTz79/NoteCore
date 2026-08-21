@@ -1,12 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generado por plugins/with-widget-horario.js — no editar a mano. -->
+<!--
+  Widget compacto: la próxima clase.
+
+  ## El tamaño cambió en la Fase 16
+
+  Era 4×2 con `minHeight="110dp"`. Ahora es **3×1**: el síntoma que abrió la fase era que
+  ocupaba mucho para lo poco que mostraba, y la mitad de esa altura era hueco vacío que
+  estiraba un `layout_weight`. Una celda de alto es lo que mide una línea grande con su
+  línea de apoyo debajo, que es todo lo que este widget dice ahora.
+
+  `resizeMode="horizontal"` y ya no vertical: estirarlo a lo alto volvería a crear el hueco
+  que la fase vino a quitar. Quien quiera altura tiene los widgets de lista.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/widget_horario"
-    android:minWidth="250dp"
-    android:minHeight="110dp"
-    android:targetCellWidth="4"
-    android:targetCellHeight="2"
-    android:resizeMode="horizontal|vertical"
+    android:minWidth="180dp"
+    android:minHeight="50dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="1"
+    android:resizeMode="horizontal"
     android:widgetCategory="home_screen"
     android:description="@string/widget_descripcion"
     android:previewLayout="@layout/widget_horario"

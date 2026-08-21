@@ -25,6 +25,7 @@ import { attendanceApi } from '../lib/api';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSyncActions } from '../lib/sync-context';
+import { actualizarWidget } from '../lib/widget';
 import { useBotonAtras } from '../lib/boton-atras';
 
 /**
@@ -72,6 +73,15 @@ export function FaltasScreen({ onVolver }: { onVolver: () => void }) {
       setSummary(result.data);
       setCachedAt(result.cachedAt);
       setError(undefined);
+      /*
+       * El widget de faltas se reconstruye con lo que se acaba de leer (Fase 16).
+       *
+       * Va aquí y no en cada operación de escritura porque marcar, quitar o justificar una
+       * falta terminan todas llamando a `loadSummary()`: un solo punto, imposible de
+       * olvidar al añadir otra. Se pasa `null` como horario porque esta pantalla no lo tiene;
+       * el puente conserva el último que conoció en lugar de borrarlo.
+       */
+      void actualizarWidget(null, result.data);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }

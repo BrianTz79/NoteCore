@@ -20,6 +20,7 @@ import {
   type UpcomingClass,
 } from '@notecore/shared';
 import { agendaApi, attendanceApi, authApi, messagingApi, scheduleApi } from '../lib/api';
+import { actualizarWidget } from '../lib/widget';
 import { useAuth } from '../lib/auth-context';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
 import {
@@ -101,15 +102,31 @@ export function InicioScreen({
         horario.status === 'fulfilled' ? horario.value.data : [];
       const entries = toScheduleEntries(subjects);
 
+      const resumenDeFaltas = faltas.status === 'fulfilled' ? faltas.value : null;
+      const listaDeAgenda = agenda.status === 'fulfilled' ? agenda.value : null;
+
       setResumen({
         // La misma función que usan la web y el widget de Android: los tres dicen lo mismo
         // a la misma hora porque los tres llaman aquí (Principio II).
         proxima: nextClass(entries),
         quedanHoy: remainingToday(entries).length,
-        faltas: faltas.status === 'fulfilled' ? faltas.value : null,
-        agenda: agenda.status === 'fulfilled' ? agenda.value : null,
+        faltas: resumenDeFaltas,
+        agenda: listaDeAgenda,
         sinLeer: mensajes.status === 'fulfilled' ? mensajes.value : null,
       });
+
+      /*
+       * Los cuatro widgets se reconstruyen desde aquí (Fase 16).
+       *
+       * Es el único sitio de la app que carga las tres fuentes a la vez —horario, faltas y
+       * agenda—, que es justo lo que la familia de widgets necesita. `HorarioScreen`
+       * también los actualiza, pero solo tiene el horario y deja los otros dos en `null`;
+       * esta pantalla es la que los completa, y es la que más se abre.
+       *
+       * Va después de `setResumen` y sin `await`: pintar la pantalla no puede esperar a
+       * que Android termine de escribir en disco.
+       */
+      void actualizarWidget(entries, resumenDeFaltas, listaDeAgenda);
     }
 
     void cargar();

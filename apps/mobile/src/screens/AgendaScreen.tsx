@@ -22,6 +22,7 @@ import { AgendaForm } from '../components/agenda-form';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 import { SyncIndicator } from '../components/sync-indicator';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
+import { actualizarWidget } from '../lib/widget';
 import { useBotonAtras } from '../lib/boton-atras';
 
 /**
@@ -66,6 +67,14 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
       setAgenda(result.data);
       setCachedAt(result.cachedAt);
       setError(undefined);
+      /*
+       * El widget «Vence pronto» se reconstruye con lo que se acaba de leer (Fase 16).
+       *
+       * Va aquí y no en cada operación porque crear, completar y borrar terminan todas
+       * llamando a `load()`. Se pasa `null` como horario porque esta pantalla no lo tiene; el
+       * puente conserva el último que conoció en lugar de borrarlo.
+       */
+      void actualizarWidget(null, null, result.data);
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }

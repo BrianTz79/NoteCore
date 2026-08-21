@@ -1,110 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generado por plugins/with-widget-horario.js — no editar a mano. -->
+<!--
+  Widget compacto: la clase en curso o la próxima (FR-051).
+
+  ## Qué cambió en la Fase 16, y por qué
+
+  Antes ocupaba 4×2 celdas y el nombre de la materia iba a 17sp, con un `layout_weight="1"`
+  en el bloque central que **estiraba el hueco vertical** hasta llenar la altura reservada:
+  de ahí el espacio vacío bajo el aula que hacía que el widget se viera grande para lo poco
+  que decía. Ahora es 3×1, el nombre va a 24sp y no hay ningún peso que estire nada — la
+  altura la fija el contenido.
+
+  El aula y el "quedan N clases" ya no caben en una celda de alto y **se fueron al widget
+  «Hoy»**, que es donde el día completo tiene sitio. Perder esos dos datos aquí es el precio
+  de que el que importa —qué materia— se lea de una ojeada.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_raiz"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:orientation="horizontal"
     android:background="@drawable/widget_fondo"
-    android:padding="14dp">
+    android:padding="12dp"
+    android:baselineAligned="false">
 
-  <!-- Cabecera: marca + cuándo -->
+  <!--
+    Es un ImageView y no un View a secas **por obligación**: un RemoteViews solo puede
+    inflar una lista cerrada de clases, y `android.view.View` no está en ella —el lanzador
+    responde «Class not allowed to be inflated» y el widget entero no carga—. ImageView sí
+    está permitido y admite el mismo `setBackgroundColor` con el que el proveedor le pone
+    el color de la materia.
+  -->
+  <ImageView
+      android:id="@+id/widget_barra"
+      android:layout_width="4dp"
+      android:layout_height="match_parent"
+      android:contentDescription="@null"
+      android:background="@drawable/widget_barra" />
+
   <LinearLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:orientation="horizontal"
-      android:baselineAligned="false">
-
-    <TextView
-        android:id="@+id/widget_marca"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/widget_titulo"
-        android:textColor="@color/nc_tinta3"
-        android:textSize="11sp"
-        android:letterSpacing="0.08"
-        android:fontFamily="sans-serif-medium"
-        android:maxLines="1" />
-
-    <TextView
-        android:id="@+id/widget_cuando"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/nc_acento"
-        android:textSize="11sp"
-        android:fontFamily="monospace"
-        android:maxLines="1" />
-  </LinearLayout>
-
-  <!-- Bloque de la clase: barra de color + nombre + hora -->
-  <LinearLayout
-      android:layout_width="match_parent"
-      android:layout_height="0dp"
+      android:layout_width="0dp"
+      android:layout_height="match_parent"
       android:layout_weight="1"
-      android:orientation="horizontal"
-      android:layout_marginTop="10dp"
-      android:baselineAligned="false">
+      android:orientation="vertical"
+      android:gravity="center_vertical"
+      android:layout_marginStart="10dp">
 
-    <!--
-      Es un ImageView y no un View a secas **por obligación**: un RemoteViews solo puede
-      inflar una lista cerrada de clases, y `android.view.View` no está en ella —el
-      lanzador responde «Class not allowed to be inflated» y el widget entero no carga—.
-      ImageView sí está permitido y admite el mismo `setBackgroundColor` con el que el
-      proveedor le pone el color de la materia.
-    -->
-    <ImageView
-        android:id="@+id/widget_barra"
-        android:layout_width="3dp"
-        android:layout_height="match_parent"
-        android:contentDescription="@null"
-        android:background="@drawable/widget_barra" />
-
-    <LinearLayout
+    <!-- El dato de la ojeada. Todo lo demás en esta tarjeta se subordina a esta línea. -->
+    <TextView
+        android:id="@+id/widget_materia"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:layout_marginStart="10dp">
+        android:layout_height="wrap_content"
+        android:textColor="@color/nc_tinta"
+        android:textSize="24sp"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
-      <TextView
-          android:id="@+id/widget_materia"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:textColor="@color/nc_tinta"
-          android:textSize="17sp"
-          android:fontFamily="sans-serif-medium"
-          android:maxLines="2"
-          android:ellipsize="end" />
-
-      <TextView
-          android:id="@+id/widget_hora"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:layout_marginTop="2dp"
-          android:textColor="@color/nc_tinta2"
-          android:textSize="13sp"
-          android:fontFamily="monospace"
-          android:maxLines="1" />
-
-      <TextView
-          android:id="@+id/widget_aula"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:textColor="@color/nc_tinta3"
-          android:textSize="12sp"
-          android:maxLines="1"
-          android:ellipsize="end" />
-    </LinearLayout>
+    <!-- Hora y aula en una sola línea: la compone `widgetLineaCompacta` en shared. -->
+    <TextView
+        android:id="@+id/widget_hora"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:textColor="@color/nc_tinta2"
+        android:textSize="13sp"
+        android:fontFamily="monospace"
+        android:maxLines="1"
+        android:ellipsize="end" />
   </LinearLayout>
 
-  <!-- Pie: cuántas clases quedan hoy -->
+  <!--
+    "Ahora mismo" / "En 25 min", a la derecha y en el color que le pone el proveedor: verde
+    si la clase está ocurriendo, acento si aún no. El color lo decide `widgetColorCuando`
+    en shared, no este layout.
+
+    `layout_weight="0"` y `maxWidth` porque el nombre de la materia manda: sin ellos,
+    «Ahora mismo» se lleva un tercio del ancho y «Cálculo Integral» se queda en «Cálculo
+    Int…», que es justo el dato que esta fase vino a hacer legible. Si el reloj no cabe, se
+    parte en dos líneas —para eso tiene `maxLines="2"`—.
+  -->
   <TextView
-      android:id="@+id/widget_pie"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="8dp"
-      android:textColor="@color/nc_tinta3"
-      android:textSize="11sp"
-      android:maxLines="1"
+      android:id="@+id/widget_cuando"
+      android:layout_width="wrap_content"
+      android:layout_height="match_parent"
+      android:layout_weight="0"
+      android:maxWidth="80dp"
+      android:gravity="center_vertical|end"
+      android:layout_marginStart="8dp"
+      android:textColor="@color/nc_acento"
+      android:textSize="12sp"
+      android:fontFamily="monospace"
+      android:maxLines="2"
       android:ellipsize="end" />
 </LinearLayout>

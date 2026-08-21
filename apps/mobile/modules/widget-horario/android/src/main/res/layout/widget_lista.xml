@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Layout compartido por los tres widgets de lista de la Fase 16: «Hoy», «Faltas» y
+  «Vence pronto».
+
+  ## Uno solo, no tres
+
+  Los tres pintan lo mismo: encabezado con resumen, hasta tres filas, y un pie. Darles un
+  layout a cada uno habría dado tres caminos de pintado que divergen a la primera
+  corrección que se hace en uno y se olvida en los otros dos —que es exactamente lo que
+  pasó con la paleta en la Fase 11—. Lo que cambia entre ellos son los datos, y esos ya
+  vienen resueltos desde `shared`.
+
+  ## Por qué las filas están escritas a mano y no vienen de un adaptador
+
+  Un `RemoteViewsService` con `ListView` permitiría filas ilimitadas, pero exige un servicio
+  declarado en el manifiesto, un factory que corre en su propio hilo y un ciclo de
+  actualización aparte. Para tres filas fijas, tres `include` cuestan menos y no añaden un
+  proceso que mantener. Si algún día hicieran falta listas largas, ese es el camino.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_fondo"
+    android:padding="12dp">
+
+  <!-- Encabezado: qué widget es + el dato de la ojeada -->
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="horizontal"
+      android:baselineAligned="false">
+
+    <TextView
+        android:id="@+id/lista_titulo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/nc_tinta3"
+        android:textSize="11sp"
+        android:letterSpacing="0.08"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/lista_resumen"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:textColor="@color/nc_acento"
+        android:textSize="11sp"
+        android:fontFamily="monospace"
+        android:maxLines="1" />
+  </LinearLayout>
+
+  <!--
+    El mensaje de vacío ocupa el sitio de las filas cuando no hay ninguna.
+
+    No es decoración: un widget sin filas y sin texto es un rectángulo vacío en la pantalla
+    de inicio, y quien lo mira no sabe si es que no hay nada o es que la app se rompió.
+  -->
+  <TextView
+      android:id="@+id/lista_vacio"
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1"
+      android:gravity="center"
+      android:textColor="@color/nc_tinta3"
+      android:textSize="13sp"
+      android:maxLines="2"
+      android:ellipsize="end"
+      android:visibility="gone" />
+
+  <!--
+    Las tres filas. El proveedor oculta las que sobran con setViewVisibility.
+
+    Son tres archivos con ids numerados y no tres `include` del mismo layout: un
+    RemoteViews direcciona las vistas **por id global**, así que tres copias con el mismo
+    `fila_titulo` mostrarían las tres el texto de la primera. La cabecera de
+    `widget_fila_1.xml` lo explica entero.
+  -->
+  <include layout="@layout/widget_fila_1" />
+  <include layout="@layout/widget_fila_2" />
+  <include layout="@layout/widget_fila_3" />
+
+  <TextView
+      android:id="@+id/lista_pie"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp"
+      android:textColor="@color/nc_tinta3"
+      android:textSize="11sp"
+      android:maxLines="1"
+      android:ellipsize="end"
+      android:visibility="gone" />
+</LinearLayout>
