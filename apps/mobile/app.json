@@ -13,13 +13,15 @@
     ],
     "android": {
       "package": "net.ourocore.notecore",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b0f18"
       },
       "permissions": [
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.INTERNET",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CAMERA"
       ]
     },
     "plugins": [
@@ -34,7 +36,7 @@
       ],
       "./plugins/with-firma-de-release.js",
       "./plugins/with-dev-cleartext.js",
-      "./plugins/with-sin-permisos-de-almacenamiento.js",
+      "./plugins/with-permisos-declarados.js",
       "./plugins/with-widget-horario.js",
       "./plugins/with-actualizador.js"
     ]

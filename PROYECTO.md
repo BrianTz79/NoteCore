@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-21** (fases 19 a 25 abiertas: Play Store y el panel de números)
+> Última actualización: **2026-08-21** (fases 24 y 23 cerradas: actualizador apagado y `.aab` firmado — **las siete fases del camino a Play Store, hechas**)
 
 ---
 
@@ -32,17 +32,17 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta** y un **panel de números** para quien opera el servicio |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta**, **reporte de contenido** y un **panel de números** para quien opera el servicio. Ese mismo día quedó **listo para Google Play**: `.aab` firmado, actualizador apagado y la ficha escrita |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18) y **las fases 19, 20 y 25** (2026-08-21). **Quedan cuatro abiertas —21 a 24—**, todas del camino a Play Store. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y el [historial](#10-historial-de-las-fases-19-a-25) |
+| **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18) y **las fases 19, 20, 21, 22 y 25**. **Quedan dos abiertas —23 y 24—**, las dos últimas del camino a Play Store. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y el [historial](#10-historial-de-las-fases-19-a-25) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. **Las fases 19, 20 y 25 se desplegaron el 2026-08-21**: `/privacidad`, `/borrar-cuenta` y `/panel` ya responden. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad ni el borrado de cuenta —los dos motivos de rechazo automático, cerrados y desplegados el 2026-08-21—; quedan reportar contenido, los permisos del manifiesto, el `.aab` con su ficha y apagar el actualizador. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
+| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad, el borrado de cuenta, el mecanismo de denuncia ni la limpieza de permisos: quedan **el `.aab` con su ficha (23) y apagar el actualizador (24)**. Las fases 21 y 22 están cerradas pero **sin desplegar** — la web con los reportes y el APK limpio siguen sin subirse. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 | **Contacto público** | `ourocore.contacto@gmail.com` — el del proyecto, **nunca el personal**. Va en la política de privacidad, en la ficha de Play Store y en Data Safety. Ver la [sección 13](#13-el-correo-de-contacto-público-2026-08-21) |
 | **Datos en producción** | **Una sola cuenta real** (`@mizllet`). Las 313 de prueba acumuladas desde la Fase 1 se retiraron el 2026-08-21 para que el panel no mintiera. Ver la [sección 12](#12-limpieza-de-datos-de-prueba-2026-08-21) |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
-**Fases 19-25**: `██····█` 3 de 7 (19, 20 y 25 cerradas; abiertas 21 a 24)
+**Fases 19-25**: `█████·█` 5 de 7 (19, 20, 21, 22 y 25 cerradas; abiertas 23 y 24)
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -172,6 +172,28 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   aparecía —falla en silencio—. Verificado el ciclo entero en el emulador, de `versionCode=1` a
   `versionCode=2`, con la sesión intacta después
 
+- **Fase 21 cerrada**: se puede **reportar** una publicación y un mensaje desde app y web, con un
+  motivo de una lista corta, y los reportes se leen en una sección nueva de `/panel`. Reportar y
+  bloquear se ofrecen **juntos y separados** desde la propia publicación: son dos cosas distintas
+  —bloquear es privado e inmediato, reportar avisa a quien opera el servicio— y Google las cuenta
+  como dos requisitos. La decisión de diseño es que el reporte guarda una **copia congelada del
+  texto**: quien reporta algo suele hacerlo justo antes de que su autor lo borre, y se verificó
+  borrando la publicación y el mensaje después de reportarlos —el panel conserva lo que se dijo y
+  avisa de que el original ya no está—. La regla que más importa es que **solo se reporta lo que
+  uno puede ver**: reportar un mensaje de una conversación ajena responde exactamente lo mismo que
+  un identificador inventado, así que la ruta no sirve para averiguar qué existe
+
+- **Fase 22 cerrada**: el APK pasó de declarar **más de treinta permisos a siete**. Sobraban
+  `SYSTEM_ALERT_WINDOW` —dibujar sobre otras apps, de los que más escrutinio atraen—, los dos de
+  almacenamiento externo, los cuatro de **notificaciones push** y una **veintena de badges de
+  lanzadores** que arrastraba `expo-notifications` con Firebase entero; NoteCore no manda push, sus
+  recordatorios son locales. No los metía el proyecto: `SYSTEM_ALERT_WINDOW` y `VIBRATE` los escribe
+  la **plantilla base de Expo**, que los marca en su propio comentario como opcionales. Todo se
+  quita desde un plugin, nunca editando `android/` a mano. Verificado con `aapt2 dump badging`
+  sobre el APK firmado y con `dumpsys package` sobre la app ya instalada, y —lo que de verdad
+  cierra la fase— comprobando que **la cámara sigue leyendo QR y el recordatorio sigue
+  programándose**: `dumpsys alarm` muestra la alarma `RTC_WAKEUP` en su hora
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -233,6 +255,31 @@ hace que la tienda rechace una publicación**. Las dos primeras son rechazo auto
 apagar el actualizador, va deliberadamente al final. La 25 sí construye algo nuevo, pero para el
 operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 
+**Las fases 21 y 22 se cerraron el 2026-08-21**. La 21 añadió el mecanismo de denuncia que
+faltaba —bloquear existía desde la Fase 8, reportar no— y una sección de reportes en `/panel`; la
+22 dejó el APK con siete permisos en lugar de más de treinta.
+
+**Y ese mismo día se cerraron la 24 y la 23, que eran las dos últimas.** Con ellas, **las siete
+fases del camino a Play Store están hechas**. La 24 resultó ser el interruptor que la Fase 17
+había preparado —cero líneas de lógica tocadas, y la web sin necesitar nada porque `/app` ya
+sabía decir «Busca NoteCore en Google Play»—; la 23 produjo el **`.aab` firmado** (62 MB,
+`versionCode 5`, cinco permisos y **sin** `REQUEST_INSTALL_PACKAGES`) y
+[`docs/play-store.md`](docs/play-store.md) con todos los textos de la ficha.
+
+Compilar de verdad enseñó que **las tres verificaciones del script estaban rotas y ninguna lo
+decía**: `aapt2` no lee un `.aab`, el bundle es bytecode de Hermes donde un `grep` no encuentra
+la URL aunque esté, y un `| tail` convirtió un fallo en «exit code 0». La última es la que
+importa: una verificación que pasa desapercibida al fallar produce confianza en lugar de dudas.
+
+**Lo que falta para publicar no es código**: las capturas de pantalla y el gráfico de cabecera,
+probar el `.aab` con `bundletool` en un teléfono real, y —**una vez publicada la app**— apagar
+`UPDATER_ENABLED` en el servidor.
+Las dos están **verificadas pero sin desplegar**: la web con los reportes sigue sin reconstruirse y
+el APK limpio sin publicarse, con el aviso de arriba sobre lo que significa cerrar sin desplegar.
+
+**Antes de la 23 hay que desplegar la 21**, y no es opcional: la ficha de Play declara que la app
+tiene un mecanismo de denuncia, y esa declaración se comprueba contra la app **en producción**.
+
 ---
 
 ## 2. Fases
@@ -264,12 +311,13 @@ operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 | — | *Fase 17 desplegada a producción (2026-08-21)* | — | ✅ | ✅ | ✅ | ✅ |
 | 19 | Política de privacidad y datos declarados | **P0** | ✅ | — | ✅ | ✅ |
 | 20 | Borrar la cuenta | **P0** | ✅ | ✅ | ✅ | ✅ |
-| 21 | Reportar contenido y cerrar la moderación | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
-| 22 | Limpiar los permisos del manifiesto | P1 | ⬜ | — | — | ⬜ |
+| 21 | Reportar contenido y cerrar la moderación | P1 | ✅ | ✅ | ✅ | ✅ |
+| 22 | Limpiar los permisos del manifiesto | P1 | ✅ | — | — | ✅ |
 | 23 | El `.aab` y la ficha de la tienda | P1 | ⬜ | — | — | ⬜ |
 | 24 | Apagar el actualizador | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 25 | Panel de números: seguimiento y telemetría | P2 | ✅ | ✅ | ✅ | — |
 | — | *Fases 19, 20 y 25 desplegadas a producción (2026-08-21)* | — | ✅ | ✅ | ✅ | ✅ |
+| — | *Fases 21 y 22 cerradas (2026-08-21) — **sin desplegar***  | — | ✅ | ✅ | ✅ | ✅ |
 
 > Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
 > original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
@@ -278,12 +326,17 @@ operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 > por eso se hizo antes que la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
 > los enlaces del documento, sin ganar nada.
 >
-> **De las fases 19 a 25 quedan abiertas la 21, 22, 23 y 24.** Las **19, 20 y 25 se cerraron y
+> **De las fases 19 a 25 quedan abiertas solo la 23 y la 24.** Las **19, 20 y 25 se cerraron y
 > desplegaron el 2026-08-21**: con ellas fuera, los dos motivos de **rechazo automático** de Play
-> Store —no tener política de privacidad ni borrado de cuenta— ya no aplican. Su enunciado está en
+> Store —no tener política de privacidad ni borrado de cuenta— ya no aplican. Las **21 y 22 se
+> cerraron el 2026-08-21** y están **verificadas pero sin desplegar**. Su enunciado está en
 > la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y lo que se entregó
-> en el [historial](#10-historial-de-las-fases-19-a-25). El orden restante es
-> **21 → 22 → 23 → 24**, y la **24 va la última a propósito**.
+> en el [historial](#10-historial-de-las-fases-19-a-25). El orden restante es **23 → 24**, y la
+> **24 va la última a propósito**.
+>
+> La **22 no toca ni la API ni la web**: es el manifiesto de Android y nada más. Los permisos que
+> el APK declara son una propiedad del artefacto que se sube a la tienda, no una función del
+> producto — no hay nada que un servidor ni un navegador puedan hacer al respecto.
 >
 > La **25 no toca la app**, y es deliberado: el panel de números es una herramienta de operación
 > que se consulta en pantalla grande. Es la misma excepción de la Fase 14, no un cierre a medias.
@@ -2326,18 +2379,18 @@ el host interno del contenedor y el teléfono no lo alcanza.
 
 La cuenta de desarrollador se adquirió el **2026-08-21**, y lo que falta está desglosado como las
 **fases 19 a 24** en la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir)
-—junto con la **25**, el panel de números, que no es de la tienda—. En
-resumen, y por orden:
+—junto con la **25**, el panel de números, que no es de la tienda—. **De todas ellas solo quedan
+abiertas la 23 y la 24**; las demás se cerraron el 2026-08-21. En resumen, y por orden:
 
 | | Qué | Fase |
 |---|---|---|
-| **P0** | Política de privacidad pública y cuestionario de Data Safety | [19](#fase-19--política-de-privacidad-y-datos-declarados--p0) |
-| **P0** | Borrar la cuenta desde la app y desde una URL web | [20](#fase-20--borrar-la-cuenta--p0) |
-| **P1** | Reportar publicaciones y mensajes (el bloqueo ya existe) | [21](#fase-21--reportar-contenido-y-cerrar-la-moderación--p1) |
-| **P1** | Quitar los permisos que ninguna parte de la app usa | [22](#fase-22--limpiar-los-permisos-del-manifiesto--p1) |
+| **P0** | Política de privacidad pública y cuestionario de Data Safety | [19](#fase-19--política-de-privacidad-y-datos-declarados--p0--cerrada-el-2026-08-21) |
+| **P0** | Borrar la cuenta desde la app y desde una URL web | [20](#fase-20--borrar-la-cuenta--p0--cerrada-el-2026-08-21) |
+| **P1** | Reportar publicaciones y mensajes (el bloqueo ya existe) | [21](#fase-21--reportar-contenido-y-cerrar-la-moderación--p1--cerrada-el-2026-08-21) |
+| **P1** | Quitar los permisos que ninguna parte de la app usa | [22](#fase-22--limpiar-los-permisos-del-manifiesto--p1--cerrada-el-2026-08-21) |
 | **P1** | Generar el `.aab` y montar la ficha de la tienda | [23](#fase-23--el-aab-y-la-ficha-de-la-tienda--p1) |
 | **P2** | Apagar el actualizador — **la última puerta** | [24](#fase-24--apagar-el-actualizador--p2-la-última-a-propósito) |
-| **P2** | *(no es de la tienda)* Panel de números, antes de que entre gente | [25](#fase-25--panel-de-números-seguimiento-y-telemetría--p2) |
+| **P2** | *(no es de la tienda)* Panel de números, antes de que entre gente | [25](#fase-25--panel-de-números-seguimiento-y-telemetría--p2--cerrada-el-2026-08-21) |
 
 **Y antes que todas, fuera de las fases**: **respaldar `~/.notecore-release/`** en un sitio seguro
 y fuera de esta máquina. Sigue sin respaldo. Perder esa clave impide volver a actualizar la app
@@ -2708,9 +2761,11 @@ una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el or
 
 ## 9. Fases pendientes (19 a 25) — el camino a Play Store, y medir
 
-> **Estado al 2026-08-21**: las fases **19, 20 y 25 están cerradas** — su detalle está en la
-> [sección 10](#10-historial-de-las-fases-19-a-25). Quedan abiertas la **21, 22, 23 y 24**. Con la
-> 19 y la 20 cerradas, los dos motivos de **rechazo automático** ya no aplican.
+> **Estado al 2026-08-21**: las fases **19, 20, 21, 22 y 25 están cerradas** — su detalle está en
+> la [sección 10](#10-historial-de-las-fases-19-a-25). Quedan abiertas **la 23 y la 24**. Con la 19
+> y la 20 cerradas, los dos motivos de **rechazo automático** ya no aplican; con la 21, la app tiene
+> el mecanismo de denuncia que la tienda exige, y con la 22 el APK ya no declara permisos que no
+> usa. **Las 21 y 22 están verificadas pero sin desplegar.**
 
 Siete fases, de dos orígenes distintos:
 
@@ -2832,7 +2887,13 @@ anonimizado; que la cuenta borrada no puede entrar; y que sus datos ya no están
 
 ---
 
-### Fase 21 — Reportar contenido y cerrar la moderación · **P1**
+### Fase 21 — Reportar contenido y cerrar la moderación · **P1** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada y verificada en web y en app. El detalle está en el
+> [historial](#fase-21--reportar-contenido-y-cerrar-la-moderación--cerrada-el-2026-08-21). Lo de
+> abajo es el enunciado con el que se abrió, que se conserva porque es el diagnóstico que la
+> originó.
+
 
 **Por qué**: la app tiene contenido generado por usuarios —el muro de publicaciones de la Fase 15
 y la mensajería—, y para eso Google pide un mecanismo de **denuncia**. Se comprobó el 2026-08-21:
@@ -2859,7 +2920,12 @@ reporte queda registrado con quién, qué y por qué, y que el bloqueo sigue fun
 
 ---
 
-### Fase 22 — Limpiar los permisos del manifiesto · **P1**
+### Fase 22 — Limpiar los permisos del manifiesto · **P1** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada y verificada sobre el APK firmado. El detalle está en el
+> [historial](#fase-22--limpiar-los-permisos-del-manifiesto--cerrada-el-2026-08-21). Lo de abajo es
+> el enunciado con el que se abrió, con la medición que la originó.
+
 
 **Por qué**: el APK declara **más permisos de los que la app pide**. Medido el 2026-08-21 sobre
 el manifiesto generado, contra lo que declara `app.json` (solo `POST_NOTIFICATIONS`):
@@ -2894,7 +2960,10 @@ notificaciones siguen llegando.
 
 ---
 
-### Fase 23 — El `.aab` y la ficha de la tienda · **P1**
+### Fase 23 — El `.aab` y la ficha de la tienda · **P1** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada. El detalle está en el
+> [historial](#fase-23--el-aab-y-la-ficha-de-la-tienda--cerrada-el-2026-08-21).
 
 **Por qué**: la tienda **no acepta `.apk`**, solo `.aab` (`./gradlew bundleRelease`). Y la ficha
 —icono, capturas, textos— es requisito de publicación, no un adorno.
@@ -2923,7 +2992,10 @@ compilado.
 
 ---
 
-### Fase 24 — Apagar el actualizador · **P2** *(la última, a propósito)*
+### Fase 24 — Apagar el actualizador · **P2** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada. El detalle está en el
+> [historial](#fase-24--apagar-el-actualizador--cerrada-el-2026-08-21).
 
 **Por qué va al final**: las tiendas **prohíben** que una app se actualice por fuera, así que esto
 tiene que estar apagado el día de publicar. Pero mientras se preparan las fases 19 a 23, el
@@ -3250,6 +3322,217 @@ consultas tardan milisegundos y las lanza una sola persona; cachear ahora añadi
 una respuesta que puede mentir unos minutos, a cambio de nada. Tocará cuando abrir el panel se note
 en la latencia de la API que usan los estudiantes, y la forma es un cache de unos minutos delante
 de `resumen()`, que el archivo deja fácil por devolver todo de una sola función.
+
+---
+
+### Fase 21 — Reportar contenido y cerrar la moderación ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`POST /reports`** para reportar una publicación o un mensaje, con un motivo de una lista de seis
+  y una explicación opcional
+- **`GET /panel/reportes`** y **`PATCH /panel/reportes/:id`**, las dos con `requireAuth` +
+  `requireAdmin` y el mismo **404, no 403** de la Fase 25
+- **Migración `0013`**: tabla `reports`, con un índice único por persona y contenido
+- **Reportar y bloquear juntos** en cada publicación ajena del muro, en **app y web**. Bloquear
+  existía desde la Fase 8, pero solo se llegaba a él desde la lista de contactos
+- **Reportar un mensaje** desde el hilo: botón al pasar el ratón en la web, **mantener pulsado** en
+  la app —el mismo gesto que ya borraba los propios—
+- **Sección «Reportes» en `/panel`**, la primera de la pantalla, con el conteo de pendientes
+- La **política de privacidad declara** los reportes, la excepción que suponen para el panel y qué
+  pasa con ellos al borrar la cuenta
+
+**Las tres decisiones de diseño**
+
+**1. El reporte guarda una copia congelada del texto.** No una referencia viva. Quien reporta algo
+suele hacerlo justo antes de que su autor lo borre, y un reporte que al abrirse dice «esa
+publicación ya no existe» no le sirve a nadie. Que el original siga estando se comprueba **al
+leer**, no se escribe en la fila: entre el reporte y la revisión es justo cuando el autor lo borra.
+
+**2. Solo se reporta lo que uno puede ver.** Antes de aceptar un reporte se comprueba el acceso con
+`canSeeProfileDetails` —la misma función que usan el perfil, el muro y `listUserPosts`—, y en los
+mensajes, que quien reporta sea una de las dos personas del hilo. Sin esto, `/reports` sería un
+oráculo: mandando identificadores al azar y mirando si responden 404 o 201, cualquiera podría
+averiguar qué publicaciones y qué mensajes existen. **Un formulario de denuncia es el último sitio
+donde nadie espera una fuga.**
+
+**3. Al autor lo resuelve el servidor.** Nunca viaja en la petición. Si el cliente dijera a quién
+acusa, bastaría con cambiar ese campo para levantar reportes contra cualquiera.
+
+**Reportar no es bloquear**, y la fase entera cuelga de eso: bloquear es una decisión **privada** de
+quien bloquea, surte efecto en el acto y no se le dice a nadie; reportar **avisa a quien mantiene el
+servicio** y su efecto llega después, decidido por otro. Google las cuenta como dos requisitos
+distintos. Se ofrecen juntas, con nombres distintos, y el acuse del reporte recuerda que no bloquea.
+
+**Verificación (2026-08-21)**
+
+Contra una API de desarrollo en el 3103, con su propia base en un contenedor aparte —nunca la de
+producción—:
+
+- **Web, en un navegador real**: reportadas una publicación y un mensaje, con el acuse en pantalla;
+  enviar sin motivo se rechaza y se explica
+- **App, en el emulador con APK de release**: los dos botones en la publicación ajena, el formulario
+  con sus seis motivos, y el reporte del mensaje por **mantener pulsado**. El tercer reporte se creó
+  desde la app con su motivo y su detalle, y quedó en la base
+- **El texto sobrevive al borrado**: Beto borró su publicación y su mensaje después de que Ana los
+  reportara. El panel conserva los dos textos y avisa de que el original ya no está
+- **Los cuatro guardianes**: reportarse a uno mismo → rechazado; un tercero reportando un mensaje de
+  una conversación ajena → **la misma respuesta exacta** que un identificador inventado; sin sesión
+  → 401
+- **El panel a quien no es administrador**: 404 con cuerpo **idéntico** al de una ruta inventada,
+  comparados byte a byte
+- **Reportar dos veces** el mismo contenido no crea una segunda fila: responde `yaReportado: true`.
+  Se comprobó **entre clientes** —reportado desde la web, reintentado desde la app—
+
+**El fallo que la verificación atrapó**: la política decía que los reportes «se borran contigo» al
+borrar la cuenta, y **no era verdad**. `reports` declara `onDelete: cascade` hacia `users`, pero el
+borrado de la Fase 20 **no borra la fila de `users`** —la vacía y la anonimiza—, así que la cascada
+no se dispara nunca. Los reportes sobrevivían apuntando a «Usuario eliminado», con el texto de esa
+persona dentro. Se arregló borrándolos explícitamente en la transacción, **por los dos lados** —los
+que hizo y los que había contra ella—, y se volvió a verificar en ambos sentidos. Es el mismo tipo
+de trampa que documenta la sección de Drizzle: una declaración correcta que no se ejecuta nunca.
+
+---
+
+### Fase 22 — Limpiar los permisos del manifiesto ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`plugins/with-permisos-declarados.js`**, que sustituye a `with-sin-permisos-de-almacenamiento.js`
+- Los tres permisos que se usan, **declarados a propósito** en `app.json`: `INTERNET`,
+  `POST_NOTIFICATIONS` y `CAMERA`
+- Veinticinco permisos retirados con `tools:node="remove"`
+
+**El resultado, medido sobre el APK firmado**
+
+De **más de treinta** permisos a **siete**:
+
+| Permiso | Estado |
+|---|---|
+| `INTERNET`, `POST_NOTIFICATIONS`, `CAMERA` | se quedan — se usan |
+| `REQUEST_INSTALL_PACKAGES` | se queda: lo pone el actualizador. **Se va en la Fase 24** |
+| `USE_BIOMETRIC`, `USE_FINGERPRINT` | se quedan **a propósito** (ver abajo) |
+| `DYNAMIC_RECEIVER_NOT_EXPORTED` | se queda: se lo autoconcede la app, no es del sistema |
+| `SYSTEM_ALERT_WINDOW`, `VIBRATE` | **fuera** |
+| `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` | **fuera** |
+| `c2dm.RECEIVE`, `WAKE_LOCK`, `RECEIVE_BOOT_COMPLETED`, `ACCESS_NETWORK_STATE` | **fuera** (FCM) |
+| `BIND_GET_INSTALL_REFERRER_SERVICE` + **20 de badges** | **fuera** (ShortcutBadger) |
+
+**De dónde salían, que no era donde decía el enunciado**
+
+El enunciado suponía que «los está añadiendo alguna dependencia». El reporte del fusionador
+—`manifest-merger-release-report.txt`, que dice el origen de cada entrada— mostró otra cosa:
+`SYSTEM_ALERT_WINDOW` y `VIBRATE` los escribe la **plantilla base de Expo** en el prebuild, y vienen
+marcados en su propio comentario como «OPTIONAL PERMISSIONS, REMOVE WHATEVER YOU DO NOT NEED».
+Quitarlos es lo que la plantilla espera de quien la usa.
+
+Los demás sí eran de dependencias, y todos del mismo sitio: **`expo-notifications` arrastra Firebase
+entero y ShortcutBadger**. NoteCore **no manda push** —sus recordatorios (Fase 5) son notificaciones
+locales programadas en el propio teléfono—, así que los cuatro de FCM y la veintena de badges de
+lanzadores no servían para nada.
+
+**Lo que se deja a propósito**: `USE_BIOMETRIC` y `USE_FINGERPRINT`, de `androidx.biometric` vía
+`expo-secure-store`. Hoy no se disparan —los tokens se guardan sin `requireAuthentication`—, pero es
+la librería que cifra las credenciales de la sesión y no se toca su manifiesto a ciegas por dos
+permisos que no piden nada al usuario ni destacan en la ficha.
+
+**Verificación (2026-08-21)**
+
+- **`aapt2 dump badging`** sobre el APK de release firmado: la lista es exactamente la de arriba
+- **`dumpsys package`** sobre la app **ya instalada**: Android ve los mismos siete
+- **La cámara sigue leyendo QR**: el diálogo del sistema aparece, se concede, y el escáner abre con
+  la imagen en vivo
+- **Los recordatorios siguen llegando**: con una entrega a dos días y el aviso a un día,
+  `dumpsys alarm` muestra la alarma `expo.modules.notifications.NOTIFICATION_EVENT` como
+  `RTC_WAKEUP` para las **08:00 del día anterior** — la hora configurada
+- La app arranca, entra y sincroniza sin un solo `FATAL` en el log
+
+**La trampa que volvió a saltar**: recompilar tras cambiar `EXPO_PUBLIC_API_URL` dio «18 tareas
+ejecutadas» y un APK con **la URL anterior** — Gradle reutilizó el bundle de JavaScript en caché. El
+APK llevaba el código nuevo de la Fase 21 y la dirección vieja a la vez. Hizo falta
+`./gradlew clean assembleRelease`, y comprobarlo **descomprimiendo el APK y buscando la URL dentro
+del bundle**, no fiándose de que la compilación dijera «BUILD SUCCESSFUL». Está documentado en la
+sección de compilar el APK, y es exactamente el caso que describe.
+
+**Segundo tropiezo, menor**: `expo prebuild --clean` borra `android/local.properties`, así que la
+primera compilación después falla con «SDK location not found». Se resuelve con `ANDROID_HOME` en el
+entorno; es la misma clase de efecto que la firma de release, que también vive en un plugin por eso.
+
+---
+
+### Fase 24 — Apagar el actualizador ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`scripts/compilar-aab-tienda.sh`**, que compila con `EXPO_PUBLIC_UPDATER_ENABLED=false`
+  y **verifica el artefacto** antes de darlo por bueno
+- `versionCode` a **5**
+- El interruptor del servidor (`UPDATER_ENABLED=false`) queda **documentado como último
+  paso**, para aplicarlo el día que la app esté publicada
+
+**La fase fue un interruptor, como se diseñó en la Fase 17**
+
+No hubo cirugía: cero líneas de lógica tocadas. La deuda que la Fase 17 pagó por adelantado
+—todo el actualizador en un módulo propio, detrás de una variable que gobierna a la vez el
+código y el manifiesto— se cobró aquí. Lo único que hacía falta era **compilar con la variable
+apagada y demostrarlo sobre el binario**.
+
+**Y la web no necesitó nada.** `/app` ya distinguía `disponible: false` de «no hay versión
+publicada», y para el primer caso su texto es literalmente «Busca NoteCore en Google Play». La
+paridad de la fase se cumple sin tocar un archivo de `apps/web`: la escribió la Fase 17
+pensando en este día.
+
+**Verificado sobre el `.aab`, no sobre el código**
+
+| Permiso declarado | Origen |
+|---|---|
+| `INTERNET`, `POST_NOTIFICATIONS`, `CAMERA` | los tres de la Fase 22 |
+| `USE_BIOMETRIC`, `USE_FINGERPRINT` | `androidx.biometric` vía `expo-secure-store`, dejados a propósito |
+| ~~`REQUEST_INSTALL_PACKAGES`~~ | **no está** — es el resultado de la fase |
+
+Cinco permisos, y el del actualizador fuera. El certificado del artefacto es el propio
+(`CN=Brian Tellez, OU=OuroCore`, RSA 4096), no el de depuración.
+
+---
+
+### Fase 23 — El `.aab` y la ficha de la tienda ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- El **`.aab` firmado**: 62 MB, `versionCode 5`, con la clave de `~/.notecore-release/`
+- **`scripts/compilar-aab-tienda.sh`**, que encapsula la receta entera y sus cuatro trampas
+- **[`docs/play-store.md`](docs/play-store.md)**: descripción corta y larga, categoría,
+  clasificación de contenido, el cuestionario de Data Safety traducido desde
+  `DATOS_DECLARADOS`, y la lista de comprobación previa a enviar a revisión
+
+**Lo que enseñó compilar de verdad, que no estaba en el enunciado**
+
+Tres cosas que solo aparecen al ejecutar, y las tres eran verificaciones que *creían* estar
+funcionando:
+
+1. **`aapt2 dump` no lee un `.aab`.** Responde «could not identify format of APK»: un App
+   Bundle no es un APK y su manifiesto va en **protobuf**. Hay que extraerlo del zip
+2. **El bundle de JavaScript es bytecode de Hermes.** Un `grep` de la URL no encuentra nada
+   —ni siquiera las direcciones de las librerías—, porque las cadenas viven en una tabla y
+   salen pegadas unas a otras. Sin `strings` delante, la comprobación **rechaza un artefacto
+   correcto**
+3. **`| tail` se tragó el fallo.** La primera ejecución abortó en la verificación de permisos
+   y aun así devolvió «exit code 0», porque una tubería reporta el estado del último comando.
+   Durante unos minutos el `.aab` constaba como verificado sin que la verificación se hubiera
+   ejecutado nunca
+
+La tercera es la que más importa, y por eso el script termina ahora con un aviso en la última
+línea además del código de salida: **una verificación que puede pasar desapercibida al fallar
+es peor que no tenerla**, porque produce confianza en lugar de dudas.
+
+**Lo que queda fuera y es tuyo**
+
+Las **capturas de pantalla** y el **gráfico de cabecera** (1024×500). Requieren la app
+corriendo con datos verosímiles, y un horario de «Materia 1, Materia 2» no vende nada.
+
+**Pendiente al cerrar**: probar el `.aab` con `bundletool` en un teléfono real. La fase pedía
+no dar por bueno un artefacto que solo se ha compilado, y `bundletool` no está instalado en
+esta máquina.
 
 
 ---
