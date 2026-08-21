@@ -255,3 +255,23 @@ export const BORRADO_EXPLICADO: readonly string[] = [
   'Los reportes que enviaste se borran contigo, y también los que otros hubieran hecho sobre tu contenido: si tus datos ya no están, no queda nada que revisar.',
   'El borrado es inmediato e irreversible. No hay periodo de gracia ni forma de recuperar la cuenta después.',
 ];
+
+/**
+ * Borrar datos sueltos sin borrar la cuenta.
+ *
+ * Google pregunta esto aparte del borrado de cuenta, y son cosas distintas: una es irse, la
+ * otra es quitar algo concreto y seguir usando la app. NoteCore siempre permitió lo segundo
+ * —cada dato tiene su borrado desde la fase en que se creó—, pero no estaba dicho en ningún
+ * sitio, y una capacidad que no se explica no cuenta como ofrecida.
+ *
+ * Cada línea corresponde a un `DELETE` real de la API, no a una intención: si algo de aquí
+ * deja de existir, esta lista miente y hay que corregirla.
+ */
+export const BORRADO_PARCIAL_EXPLICADO: readonly string[] = [
+  'Una materia y su horario: en Horario, abre la materia y bórrala. Se van con ella sus sesiones y las faltas que tuviera asociadas.',
+  'Una falta suelta: en Faltas, abre el día y quita la que registraste por error. El conteo se recalcula solo.',
+  'Una tarea, examen o actividad: en Agenda, abre la actividad y bórrala.',
+  'Una publicación tuya: en tu perfil, abre la publicación y bórrala.',
+  'Un mensaje que enviaste: mantén pulsado el mensaje y bórralo. El texto se vacía para ambos lados de la conversación.',
+  'Los datos opcionales de tu perfil —biografía, carrera, escuela, edad— se pueden vaciar en cualquier momento desde «Mi cuenta»: quedan en blanco y dejan de guardarse.',
+];

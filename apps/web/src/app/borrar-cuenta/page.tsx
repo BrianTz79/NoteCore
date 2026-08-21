@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { BORRADO_EXPLICADO, PRIVACIDAD_CONTACTO } from '@notecore/shared';
+import {
+  BORRADO_EXPLICADO,
+  BORRADO_PARCIAL_EXPLICADO,
+  PRIVACIDAD_CONTACTO,
+} from '@notecore/shared';
 
 /**
  * Cómo borrar la cuenta, sin necesidad de tener la app (Fase 20).
@@ -80,7 +84,9 @@ export default function BorrarCuentaPage() {
         </section>
 
         <section className="space-y-nc-sm">
-          <h2 className="text-xl font-medium text-tinta">Qué se borra exactamente</h2>
+          <h2 className="text-xl font-medium text-tinta">
+            Qué se borra al eliminar la cuenta
+          </h2>
           <ul className="space-y-nc-xs text-tinta2">
             {BORRADO_EXPLICADO.map((linea) => (
               <li key={linea} className="flex gap-nc-xs">
@@ -91,6 +97,43 @@ export default function BorrarCuentaPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        {/*
+          Va después del borrado total y antes del aviso rojo porque es la salida menos
+          drástica: quien llegó aquí buscando quitar una cosa concreta —no irse— encuentra
+          que puede hacerlo sin borrar la cuenta, justo antes de leer que lo otro no tiene
+          vuelta atrás. Google lo pregunta aparte, y sin esta sección la respuesta «sí» de
+          la ficha no estaría respaldada por nada visible.
+        */}
+        <section className="space-y-nc-sm">
+          <h2 className="text-xl font-medium text-tinta">
+            Borrar solo una parte, sin borrar la cuenta
+          </h2>
+          <p className="text-tinta2">
+            No hace falta irte para quitar algo. Cada dato se borra por su cuenta, desde la app
+            o desde la web, y el borrado es inmediato en ambos sitios:
+          </p>
+          <ul className="space-y-nc-xs text-tinta2">
+            {BORRADO_PARCIAL_EXPLICADO.map((linea) => (
+              <li key={linea} className="flex gap-nc-xs">
+                <span aria-hidden className="text-tinta3">
+                  ·
+                </span>
+                <span>{linea}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-tinta2">
+            Si prefieres que lo hagamos por ti, escribe a{' '}
+            <a
+              href={`mailto:${PRIVACIDAD_CONTACTO}?subject=Borrar%20datos%20de%20mi%20cuenta%20de%20NoteCore`}
+              className="text-acento underline underline-offset-2"
+            >
+              {PRIVACIDAD_CONTACTO}
+            </a>{' '}
+            desde el correo con el que te registraste, diciendo qué datos quieres que se borren.
+          </p>
         </section>
 
         {/*
