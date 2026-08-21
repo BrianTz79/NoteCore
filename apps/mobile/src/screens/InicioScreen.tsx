@@ -1,25 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CACHE_KEYS,
   describeUpcoming,
-  formatDateTime,
   nextClass,
   pendingSummary,
   remainingToday,
-  toFormErrors,
   toScheduleEntries,
   unreadSummary,
-  updateProfileSchema,
   type AgendaList,
   type AttendanceSummary,
-  type FormErrors,
-  type SessionInfo,
   type Subject,
   type UnreadSummary,
   type UpcomingClass,
 } from '@notecore/shared';
-import { agendaApi, attendanceApi, authApi, messagingApi, scheduleApi } from '../lib/api';
+import { agendaApi, attendanceApi, messagingApi, scheduleApi } from '../lib/api';
 import { actualizarWidget } from '../lib/widget';
 import { useAuth } from '../lib/auth-context';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
@@ -27,8 +22,6 @@ import {
   Button,
   Card,
   EmptyState,
-  Field,
-  FormError,
   RADIUS,
   RULE,
   SPACE,
@@ -36,7 +29,6 @@ import {
   Tag,
   base,
   c,
-  colors,
   fuente,
 } from '../components/ui';
 import { SyncIndicator, SyncQueuePanel } from '../components/sync-indicator';
@@ -54,8 +46,10 @@ import { AvisoDeActualizacion } from '../components/aviso-actualizacion';
  * entre sí que antes—: arriba **qué clase toca**, luego solo lo que exige atención, y al
  * final la navegación en rejilla.
  *
- * El perfil y los dispositivos siguen aquí, al fondo, porque no tienen pantalla propia en la
- * app y quitarlos sería perder funcionalidad —no es lo que pide una pasada de diseño—.
+ * El perfil y los dispositivos **ya no están aquí**: la Fase 11 los dejó al fondo porque no
+ * tenían pantalla propia, y ahora la tienen en `AjustesScreen`. Eran dos formularios que casi
+ * nunca se tocan ocupando el final de la pantalla que más se abre. El inicio termina ahora en
+ * la rejilla de navegación, y «Ajustes» es uno de sus destinos.
  */
 export function InicioScreen({
   onIrAHorario,
@@ -66,6 +60,7 @@ export function InicioScreen({
   onIrASemestres,
   onIrASocial,
   onIrAMensajes,
+  onIrAAjustes,
 }: {
   onIrAHorario: () => void;
   onIrAFaltas: () => void;
@@ -75,8 +70,9 @@ export function InicioScreen({
   onIrASemestres: () => void;
   onIrASocial: () => void;
   onIrAMensajes: () => void;
+  onIrAAjustes: () => void;
 }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const sync = useSyncActions();
   const [resumen, setResumen] = useState<Resumen | null>(null);
 
@@ -178,13 +174,9 @@ export function InicioScreen({
           { nombre: 'Periodos', nota: 'Semestres y archivo', ir: onIrASemestres },
           { nombre: 'Contactos', nota: 'Perfil y compañeros', ir: onIrASocial },
           { nombre: 'Mensajes', nota: 'Con tus contactos', ir: onIrAMensajes },
+          { nombre: 'Ajustes', nota: 'Cuenta y dispositivos', ir: onIrAAjustes },
         ]}
       />
-
-      <DatosDelPerfil />
-      <Dispositivos />
-
-      <Button title="Cerrar sesión" variant="secondary" onPress={() => void logout()} />
     </ScrollView>
   );
 }
@@ -464,130 +456,6 @@ function Sincronizacion() {
   );
 }
 
-function DatosDelPerfil() {
-  const { user, updateProfile } = useAuth();
-
-  const [values, setValues] = useState({
-    displayName: user?.displayName ?? '',
-    username: user?.username ?? '',
-  });
-  const [errors, setErrors] = useState<FormErrors>({ fields: {} });
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  async function onSubmit() {
-    setSaving(true);
-    setErrors({ fields: {} });
-    setSaved(false);
-
-    const parsed = updateProfileSchema.safeParse(values);
-    if (!parsed.success) {
-      const fields: Record<string, string> = {};
-      for (const issue of parsed.error.issues) fields[issue.path.join('.')] = issue.message;
-      setErrors({ fields });
-      setSaving(false);
-      return;
-    }
-
-    try {
-      await updateProfile(parsed.data);
-      setSaved(true);
-    } catch (error) {
-      setErrors(toFormErrors(error));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Card title="Nombre y usuario">
-      <FormError message={errors.general} />
-
-      <Field
-        label="Tu nombre"
-        value={values.displayName}
-        onChangeText={(displayName) => setValues((valores) => ({ ...valores, displayName }))}
-        error={errors.fields.displayName}
-      />
-
-      <Field
-        label="Nombre de usuario"
-        value={values.username}
-        onChangeText={(username) => setValues((valores) => ({ ...valores, username }))}
-        error={errors.fields.username}
-        autoCapitalize="none"
-      />
-
-      <Button title="Guardar cambios" onPress={() => void onSubmit()} loading={saving} />
-      {saved ? <Text style={styles.ok}>Guardado</Text> : null}
-    </Card>
-  );
-}
-
-/** Sesiones abiertas: la de este teléfono y la del navegador, a la vez (FR-002). */
-function Dispositivos() {
-  const [sessions, setSessions] = useState<readonly SessionInfo[]>([]);
-  const [error, setError] = useState<string>();
-  const [loading, setLoading] = useState(true);
-
-  const load = useCallback(async () => {
-    try {
-      setSessions(await authApi.sessions());
-      setError(undefined);
-    } catch (caught) {
-      setError(toFormErrors(caught).general);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function revoke(id: string) {
-    try {
-      await authApi.revokeSession(id);
-      await load();
-    } catch (caught) {
-      setError(toFormErrors(caught).general);
-    }
-  }
-
-  return (
-    <Card title="Tus dispositivos">
-      <FormError message={error} />
-
-      {loading ? (
-        <Text style={base.tenue}>Cargando…</Text>
-      ) : (
-        sessions.map((session) => (
-          <View key={session.id} style={styles.sessionRow}>
-            <View style={styles.sessionInfo}>
-              <Text style={base.cuerpo}>
-                {session.client === 'mobile' ? 'App Android' : 'Navegador web'}
-                {session.isCurrent ? ' · este dispositivo' : ''}
-              </Text>
-              <Text style={base.tenue}>
-                Última actividad: {formatDateTime(session.lastUsedAt)}
-              </Text>
-            </View>
-            {session.isCurrent ? null : (
-              <Button
-                title="Cerrar"
-                variant="danger"
-                size="sm"
-                compacto
-                onPress={() => void revoke(session.id)}
-              />
-            )}
-          </View>
-        ))
-      )}
-    </Card>
-  );
-}
-
 const styles = StyleSheet.create({
   content: {
     paddingHorizontal: SPACE.md,
@@ -686,15 +554,4 @@ const styles = StyleSheet.create({
   destinoNota: { fontFamily: fuente.cuerpo, fontSize: TEXT.xs, color: c.tinta3 },
 
   /* ---- Perfil y dispositivos ---- */
-  ok: { color: c.exito, fontFamily: fuente.cuerpo, fontSize: TEXT.md },
-  sessionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACE.sm,
-    borderTopColor: colors.borde,
-    borderTopWidth: RULE,
-    paddingTop: SPACE.sm,
-  },
-  sessionInfo: { flex: 1, gap: 2 },
 });

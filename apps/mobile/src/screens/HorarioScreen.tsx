@@ -255,36 +255,6 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
         </View>
       )}
 
-      {/*
-        Atajo para colocar los widgets (FR-051, Fase 16). Va aquí, en la pantalla del
-        horario, porque es donde el estudiante ya está mirando sus clases y donde «tenerlas
-        en la pantalla de inicio» es una idea que viene sola. Quien confirma es Android,
-        con su diálogo.
-
-        Desde la Fase 16 son cuatro y no uno, así que se listan con su nombre y lo que
-        muestra cada uno: un botón único llamado «Añadir el widget» ya no diría cuál, y
-        elegir a ciegas entre cuatro es peor que no poder elegir.
-      */}
-      {sePuedeFijar && entries.length > 0 ? (
-        <Card title="Widgets para tu pantalla de inicio">
-          {CLASES_DE_WIDGET.map((clase) => (
-            <View key={clase} style={styles.widgetRow}>
-              <View style={styles.widgetInfo}>
-                <Text style={styles.body}>{WIDGETS[clase].nombre}</Text>
-                <Text style={styles.muted}>{WIDGETS[clase].descripcion}</Text>
-              </View>
-              <Button
-                title="Añadir"
-                variant="secondary"
-                onPress={() => {
-                  void fijarWidget(clase);
-                }}
-              />
-            </View>
-          ))}
-        </Card>
-      ) : null}
-
       {loading ? (
         <Text style={styles.muted}>Cargando tu horario…</Text>
       ) : entries.length === 0 ? (
@@ -349,6 +319,37 @@ export function HorarioScreen({ onVolver }: { onVolver: () => void }) {
           </Card>
         </>
       )}
+
+      {/*
+        Atajo para colocar los widgets (FR-051, Fase 16). Va al final de la pantalla, después
+        del horario y de las materias, y eso es deliberado: quien entra a «Mi horario» viene a
+        ver sus clases, no a configurar la pantalla de inicio del teléfono. Cuando el panel
+        iba arriba, empujaba la rejilla fuera de la vista y había que desplazarse para ver lo
+        que se venía a ver. Aquí lo encuentra quien lo busca, sin estorbar a quien no.
+
+        Desde la Fase 16 son cuatro y no uno, así que se listan con su nombre y lo que
+        muestra cada uno: un botón único llamado «Añadir el widget» ya no diría cuál, y
+        elegir a ciegas entre cuatro es peor que no poder elegir.
+      */}
+      {sePuedeFijar && entries.length > 0 ? (
+        <Card title="Widgets para tu pantalla de inicio">
+          {CLASES_DE_WIDGET.map((clase) => (
+            <View key={clase} style={styles.widgetRow}>
+              <View style={styles.widgetInfo}>
+                <Text style={styles.body}>{WIDGETS[clase].nombre}</Text>
+                <Text style={styles.muted}>{WIDGETS[clase].descripcion}</Text>
+              </View>
+              <Button
+                title="Añadir"
+                variant="secondary"
+                onPress={() => {
+                  void fijarWidget(clase);
+                }}
+              />
+            </View>
+          ))}
+        </Card>
+      ) : null}
 
       <Button title="Volver al inicio" variant="secondary" onPress={onVolver} />
     </ScrollView>

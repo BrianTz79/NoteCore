@@ -13,7 +13,7 @@
     ],
     "android": {
       "package": "net.ourocore.notecore",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b0f18"

@@ -18,6 +18,7 @@ import { CompartirScreen } from './screens/CompartirScreen';
 import { SemestresScreen } from './screens/SemestresScreen';
 import { SocialScreen } from './screens/SocialScreen';
 import { MensajesScreen } from './screens/MensajesScreen';
+import { AjustesScreen } from './screens/AjustesScreen';
 import { colors } from './components/ui';
 
 /**
@@ -150,6 +151,7 @@ function Root() {
     | 'semestres'
     | 'social'
     | 'mensajes'
+    | 'ajustes'
   >('inicio');
 
   /**
@@ -270,6 +272,9 @@ function Root() {
     if (seccion === 'semestres') {
       return <SemestresScreen onVolver={() => setSeccion('inicio')} />;
     }
+    if (seccion === 'ajustes') {
+      return <AjustesScreen onVolver={() => setSeccion('inicio')} />;
+    }
     if (seccion === 'social') {
       return (
         <SocialScreen
@@ -307,6 +312,7 @@ function Root() {
           setConversacionInicial(undefined);
           setSeccion('mensajes');
         }}
+        onIrAAjustes={() => setSeccion('ajustes')}
       />
     );
   }
