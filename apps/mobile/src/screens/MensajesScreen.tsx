@@ -32,6 +32,7 @@ import {
 import { apiBaseUrl, messagingApi, tokenStore } from '../lib/api';
 import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
+import { ReportDialog } from '../components/report-dialog';
 
 /**
  * Mensajería (FR-043, FR-044).
@@ -215,6 +216,8 @@ function Hilo({
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [cargandoAnteriores, setCargandoAnteriores] = useState(false);
+  /** Identificador del mensaje que se está reportando, o `null` (Fase 21). */
+  const [reportando, setReportando] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
 
   const scrollRef = useRef<ScrollView | null>(null);
@@ -401,10 +404,25 @@ function Hilo({
               mensaje={mensaje}
               agrupado={groupsWithPrevious(mensaje, mensajes[indice - 1])}
               onBorrar={() => void borrar(mensaje.id)}
+              onReportar={() => setReportando(mensaje.id)}
             />
           ))
         )}
       </ScrollView>
+
+      {/*
+        El formulario de reporte se pinta **fuera** del `ScrollView` del hilo: dentro quedaría
+        en una caja que se desplaza sola al llegar un mensaje, y el usuario perdería de vista
+        lo que estaba rellenando.
+      */}
+      {reportando !== null ? (
+        <ReportDialog
+          target="mensaje"
+          targetId={reportando}
+          authorName={conversacion.user.displayName}
+          onClose={() => setReportando(null)}
+        />
+      ) : null}
 
       {motivo ? (
         <View style={styles.motivo}>
@@ -432,10 +450,12 @@ function Burbuja({
   mensaje,
   agrupado,
   onBorrar,
+  onReportar,
 }: {
   mensaje: Message;
   agrupado: boolean;
   onBorrar: () => void;
+  onReportar: () => void;
 }) {
   return (
     <View
@@ -446,9 +466,18 @@ function Burbuja({
       ]}
     >
       <Pressable
-        // Mantener pulsado para borrar: en un teléfono no hay «pasar el ratón por encima»,
-        // así que el gesto largo hace el papel del botón que en la web solo aparece al pasar.
-        onLongPress={mensaje.isOwn && !mensaje.deleted ? onBorrar : undefined}
+        /*
+          Mantener pulsado: en un teléfono no hay «pasar el ratón por encima», así que el
+          gesto largo hace el papel del botón que en la web solo aparece al pasar.
+       
+          **El mismo gesto hace cosas distintas según de quién sea el mensaje**, y es
+          deliberado: sobre lo propio borra, sobre lo ajeno reporta (Fase 21). Son las dos
+          únicas acciones que existen sobre un mensaje, nunca coinciden en la misma burbuja, y
+          darles gestos distintos obligaría a aprender dos cuando la pantalla ya enseña uno.
+        */
+        onLongPress={
+          mensaje.deleted ? undefined : mensaje.isOwn ? onBorrar : onReportar
+        }
         style={styles.burbujaContenedor}
       >
         <View

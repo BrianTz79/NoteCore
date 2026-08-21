@@ -826,6 +826,111 @@ export const messages = pgTable(
   ],
 );
 
+/**
+ * Reportes de contenido (Fase 21).
+ *
+ * Google exige un mecanismo de denuncia en toda app con contenido generado por usuarios, y
+ * lo cuenta **aparte** del bloqueo que ya existe desde la Fase 8 (FR-042). Son dos cosas
+ * distintas: bloquear es una decisión privada de quien bloquea, reportar es avisar a quien
+ * mantiene el servicio.
+ *
+ * ## Por qué se guarda una copia del texto y no solo la referencia
+ *
+ * `targetId` puede quedar en `null` —el contenido se borró—, pero `targetText` no se pierde.
+ * Es deliberado y es la decisión de diseño de la tabla: quien reporta algo suele reportarlo
+ * justo antes de que su autor lo borre, y un reporte que al abrirse dice «esa publicación ya
+ * no existe» no le sirve a nadie. La copia es lo que hace que el aviso siga significando algo
+ * cuando alguien lo lea.
+ *
+ * No es una excepción al principio de mínima recogida de datos: es el **contenido señalado
+ * por una persona en un reporte que ella misma levantó**, guardado para el único fin que la
+ * política de privacidad (Fase 19) declara.
+ *
+ * ## Por qué no hay clave foránea a `posts` ni a `messages`
+ *
+ * Porque el contenido reportado son dos tablas distintas y una columna no puede referenciar
+ * las dos. La alternativa —dos columnas anulables con dos claves foráneas— obligaría además a
+ * borrar el reporte en cascada cuando su autor borra lo reportado, que es exactamente lo que
+ * no debe pasar: borrar lo denunciado no puede hacer desaparecer la denuncia.
+ *
+ * `targetId` es, por tanto, una referencia **suelta a propósito**, y se pone a `null` cuando
+ * se comprueba que el original ya no está.
+ */
+export const reports = pgTable(
+  'reports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** `publicacion` o `mensaje`, tal como los define `REPORT_TARGETS`. */
+    target: text('target').notNull(),
+    /** El contenido señalado. `null` si su autor ya lo borró. Sin clave foránea, ver arriba. */
+    targetId: uuid('target_id'),
+    /** Copia del texto en el momento del reporte, congelada. */
+    targetText: text('target_text').notNull(),
+    /**
+     * Quién reportó.
+     *
+     * En cascada: si esa persona borra su cuenta (Fase 20), sus reportes se van con ella. Un
+     * reporte es una manifestación suya, no contenido de un tercero como los mensajes.
+     */
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /**
+     * Quién escribió lo reportado. Lo resuelve **el servidor** a partir del contenido.
+     *
+     * Principio III: si el cliente mandara a quién acusa, bastaría con cambiar ese campo para
+     * levantar reportes contra cualquiera.
+     *
+     * También en cascada, y eso significa que borrar la cuenta de alguien retira los reportes
+     * que había contra él. Es lo correcto: sus datos ya no están, así que no queda nada que
+     * moderar, y conservar una acusación contra una cuenta que ya no existe sería guardar el
+     * señalamiento de una persona por un contenido que se destruyó.
+     */
+    authorId: uuid('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    /** El motivo, de `REPORT_REASONS`. */
+    reason: text('reason').notNull(),
+    /** Lo que añadió quien reportó. `null` si no añadió nada. */
+    detail: text('detail'),
+    /** `pendiente`, `revisado` o `descartado`, de `REPORT_STATUSES`. */
+    status: text('status').notNull().default('pendiente'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    /** Cuándo se revisó o descartó. `null` mientras siga pendiente. */
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    /** Quién lo revisó. `null` mientras siga pendiente. */
+    reviewedById: uuid('reviewed_by_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (table) => [
+    /**
+     * Un reporte por persona y contenido.
+     *
+     * Lo impone la base de datos y no solo el servicio, por lo mismo que el par único de los
+     * contactos: quien reporta algo y no ve pasar nada vuelve a tocar el botón, y sin esto la
+     * lista se llenaría de copias del mismo aviso —que es lo que hace que un moderador deje
+     * de leerla—.
+     *
+     * No impide que **varias personas** reporten lo mismo, y eso es justo lo que se quiere:
+     * tres reportes de tres personas sobre una publicación dicen algo que uno solo no dice.
+     */
+    uniqueIndex('reports_reporter_target_unique').on(
+      table.reporterId,
+      table.target,
+      table.targetId,
+    ),
+    /** La consulta del panel: lo pendiente primero, y dentro de eso lo más reciente. */
+    index('reports_status_created_idx').on(table.status, table.createdAt),
+    /**
+     * Los reportes contra una persona.
+     *
+     * Es la consulta que convierte una lista de avisos sueltos en información: tres reportes
+     * de tres personas distintas contra la misma cuenta es un patrón, y sin este índice
+     * habría que recorrer la tabla entera para verlo.
+     */
+    index('reports_author_idx').on(table.authorId),
+  ],
+);
+
 export const usersRelations = relations(users, ({ many, one }) => ({
   sessions: many(sessions),
   semesters: many(semesters),
@@ -977,3 +1082,27 @@ export type ConversationRow = typeof conversations.$inferSelect;
 export type NewConversationRow = typeof conversations.$inferInsert;
 export type MessageRow = typeof messages.$inferSelect;
 export type NewMessageRow = typeof messages.$inferInsert;
+export type ReportRow = typeof reports.$inferSelect;
+export type NewReportRow = typeof reports.$inferInsert;
+
+/**
+ * Las tres referencias a `users` se nombran, por lo mismo que en `contacts`: Drizzle no puede
+ * adivinar cuál es cuál cuando hay varias a la misma tabla.
+ */
+export const reportsRelations = relations(reports, ({ one }) => ({
+  reporter: one(users, {
+    fields: [reports.reporterId],
+    references: [users.id],
+    relationName: 'reportsMade',
+  }),
+  author: one(users, {
+    fields: [reports.authorId],
+    references: [users.id],
+    relationName: 'reportsReceived',
+  }),
+  reviewedBy: one(users, {
+    fields: [reports.reviewedById],
+    references: [users.id],
+    relationName: 'reportsReviewed',
+  }),
+}));

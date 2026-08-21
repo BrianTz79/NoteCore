@@ -38,6 +38,7 @@ import {
   subjects,
   users,
 } from '../db/schema.js';
+import { countPendingReports } from './moderation.js';
 
 /**
  * Los números del panel de operación (Fase 25).
@@ -411,6 +412,7 @@ export async function resumen(): Promise<PanelResumen> {
     saludResultado,
     retencionResultado,
     embudoResultado,
+    reportesPendientes,
   ] = await Promise.all([
     inventario(),
     altasPorSemana(),
@@ -419,6 +421,7 @@ export async function resumen(): Promise<PanelResumen> {
     salud(),
     retencion(),
     embudo(),
+    countPendingReports(),
   ]);
 
   return {
@@ -429,5 +432,6 @@ export async function resumen(): Promise<PanelResumen> {
     salud: saludResultado,
     retencion: retencionResultado,
     embudo: embudoResultado,
+    reportesPendientes,
   };
 }

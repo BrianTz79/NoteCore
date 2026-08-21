@@ -164,8 +164,10 @@ export default function PrivacidadPage() {
             en cualquier otra app de mensajería sin cifrado.
           </p>
           <p className="mt-nc-sm">
-            Puedes bloquear a cualquier persona desde su perfil. Al bloquearla deja de poder
-            escribirte.
+            Puedes bloquear a cualquier persona desde su perfil o desde su publicación. Al
+            bloquearla deja de poder escribirte. También puedes reportar una publicación o un
+            mensaje: son dos cosas distintas —bloquear es tu decisión y surte efecto en el
+            acto; reportar avisa a quien mantiene NoteCore para que lo revise—.
           </p>
         </Seccion>
 
@@ -208,6 +210,7 @@ export default function PrivacidadPage() {
         <Seccion titulo="El panel de quien mantiene NoteCore">
           <p>{PANEL_OPERADOR.que}</p>
           <p className="mt-nc-sm">{PANEL_OPERADOR.limite}</p>
+          <p className="mt-nc-sm">{PANEL_OPERADOR.excepcion}</p>
         </Seccion>
 
         <Seccion titulo="Menores de edad">

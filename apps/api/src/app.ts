@@ -18,6 +18,7 @@ import { socialRoutes } from './routes/social.js';
 import { messagingRoutes } from './routes/messaging.js';
 import { releaseRoutes } from './routes/releases.js';
 import { panelRoutes } from './routes/panel.js';
+import { moderationRoutes } from './routes/moderation.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -184,6 +185,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(messagingRoutes);
   await app.register(releaseRoutes);
   await app.register(panelRoutes);
+  await app.register(moderationRoutes);
 
   return app;
 }

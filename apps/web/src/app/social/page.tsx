@@ -26,6 +26,7 @@ import {
 } from '@notecore/shared';
 import { socialApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
+import { ReportDialog } from '@/components/report-dialog';
 import { Button, Card, Field, FormError, ScreenHeader } from '@/components/ui';
 import { QrCode } from '@/components/qr-code';
 
@@ -723,6 +724,8 @@ function Muro({ onCambio }: { onCambio: () => Promise<void> }) {
   const [texto, setTexto] = useState('');
   const [publicando, setPublicando] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  /** Identificador de la publicación cuyo formulario de reporte está abierto (Fase 21). */
+  const [reportando, setReportando] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     try {
@@ -763,6 +766,23 @@ function Muro({ onCambio }: { onCambio: () => Promise<void> }) {
       await onCambio();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'No se pudo borrar.');
+    }
+  }
+
+  /**
+   * Bloquea al autor desde su propia publicación (FR-042, accesible desde la Fase 21).
+   *
+   * Recarga el muro después porque bloquear saca a esa persona de los contactos aceptados, y
+   * con ella todo lo suyo: dejar la publicación en pantalla después de bloquear sería el
+   * peor acuse posible de que la acción funcionó.
+   */
+  async function bloquear(username: string) {
+    try {
+      await socialApi.blockUser({ username });
+      await cargar();
+      await onCambio();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo bloquear.');
     }
   }
 
@@ -822,7 +842,7 @@ function Muro({ onCambio }: { onCambio: () => Promise<void> }) {
 
                 <p className="whitespace-pre-wrap text-tinta">{post.text}</p>
 
-                <div className="flex items-center justify-between gap-nc-sm">
+                <div className="flex flex-wrap items-center justify-between gap-nc-sm">
                   <span className="text-sm text-tinta3">{relativeTime(post.createdAt)}</span>
                   {/* Solo lo propio se puede borrar. El servidor lo comprueba igual: que el
                       botón no se pinte es comodidad, no la medida (Principio III). */}
@@ -834,8 +854,43 @@ function Muro({ onCambio }: { onCambio: () => Promise<void> }) {
                     >
                       Borrar
                     </Button>
-                  ) : null}
+                  ) : (
+                    /*
+                      Las dos acciones sobre lo ajeno, juntas y con nombres distintos (Fase 21).
+                      Reportar avisa a quien mantiene el servicio; bloquear es una decisión
+                      privada que surte efecto en el acto. Estaban las dos en el proyecto pero
+                      solo se llegaba a bloquear desde la lista de contactos — es decir, había
+                      que dejar de ver la publicación para poder actuar sobre ella.
+                    */
+                    <div className="flex flex-wrap gap-nc-xs">
+                      <Button
+                        variant="secondary"
+                        data-testid={`reportar-post-${post.id}`}
+                        onClick={() =>
+                          setReportando(reportando === post.id ? null : post.id)
+                        }
+                      >
+                        {reportando === post.id ? 'Cancelar' : 'Reportar'}
+                      </Button>
+                      <Button
+                        variant="danger"
+                        data-testid={`bloquear-autor-${post.author.username}`}
+                        onClick={() => void bloquear(post.author.username)}
+                      >
+                        Bloquear
+                      </Button>
+                    </div>
+                  )}
                 </div>
+
+                {reportando === post.id ? (
+                  <ReportDialog
+                    target="publicacion"
+                    targetId={post.id}
+                    authorName={post.author.displayName}
+                    onClose={() => setReportando(null)}
+                  />
+                ) : null}
               </li>
             ))}
           </ul>

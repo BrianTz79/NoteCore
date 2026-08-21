@@ -99,8 +99,10 @@ export function PrivacidadScreen({ onVolver }: { onVolver: () => void }) {
           protección que no existe.
         </Text>
         <Text style={base.cuerpo}>
-          Puedes bloquear a cualquier persona desde su perfil. Al bloquearla deja de poder
-          escribirte.
+          Puedes bloquear a cualquier persona desde su perfil o desde su publicación. Al
+          bloquearla deja de poder escribirte. También puedes reportar una publicación o un
+          mensaje: son dos cosas distintas —bloquear es tu decisión y surte efecto en el acto;
+          reportar avisa a quien mantiene NoteCore para que lo revise—.
         </Text>
       </Card>
 
@@ -123,6 +125,7 @@ export function PrivacidadScreen({ onVolver }: { onVolver: () => void }) {
       <Card title="El panel de quien mantiene NoteCore">
         <Text style={base.cuerpo}>{PANEL_OPERADOR.que}</Text>
         <Text style={base.cuerpo}>{PANEL_OPERADOR.limite}</Text>
+        <Text style={base.cuerpo}>{PANEL_OPERADOR.excepcion}</Text>
       </Card>
 
       <Card title="A quién escribir">

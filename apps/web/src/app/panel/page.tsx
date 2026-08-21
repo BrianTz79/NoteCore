@@ -1,17 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 import {
+  REPORT_REASON_LABELS,
+  REPORT_STATUS_LABELS,
+  REPORT_TARGET_LABELS,
   formatDateTime,
   toFormErrors,
+  type ReportList,
   type PanelResumen,
   type PanelVersion,
 } from '@notecore/shared';
-import { panelApi } from '@/lib/api';
+import { moderationApi, panelApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { RequireSession } from '@/components/require-session';
-import { Card, FormError, Rule, ScreenHeader, Stat } from '@/components/ui';
+import { Button, Card, FormError, Rule, ScreenHeader, Stat, Tag } from '@/components/ui';
 
 /**
  * El panel de números del operador (Fase 25).
@@ -96,6 +100,13 @@ function Panel() {
 
         {datos ? (
           <>
+            {/*
+              Los reportes van **primero**, por delante incluso del embudo (Fase 21).
+              Todo lo demás en esta pantalla son números que se miran; esto es lo único que
+              pide que una persona haga algo, y una cola de moderación al final de una página
+              larga es una cola que no se lee.
+            */}
+            <Reportes pendientes={datos.reportesPendientes} />
             <Embudo datos={datos} />
             <Actividad datos={datos} />
             <Inventario datos={datos} />
@@ -113,6 +124,173 @@ function Panel() {
 /* ==========================================================================
  * Las secciones, en el orden en que se leen
  * ======================================================================== */
+
+/**
+ * Los reportes de contenido recibidos (Fase 21).
+ *
+ * ## Por qué esto no es un backoffice de moderación
+ *
+ * Porque no hace falta uno para publicar, y montarlo aquí sería inventar alcance. Google pide
+ * que exista un mecanismo de denuncia y que lo reportado **llegue a alguien**; esta sección es
+ * ese alguien. Lo que hace es lo mínimo que sirve de verdad: enseñar quién reportó qué y por
+ * qué, y permitir distinguir lo que ya se miró de lo que no.
+ *
+ * **Lo que deliberadamente no hace**: sancionar, borrar contenido ajeno ni suspender cuentas
+ * desde aquí. Esas acciones existen ya por otras vías y con otras consecuencias, y un botón
+ * que las dispare en un clic desde una lista es exactamente cómo se borra lo que no se debía.
+ *
+ * ## La lista se carga aparte del resumen
+ *
+ * El resumen del panel trae solo el **número** de pendientes. Los reportes llevan texto
+ * escrito por personas —lo único de todo el panel que no es un conteo—, y traerlos en la misma
+ * respuesta que las estadísticas los cargaría en cada visita al panel aunque no hubiera
+ * ninguno que mirar.
+ */
+function Reportes({ pendientes }: { pendientes: number }) {
+  const [lista, setLista] = useState<ReportList | null>(null);
+  const [abierto, setAbierto] = useState(false);
+  const [error, setError] = useState<string>();
+  const [ocupado, setOcupado] = useState<string | null>(null);
+
+  const cargar = useCallback(async () => {
+    try {
+      setLista(await moderationApi.list());
+    } catch (fallo: unknown) {
+      setError(toFormErrors(fallo).general);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (abierto) void cargar();
+  }, [abierto, cargar]);
+
+  async function revisar(id: string, status: 'revisado' | 'descartado') {
+    setOcupado(id);
+    setError(undefined);
+    try {
+      await moderationApi.review(id, { status });
+      await cargar();
+    } catch (fallo: unknown) {
+      setError(toFormErrors(fallo).general);
+    } finally {
+      setOcupado(null);
+    }
+  }
+
+  return (
+    <Card
+      title="Reportes"
+      action={
+        <button
+          type="button"
+          onClick={() => setAbierto((previo) => !previo)}
+          data-testid="alternar-reportes"
+          className="text-sm text-acento hover:text-foco"
+        >
+          {abierto ? 'Ocultar' : 'Ver reportes'}
+        </button>
+      }
+    >
+      <Stat
+        label="Sin revisar"
+        value={pendientes}
+        /*
+          Cero pendientes es neutro, no un éxito: no hay nada que celebrar en que nadie haya
+          reportado nada, y pintarlo de verde enseñaría a leer el color como un marcador.
+        */
+        tone={pendientes > 0 ? 'aviso' : 'neutro'}
+        hint={pendientes > 0 ? 'Hay avisos esperando revisión.' : 'Nada pendiente.'}
+      />
+
+      <FormError message={error} />
+
+      {abierto ? (
+        lista === null ? (
+          <p className="text-tinta3">Cargando…</p>
+        ) : lista.reports.length === 0 ? (
+          <p data-testid="sin-reportes" className="text-tinta2">
+            No hay reportes.
+          </p>
+        ) : (
+          <ul className="space-y-nc-sm" data-testid="lista-reportes">
+            {lista.reports.map((reporte) => (
+              <li
+                key={reporte.id}
+                data-testid={`reporte-${reporte.id}`}
+                className="space-y-nc-xs rounded-lg border border-filete bg-papel3 p-nc-sm"
+              >
+                <div className="flex flex-wrap items-center gap-nc-xs">
+                  <Tag tone={reporte.status === 'pendiente' ? 'aviso' : 'neutro'}>
+                    {REPORT_STATUS_LABELS[reporte.status]}
+                  </Tag>
+                  <Tag tone="error">{REPORT_REASON_LABELS[reporte.reason]}</Tag>
+                  <span className="text-sm text-tinta3">
+                    {REPORT_TARGET_LABELS[reporte.target]} ·{' '}
+                    {formatDateTime(reporte.createdAt)}
+                  </span>
+                </div>
+
+                <p className="text-sm text-tinta2">
+                  <span className="text-tinta">@{reporte.reporter.username}</span> reportó a{' '}
+                  <span className="text-tinta">@{reporte.author.username}</span>
+                  {/*
+                    Se dice si el original ya no está, y no se calla: cambia lo que procede
+                    hacer con el aviso —no hay nada que retirar— y ahorra ir a buscarlo.
+                  */}
+                  {reporte.targetId === null ? (
+                    <span className="text-tinta3"> · el contenido ya no existe</span>
+                  ) : null}
+                </p>
+
+                {/*
+                  El texto copiado en el momento del reporte. Es la única superficie del
+                  producto donde el contenido de una conversación privada sale del hilo, y por
+                  eso lleva **solo el mensaje señalado**: quien reporta señala un renglón, no
+                  entrega su conversación entera a revisión.
+                */}
+                <blockquote className="whitespace-pre-wrap break-words border-l-2 border-filete2 pl-nc-sm text-sm text-tinta">
+                  {reporte.targetText}
+                </blockquote>
+
+                {reporte.detail ? (
+                  <p className="text-sm text-tinta2">
+                    <span className="text-tinta3">Añadió: </span>
+                    {reporte.detail}
+                  </p>
+                ) : null}
+
+                {reporte.status === 'pendiente' ? (
+                  <div className="flex flex-wrap gap-nc-xs">
+                    <Button
+                      variant="secondary"
+                      loading={ocupado === reporte.id}
+                      data-testid={`revisado-${reporte.id}`}
+                      onClick={() => void revisar(reporte.id, 'revisado')}
+                    >
+                      Marcar revisado
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      loading={ocupado === reporte.id}
+                      data-testid={`descartado-${reporte.id}`}
+                      onClick={() => void revisar(reporte.id, 'descartado')}
+                    >
+                      Descartar
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-tinta3">
+                    {reporte.reviewedAt ? formatDateTime(reporte.reviewedAt) : ''}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )
+      ) : null}
+    </Card>
+  );
+}
 
 /**
  * El embudo va primero porque es el único que responde «¿va bien esto?».

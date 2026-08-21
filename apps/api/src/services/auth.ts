@@ -16,6 +16,7 @@ import {
   agendaItems,
   contacts,
   posts,
+  reports,
   scheduleBlocks,
   semesters,
   sessions,
@@ -424,6 +425,29 @@ export async function deleteAccount(
           eq(contacts.requesterId, userId),
         ),
       );
+
+    /**
+     * Los reportes en los que aparece, por cualquiera de los dos lados (Fase 21).
+     *
+     * **Se borran a mano y no por la cascada de su clave foránea**, y esto es una trampa que
+     * conviene entender antes de tocarla: `reports` declara `onDelete: 'cascade'` hacia
+     * `users`, pero el borrado de cuenta **no borra la fila de `users`** —la vacía y la
+     * anonimiza, ver la lápida de más abajo—, así que esa cascada no se dispara nunca en la
+     * operación normal. Confiar en ella dejaría aquí los reportes de una persona que ya no
+     * está, con el texto que escribió, apuntando a «Usuario eliminado». Se comprobó
+     * ejecutándolo.
+     *
+     * Se van los dos lados:
+     *
+     * - Los que **ella hizo**: son manifestaciones suyas, y se van con lo demás suyo.
+     * - Los que hay **contra ella**: si su contenido ya no existe, no queda nada que moderar,
+     *   y conservar la acusación —con la copia del texto dentro— sería guardar el
+     *   señalamiento de una persona por algo que se destruyó. La política de privacidad lo
+     *   promete explícitamente.
+     */
+    await tx
+      .delete(reports)
+      .where(or(eq(reports.reporterId, userId), eq(reports.authorId, userId)));
 
     /**
      * Las sesiones, que es lo que cierra el teléfono y el navegador a la vez.

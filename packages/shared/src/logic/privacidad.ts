@@ -154,6 +154,13 @@ export const DATOS_DECLARADOS: readonly DatoDeclarado[] = [
     opcional: true,
   },
   {
+    que: 'Los reportes de contenido que envías',
+    donde: 'reports',
+    paraQue:
+      'Cuando reportas una publicación o un mensaje, se guarda quién reportó, a quién, por qué motivo, lo que añadieras y una copia del texto reportado. La copia se guarda porque su autor puede borrarlo justo después, y sin ella el aviso no diría nada. Solo lo consulta quien mantiene NoteCore, para revisarlo.',
+    opcional: true,
+  },
+  {
     que: 'Tus sesiones abiertas',
     donde: 'sessions',
     paraQue:
@@ -220,6 +227,18 @@ export const PANEL_OPERADOR = {
   que: 'Quien mantiene NoteCore consulta un panel con números agregados: cuántas cuentas hay, cuántas capturaron su horario, cuántos mensajes se han enviado en total, cuánta gente entra desde la app y cuánta desde el navegador.',
   limite:
     'Ese panel cuenta cuántos, no quién: no muestra el contenido de ningún mensaje, ninguna tarea, ningún horario ni ninguna publicación de nadie en particular.',
+  /**
+   * La única excepción al límite de arriba, dicha en voz alta (Fase 21).
+   *
+   * El panel gana una sección que **sí** enseña texto de una persona: la de los reportes.
+   * Callarlo dejaría la frase anterior siendo falsa, que es exactamente el tipo de
+   * discrepancia por la que esta constante existe desde la Fase 25.
+   *
+   * Se acota lo que la excepción alcanza —solo lo reportado, solo por haberlo reportado
+   * alguien— porque un límite sin borde no es un límite.
+   */
+  excepcion:
+    'La única excepción es lo que alguien reporta: si reportas una publicación o un mensaje, quien mantiene NoteCore lee ese contenido concreto para poder revisarlo. Solo ese, y solo porque alguien lo señaló; el resto de la conversación no se muestra.',
 } as const;
 
 /**
@@ -233,5 +252,6 @@ export const BORRADO_EXPLICADO: readonly string[] = [
   'Se borran de la base de datos, sin copia ni papelera: tu cuenta, tu horario, tus materias, tus faltas, tu agenda, tus periodos, tus publicaciones, tus comparticiones, tus ajustes y todas tus sesiones abiertas.',
   'Los mensajes que enviaste a otras personas se quedan en la conversación de esa persona, porque también son suyos, pero dejan de estar ligados a ti: aparecen como enviados por «Usuario eliminado» y tu nombre, tu @usuario y tu correo desaparecen de ellos.',
   'Lo que compartiste y alguien ya aceptó es una copia independiente suya desde el momento en que la aceptó, así que se queda en su cuenta. Borrar la tuya no vacía la de nadie más.',
+  'Los reportes que enviaste se borran contigo, y también los que otros hubieran hecho sobre tu contenido: si tus datos ya no están, no queda nada que revisar.',
   'El borrado es inmediato e irreversible. No hay periodo de gracia ni forma de recuperar la cuenta después.',
 ];

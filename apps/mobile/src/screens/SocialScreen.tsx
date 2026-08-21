@@ -39,6 +39,7 @@ import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, Field, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors, fuente } from '../components/ui';
 import { QrCode } from '../components/qr-code';
 import { QrScanner } from '../components/qr-scanner';
+import { ReportDialog } from '../components/report-dialog';
 
 /**
  * Sección social: perfil, contactos y publicaciones (FR-039 a FR-042, FR-045).
@@ -942,6 +943,8 @@ function Muro({
   const [texto, setTexto] = useState('');
   const [publicando, setPublicando] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  /** Identificador de la publicación cuyo formulario de reporte está abierto (Fase 21). */
+  const [reportando, setReportando] = useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     try {
@@ -982,6 +985,23 @@ function Muro({
       await onCambio();
     } catch (caught) {
       setError(caught instanceof ApiError ? caught.message : 'No se pudo borrar.');
+    }
+  }
+
+  /**
+   * Bloquea al autor desde su propia publicación (FR-042, accesible desde la Fase 21).
+   *
+   * Recarga el muro después porque bloquear saca a esa persona de los contactos aceptados y
+   * con ella todo lo suyo: dejar la publicación en pantalla después de bloquear sería el peor
+   * acuse posible de que la acción funcionó.
+   */
+  async function bloquear(username: string) {
+    try {
+      await socialApi.blockUser({ username });
+      await cargar();
+      await onCambio();
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : 'No se pudo bloquear.');
     }
   }
 
@@ -1036,6 +1056,37 @@ function Muro({
                   pinte es comodidad, no la medida (Principio III). */}
               {post.isOwn ? (
                 <Button title="Borrar" variant="secondary" onPress={() => void borrar(post.id)} />
+              ) : (
+                /*
+                  Las dos acciones sobre lo ajeno, juntas y con nombres distintos (Fase 21).
+                  Reportar avisa a quien mantiene el servicio; bloquear es una decisión
+                  privada que surte efecto en el acto. Bloquear ya existía desde la Fase 8,
+                  pero solo se llegaba a él desde la lista de contactos — había que dejar de
+                  ver la publicación para poder actuar sobre ella.
+                */
+                <View style={styles.accionesPublicacion}>
+                  <Button
+                    title={reportando === post.id ? 'Cancelar' : 'Reportar'}
+                    variant="secondary"
+                    compacto
+                    onPress={() => setReportando(reportando === post.id ? null : post.id)}
+                  />
+                  <Button
+                    title="Bloquear"
+                    variant="danger"
+                    compacto
+                    onPress={() => void bloquear(post.author.username)}
+                  />
+                </View>
+              )}
+
+              {reportando === post.id ? (
+                <ReportDialog
+                  target="publicacion"
+                  targetId={post.id}
+                  authorName={post.author.displayName}
+                  onClose={() => setReportando(null)}
+                />
               ) : null}
             </View>
           ))}
@@ -1047,6 +1098,8 @@ function Muro({
 
 const styles = StyleSheet.create({
   pantalla: { flex: 1, backgroundColor: colors.fondo },
+  /** Reportar y bloquear, en fila: son alternativas, no una secuencia. */
+  accionesPublicacion: { flexDirection: 'row', gap: SPACE.xs, flexWrap: 'wrap' },
   contenido: { ...base.contenido, paddingTop: SPACE.md },
   volver: { color: c.tinta3, fontSize: TEXT.sm, fontFamily: fuente.cuerpo },
   titulo: { ...base.titulo },

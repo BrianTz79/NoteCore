@@ -7,6 +7,7 @@ import {
   createAuthApi,
   createCalendarApi,
   createMessagingApi,
+  createModerationApi,
   createScheduleApi,
   createSemesterApi,
   createShareApi,
@@ -94,6 +95,16 @@ export const shareApi = createShareApi(apiClient);
 export const semesterApi = createSemesterApi(apiClient);
 export const socialApi = createSocialApi(apiClient);
 export const messagingApi = createMessagingApi(apiClient);
+
+/**
+ * Reportes de contenido (Fase 21).
+ *
+ * La app solo usa `report`: leer y revisar los reportes es cosa del panel, que vive solo en
+ * la web (ver `types/panel.ts`). Se crea la API entera igualmente porque el objeto es uno
+ * —quien decide qué puede cada cuenta es el servidor— y recortarlo aquí sería inventar una
+ * segunda definición de lo mismo.
+ */
+export const moderationApi = createModerationApi(apiClient);
 /**
  * Publicación de versiones de la app (Fase 17).
  *

@@ -25,6 +25,7 @@ import {
 } from '@notecore/shared';
 import { apiBaseUrl, messagingApi } from '@/lib/api';
 import { RequireSession } from '@/components/require-session';
+import { ReportDialog } from '@/components/report-dialog';
 import { Button, Card, FormError, ScreenHeader } from '@/components/ui';
 
 /**
@@ -267,6 +268,8 @@ function Hilo({
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [cargandoAnteriores, setCargandoAnteriores] = useState(false);
+  /** Identificador del mensaje que se está reportando, o `null` (Fase 21). */
+  const [reportando, setReportando] = useState<string | null>(null);
 
   const finRef = useRef<HTMLDivElement | null>(null);
 
@@ -450,12 +453,27 @@ function Hilo({
               mensaje={mensaje}
               agrupado={groupsWithPrevious(mensaje, mensajes[indice - 1])}
               onBorrar={() => void borrar(mensaje.id)}
+              onReportar={() => setReportando(mensaje.id)}
             />
           ))
         )}
 
         <div ref={finRef} />
       </div>
+
+      {/*
+        El formulario de reporte se pinta **fuera** del hilo con scroll, no dentro de la
+        burbuja: dentro quedaría a media altura de una caja que se desplaza sola al llegar un
+        mensaje, y el usuario perdería de vista lo que estaba rellenando.
+      */}
+      {reportando !== null ? (
+        <ReportDialog
+          target="mensaje"
+          targetId={reportando}
+          authorName={conversacion.user.displayName}
+          onClose={() => setReportando(null)}
+        />
+      ) : null}
 
       {motivo ? (
         <p
@@ -502,10 +520,12 @@ function Burbuja({
   mensaje,
   agrupado,
   onBorrar,
+  onReportar,
 }: {
   mensaje: Message;
   agrupado: boolean;
   onBorrar: () => void;
+  onReportar: () => void;
 }) {
   return (
     <div
@@ -548,6 +568,21 @@ function Burbuja({
               className="opacity-0 transition group-hover:opacity-100 hover:text-error"
             >
               Eliminar
+            </button>
+          ) : null}
+          {/*
+            Reportar, solo en lo ajeno y solo si sigue habiendo texto (Fase 21).
+            Un mensaje que su autor ya borró no se puede reportar: su texto se vació al
+            borrarlo, así que no hay nada que congelar en el aviso.
+          */}
+          {!mensaje.isOwn && !mensaje.deleted ? (
+            <button
+              type="button"
+              data-testid={`reportar-${mensaje.id}`}
+              onClick={onReportar}
+              className="opacity-0 transition group-hover:opacity-100 hover:text-aviso"
+            >
+              Reportar
             </button>
           ) : null}
         </div>

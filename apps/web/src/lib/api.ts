@@ -5,6 +5,7 @@ import {
   createAuthApi,
   createCalendarApi,
   createMessagingApi,
+  createModerationApi,
   createPanelApi,
   createScheduleApi,
   createSemesterApi,
@@ -95,6 +96,16 @@ export const updatesApi = createUpdatesApi(apiClient);
  * de vista del cliente lo es — quien decide si hay panel es el servidor.
  */
 export const panelApi = createPanelApi(apiClient);
+
+/**
+ * Reportes de contenido (Fase 21).
+ *
+ * Sus dos mitades tienen públicos distintos: `report` la usa cualquiera desde el muro o un
+ * hilo, y `list`/`review` solo la cuenta que opera el servicio, desde `/panel`. Es una sola
+ * API porque el servidor es quien decide quién puede qué — a los demás, esas dos rutas les
+ * responden 404.
+ */
+export const moderationApi = createModerationApi(apiClient);
 
 /**
  * URL base de la API, para el canal en vivo de la mensajería (Fase 10).

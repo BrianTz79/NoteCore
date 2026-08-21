@@ -118,6 +118,15 @@ export interface PanelEmbudo {
 /** Todo el panel, en una sola respuesta. */
 export interface PanelResumen {
   readonly inventario: PanelInventario;
+  /**
+   * Cuántos reportes de contenido esperan revisión (Fase 21).
+   *
+   * Viaja en el resumen y no solo en la lista de reportes porque es lo único del panel que
+   * pide **una acción de una persona**: el resto son números que se miran. Quien abre el
+   * panel tiene que ver que hay algo pendiente sin ir a buscarlo — un aviso al que hay que
+   * navegar para enterarse de que existe no es un aviso.
+   */
+  readonly reportesPendientes: number;
   readonly altasPorSemana: readonly PanelAltaSemanal[];
   readonly actividad: PanelActividad;
   readonly versiones: readonly PanelVersion[];
