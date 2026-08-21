@@ -86,6 +86,18 @@ function Sidebar() {
         })}
       </nav>
 
+      {/*
+        La app Android (Fase 17). Va aquí abajo y no en `SECCIONES` a propósito: no es una
+        sección del producto sino una descarga, y ponerla en la lista la haría competir con
+        el horario y la agenda por la atención de quien ya está trabajando en la web.
+      */}
+      <Link
+        href="/app"
+        className="mx-nc-sm rounded-md px-nc-sm py-nc-xs text-sm text-tinta3 transition-colors duration-100 hover:bg-papel3 hover:text-tinta"
+      >
+        App para Android
+      </Link>
+
       <div className="space-y-nc-xs border-t border-filete px-nc-md py-nc-md">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-tinta">{user.displayName}</p>

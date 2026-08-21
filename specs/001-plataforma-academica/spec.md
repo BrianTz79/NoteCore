@@ -401,6 +401,10 @@ que abre la vista correspondiente.
   red.
 - **FR-050**: El sistema MUST indicar al usuario qué cambios están pendientes de sincronizar.
 - **FR-051**: La app MUST poder ofrecer un widget de pantalla principal con la vista semanal.
+- **FR-052**: Mientras la app se distribuya fuera de una tienda, el sistema MUST poder informarle de
+  que existe una versión más reciente y permitirle obtenerla, verificando la integridad de lo
+  descargado antes de instalarlo. Este mecanismo MUST poder desactivarse por configuración, sin
+  dejar rastro en la aplicación publicada.
 
 ### Key Entities
 

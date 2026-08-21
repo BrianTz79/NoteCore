@@ -40,6 +40,9 @@ import {
   fuente,
 } from '../components/ui';
 import { SyncIndicator, SyncQueuePanel } from '../components/sync-indicator';
+// Fase 17. Con el actualizador apagado no renderiza nada y no pregunta a la API. Se quita
+// borrando esta línea y su uso de abajo; ver `src/lib/actualizacion.ts`.
+import { AvisoDeActualizacion } from '../components/aviso-actualizacion';
 
 /**
  * Inicio con sesión abierta (Fase 11 · macroestructura Stat-Led de `design.md`).
@@ -143,6 +146,14 @@ export function InicioScreen({
         <Text style={base.titulo}>{user.displayName}</Text>
         <Text style={styles.usuario}>@{user.username}</Text>
       </View>
+
+      {/*
+        Versión nueva de la app (Fase 17), lo primero después del nombre.
+        Va antes que la sincronización porque una versión nueva puede traer justo el arreglo
+        de lo que esté fallando; y no es un diálogo, para no interrumpir a quien abrió la app
+        para mirar a qué hora es su próxima clase.
+      */}
+      <AvisoDeActualizacion />
 
       {/* Estado de la sincronización (FR-050): solo aparece si hay algo que decir. */}
       <SyncIndicator />

@@ -1,0 +1,37 @@
+// Módulo Android del actualizador de la app (Fase 17).
+//
+// Es un módulo local de Expo, igual que el del widget: el autolinking lo descubre por
+// `expo-module.config.json` y registra `ActualizadorModule` en el runtime.
+//
+// Vive aquí y no en `android/app` por lo mismo que el widget: el prebuild regenera ese
+// directorio y no está versionado. Y sobre todo, porque el actualizador entero tiene que
+// **poder desaparecer** el día que la app suba a Play Store, y borrar un directorio es una
+// operación que no deja restos.
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'net.ourocore.notecore.actualizador'
+version = '0.1.0'
+
+android {
+  namespace 'net.ourocore.notecore.actualizador'
+  compileSdk rootProject.ext.has('compileSdkVersion') ? rootProject.ext.compileSdkVersion : 36
+
+  defaultConfig {
+    minSdk rootProject.ext.has('minSdkVersion') ? rootProject.ext.minSdkVersion : 24
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  kotlinOptions {
+    jvmTarget = '17'
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+}

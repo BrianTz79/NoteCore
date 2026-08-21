@@ -1,6 +1,6 @@
 {
   "name": "@notecore/mobile",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "index.ts",
   "scripts": {
@@ -27,6 +27,7 @@
     "@types/react": "~19.2.0",
     "typescript": "^5.7.3"
   },
+  "_comentario_version": "El versionCode de app.json es lo que compara el actualizador de la Fase 17: hay que subirlo en CADA publicación o nadie recibirá la actualización. El `version` de aquí y el `version` de app.json son el nombre visible, y no se comparan nunca.",
   "_comentario_autolinking": "El widget de la Fase 11 es un módulo local de Expo en modules/widget-horario. El autolinking no mira ahí por defecto: sin esta línea, sus clases entran en el APK pero el módulo no se registra en el runtime y requireNativeModule devuelve null.",
   "expo": {
     "autolinking": {

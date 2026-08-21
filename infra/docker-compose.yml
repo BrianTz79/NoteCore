@@ -52,8 +52,26 @@ services:
       # rewrite de Next). Define el path de la cookie de refresco: si no coincide con la
       # URL que pide el navegador, la cookie no viaja y la sesión de la web se cae.
       WEB_API_PREFIX: ${WEB_API_PREFIX:-}
+      # Actualizador de la app fuera de la tienda (Fase 17). Apagado por defecto: las
+      # tiendas prohíben que una app se autoactualice, así que el día de subir a Play Store
+      # esta variable se queda en `false` y el mecanismo deja de existir para todos los
+      # teléfonos ya instalados, sin publicar una versión nueva.
+      UPDATER_ENABLED: ${UPDATER_ENABLED:-false}
+      # Dentro del contenedor siempre es esta ruta; lo que cambia es qué directorio del
+      # host se monta ahí (`RELEASES_HOST_DIR`). Son dos variables distintas a propósito:
+      # con una sola, cambiar dónde están los APK en el host cambiaría también la ruta que
+      # la API busca dentro del contenedor, y dejaría de encontrarlos.
+      RELEASES_DIR: /releases
+      # De dónde cuelga el enlace de descarga del APK. Absoluto porque lo abre el gestor de
+      # descargas de Android, que no tiene origen del que derivar una ruta relativa.
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
     ports:
       - '${API_PORT:-3101}:3101'
+    volumes:
+      # Los APK publicados. Es un montaje del host y no un volumen con nombre a propósito:
+      # publicar una versión es copiar dos archivos ahí desde fuera, sin entrar al
+      # contenedor. Solo lectura: la API sirve el binario, nunca lo escribe.
+      - ${RELEASES_HOST_DIR:-../releases}:/releases:ro
     depends_on:
       postgres:
         condition: service_healthy

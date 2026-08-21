@@ -72,6 +72,48 @@ const envSchema = z.object({
    * producción se fija explícitamente al dominio del túnel.
    */
   WEB_URL: z.string().url('WEB_URL debe ser una URL completa').optional(),
+
+  /**
+   * Interruptor del actualizador de la app fuera de la tienda (Fase 17).
+   *
+   * **Apagado por defecto, y eso es parte del diseño.** Las tiendas prohíben que una app se
+   * autoactualice por su cuenta, así que el día que NoteCore suba a Play Store esta variable
+   * se queda como está y todo el mecanismo desaparece: la ruta responde que no está
+   * disponible, la app no pregunta y el permiso de instalación no entra en el manifiesto.
+   *
+   * Encenderlo exige además `RELEASES_DIR`: un actualizador encendido sin un directorio de
+   * dónde servir el APK no puede publicar nada.
+   */
+  UPDATER_ENABLED: z
+    .string()
+    .default('false')
+    .transform((valor) => valor === 'true' || valor === '1'),
+
+  /**
+   * Directorio del que se sirven los APK publicados.
+   *
+   * Dentro va el binario y su `.sha256`, más un `latest.json` que dice cuál es la versión
+   * publicada. Es un directorio y no una tabla en la base de datos porque publicar una
+   * versión es copiar dos archivos: meter eso en PostgreSQL obligaría a una migración y a un
+   * panel de administración para algo que hoy hace `cp`.
+   */
+  RELEASES_DIR: z.string().optional(),
+
+  /**
+   * URL pública desde la que la **app** alcanza la API.
+   *
+   * Hace falta porque el enlace de descarga del APK tiene que ser absoluto: lo abre el
+   * gestor de descargas de Android, que no tiene ni origen ni sesión de la que derivar nada.
+   * No se reutiliza `WEB_URL` —esa es la web, y en producción son hostnames distintos a
+   * propósito (ver la sección 7 de PROYECTO.md)—.
+   *
+   * Sin definir, el enlace se compone con el host de la petición, que es lo correcto en
+   * desarrollo y lo que se debe fijar explícitamente en producción.
+   */
+  PUBLIC_API_URL: z
+    .string()
+    .url('PUBLIC_API_URL debe ser una URL completa')
+    .optional(),
 });
 
 function loadConfig() {
@@ -112,6 +154,16 @@ function loadConfig() {
     refreshTokenSeconds: env.REFRESH_TOKEN_DAYS * 24 * 60 * 60,
     cookieDomain: env.COOKIE_DOMAIN && env.COOKIE_DOMAIN.length > 0 ? env.COOKIE_DOMAIN : null,
     webApiPrefix: env.WEB_API_PREFIX,
+    /**
+     * El actualizador solo está encendido si además sabe de dónde servir el APK.
+     *
+     * Las dos condiciones se combinan **aquí** y no en cada sitio que las consulte: con dos
+     * banderas sueltas, un descuido dejaría la ruta anunciando una versión que no puede
+     * entregar, y el usuario descargaría un 404.
+     */
+    updaterEnabled: env.UPDATER_ENABLED && Boolean(env.RELEASES_DIR),
+    releasesDir: env.RELEASES_DIR ?? null,
+    publicApiUrl: env.PUBLIC_API_URL ?? null,
   } as const;
 }
 

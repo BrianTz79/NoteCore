@@ -10,6 +10,7 @@ import {
   createSemesterApi,
   createShareApi,
   createSocialApi,
+  createUpdatesApi,
   type TokenStore,
 } from '@notecore/shared';
 
@@ -71,6 +72,15 @@ export const shareApi = createShareApi(apiClient);
 export const semesterApi = createSemesterApi(apiClient);
 export const socialApi = createSocialApi(apiClient);
 export const messagingApi = createMessagingApi(apiClient);
+/**
+ * Publicación de versiones de la app (Fase 17).
+ *
+ * Se crea siempre, aunque el actualizador esté apagado: quien decide si se llama es
+ * `src/lib/actualizacion.ts`, y con el interruptor en `false` esta constante existe pero
+ * nadie la usa. Condicionarla aquí obligaría a que su tipo fuera opcional y a comprobarlo
+ * en cada llamada, para ahorrar un objeto.
+ */
+export const updatesApi = createUpdatesApi(apiClient);
 
 /**
  * URL base de la API, para el canal en vivo de la mensajería (Fase 10).

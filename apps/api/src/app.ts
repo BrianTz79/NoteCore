@@ -16,6 +16,7 @@ import { shareRoutes } from './routes/share.js';
 import { semesterRoutes } from './routes/semester.js';
 import { socialRoutes } from './routes/social.js';
 import { messagingRoutes } from './routes/messaging.js';
+import { releaseRoutes } from './routes/releases.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -173,6 +174,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(semesterRoutes);
   await app.register(socialRoutes);
   await app.register(messagingRoutes);
+  await app.register(releaseRoutes);
 
   return app;
 }

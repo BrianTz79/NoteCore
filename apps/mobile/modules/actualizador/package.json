@@ -1,0 +1,7 @@
+{
+  "name": "actualizador",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Actualización de la app fuera de la tienda (Fase 17). Se apaga entero con EXPO_PUBLIC_UPDATER_ENABLED.",
+  "main": "index.ts"
+}

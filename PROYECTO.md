@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 16 cerrada y verificada)
+> Última actualización: **2026-08-20** (Fase 17 cerrada y verificada — **el plan está completo**)
 
 ---
 
@@ -32,14 +32,14 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 16 cerrada** el 2026-08-20. Queda **una fase**, P3: la [17](#fase-17--actualización-de-la-app-sin-tienda--p3) |
+| **Fase actual** | Ninguna en curso. **Fase 17 cerrada** el 2026-08-20. **No queda ninguna fase pendiente**: las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `██████░` 6 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -49,7 +49,7 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 ### Qué se ha hecho
 
 - **Constitución** con 8 principios rectores del proyecto
-- **Especificación**: 11 historias de usuario, 51 requisitos funcionales, 11 criterios de éxito
+- **Especificación**: 11 historias de usuario, 52 requisitos funcionales, 11 criterios de éxito
 - **Plan** de 12 fases verticales
 - **Repositorio Git** inicializado, con secretos protegidos y verificados
 - **v1 eliminada**: contenedores, volumen de base de datos y código retirados. Queda un respaldo
@@ -157,6 +157,18 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   primera. Verificado con los cuatro colocados en el lanzador real, cada uno abriendo su
   sección, y borrándose los cuatro al cerrar sesión
 
+- **Fase 17 cerrada**: la app **se actualiza sin pasar por la tienda**. Comprueba al abrir si hay
+  una versión más nueva —comparando el **`versionCode`**, que es lo que Android usa para decidir si
+  algo es una actualización—, la anuncia en el inicio, la descarga, **verifica su SHA-256** y se la
+  entrega al instalador del sistema. La web estrena `/app`, que es de donde sale el APK **la primera
+  vez**: el actualizador solo alcanza a quien ya tiene la app. Todo vive detrás de un interruptor
+  que, apagado, deja el APK **sin el permiso `REQUEST_INSTALL_PACKAGES`** —comprobado sobre el
+  binario con `aapt`, no sobre el código—, porque las tiendas prohíben que una app se autoactualice
+  y ese permiso se revisa con lupa. Lo que más cambió la experiencia fue comprobar el permiso
+  **antes** de descargar: sin eso el usuario se bajaba 97 MB para descubrir que el instalador no
+  aparecía —falla en silencio—. Verificado el ciclo entero en el emulador, de `versionCode=1` a
+  `versionCode=2`, con la sesión intacta después
+
 ### Próximo paso
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
@@ -187,9 +199,22 @@ web`), producción muestra el código anterior aunque el commit ya esté en `mai
 fases 13 y 14, y el síntoma —«la página no la veo cambiada»— parece caché del navegador y no lo
 es.
 
-**Queda una fase: la [17](#fase-17--actualización-de-la-app-sin-tienda--p3)**, que es la que
-permite entregar versiones nuevas sin pedirle a cada usuario que reinstale a mano. Hasta que
-entre, cada APK nuevo se distribuye avisando uno por uno.
+**La 17 también está cerrada, y con ella no queda ninguna fase pendiente.** La app comprueba al
+abrir si hay una versión nueva, la descarga, **comprueba su SHA-256** y se la pasa al instalador de
+Android; la web tiene una página `/app` de donde sale el APK la primera vez. Todo detrás de un
+interruptor: con `UPDATER_ENABLED=false` y `EXPO_PUBLIC_UPDATER_ENABLED=false` el APK **no lleva
+siquiera el permiso** de instalación —verificado sobre el binario— y la API responde que no está
+disponible. Detalle en el
+[historial](#fase-17--actualización-de-la-app-sin-tienda--cerrada-el-2026-08-20).
+
+**Publicar una versión nueva** es, desde ahora, subir el `versionCode` en `apps/mobile/app.json`,
+compilar el APK y ejecutar `scripts/publicar-apk.sh <ruta-al-apk> "notas"`. El script lee el
+`versionCode` **del propio binario** y escribe el `latest.json`, así que no se puede publicar un
+manifiesto que no describa el archivo que lo acompaña. La API lo sirve sin reiniciarse.
+
+**Lo que queda no son fases, es operación**: desplegar esta fase a producción (reconstruir las
+imágenes, montar el directorio de publicación y encender el interruptor) y, si algún día se sube a
+Play Store, apagarlo. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20).
 
 ---
 
@@ -217,7 +242,7 @@ entre, cada APK nuevo se distribuye avisando uno por uno.
 | 14 | La web en pantalla grande | P1 | ✅ | — | ✅ | — |
 | 15 | Social en secciones propias | P2 | ✅ | ✅ | ✅ | ✅ |
 | 16 | Widgets: familia y densidad | P3 | ✅ | — | — | ✅ |
-| 17 | Actualización de la app sin tienda | P3 | ⬜ | ⬜ | — | ⬜ |
+| 17 | Actualización de la app sin tienda | P3 | ✅ | ✅ | ✅ | ✅ |
 | 18 | Cuatrimestres además de semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 
 > Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
@@ -236,6 +261,128 @@ Una fase se cierra cuando funciona **en app y en web**. Al cerrarla:
 4. Hacer commit: `feat(faseN): descripción`
 
 ### Historial de cierres
+
+#### Fase 17 — Actualización de la app sin tienda · cerrada el 2026-08-20
+
+**Entregado**: la app **comprueba al abrir** si hay una versión más nueva, la anuncia en el inicio,
+la descarga, **verifica su SHA-256** y se la entrega al instalador de Android. La web estrena
+`/app`, de donde sale el APK la primera vez —el actualizador solo alcanza a quien ya tiene la app
+instalada—. Todo detrás de un interruptor que, apagado, **no deja rastro en el APK**.
+
+**Publicar una versión** es ahora un comando: `scripts/publicar-apk.sh <apk> "notas"`.
+
+##### El interruptor no es una bandera, son dos, y esa es la fase
+
+Lo que pedía el enunciado —«que sea fácil de quitar»— se resolvió con **dos interruptores
+independientes**, y la distinción importa:
+
+- **`EXPO_PUBLIC_UPDATER_ENABLED`** (compilación de la app) decide **dos cosas con un solo valor**:
+  si la app pregunta, y si `plugins/with-actualizador.js` mete en el manifiesto
+  `REQUEST_INSTALL_PACKAGES` y el `FileProvider`. Al salir del mismo sitio, no puede darse una app
+  que avise sin poder instalar, ni un APK que pida permiso de instalación y no lo use
+- **`UPDATER_ENABLED`** (servidor) apaga el mecanismo **para los teléfonos ya instalados**, sin
+  publicar nada. Es el que hace falta el día de subir a Play Store: una app antigua puede seguir
+  preguntando, y la API le responde `disponible: false`
+
+**Por qué el permiso va en un plugin y no en el manifiesto del módulo.** El widget de la Fase 11
+declara sus receptores en el `AndroidManifest.xml` de su propio módulo y Gradle los funde. Aquí no
+se podía: un manifiesto de módulo **no se puede condicionar**, así que el permiso viajaría en el
+APK siempre. Y `REQUEST_INSTALL_PACKAGES` es de los que Play Store revisa con lupa, sobre una
+práctica —autoactualizarse por fuera— que las tiendas **prohíben**.
+
+##### Lo que se decidió al implementarla
+
+- **El permiso se comprueba ANTES de descargar.** Es lo que más cambió la experiencia. Desde
+  Android 8 el permiso en el manifiesto no basta: hace falta que el usuario autorice «instalar apps
+  desconocidas» para esta app, y sin eso **el instalador no aparece — falla en silencio**. Sin la
+  comprobación previa, el usuario se bajaba 97 MB para descubrirlo. Verificado en el emulador: el
+  primer intento abrió los Ajustes en lugar de gastar la descarga
+- **Verificar es parte de descargar, no un paso aparte.** `descargar()` comprueba la suma antes de
+  devolver, y borra el archivo si no coincide. Si fueran dos funciones, algún camino de la interfaz
+  —el típico es un reintento— llamaría a instalar sin verificar, que es justo el fallo del que la
+  suma protege
+- **La versión instalada se lee del paquete, no de una constante.** `versionInstalada()` la saca de
+  `PackageInfo`. Una constante en JavaScript se olvida de subir al publicar, y entonces la app se
+  cree en una versión que no es
+- **El script de publicación lee el `versionCode` del propio APK** con `aapt`, no de `app.json`.
+  Publicar un número mayor que el del binario dejaría a la app en bucle: Android instala el APK
+  real —con su código menor—, la app se vuelve a comparar contra el publicado y se vuelve a creer
+  desactualizada
+- **`latest.json` se relee en cada petición**, sin caché. Publicar es copiar archivos en el volumen
+  sin reiniciar el contenedor; con caché, la API anunciaría la versión anterior hasta el siguiente
+  despliegue, que es exactamente el escenario para el que esto se construyó
+- **Las dos rutas no piden sesión.** Es la única parte del producto que se consulta desde fuera, por
+  dos motivos: quien tiene una versión rota **puede no poder entrar** —y es cuando más necesita
+  saber que hay arreglo—, y no hay nada que aislar: un número de versión y un APK firmado son
+  públicos por definición
+- **La app se guarda en el caché externo y se borra sola.** Cuando la app comprueba que ya corre una
+  versión igual o mayor que la descargada, `limpiarDescargas()` tira el archivo. Son ~100 MB, y
+  nadie más los iba a borrar. Verificado: el directorio quedó vacío tras instalar
+- **El aviso es un bloque en el inicio, no un diálogo.** Un modal al abrir interrumpe a quien
+  entró a ver a qué hora es su próxima clase, y lo que enseña es a descartarlo sin leerlo
+
+##### La paridad de esta fase no puede ser literal, y así se resolvió
+
+Un navegador **no instala aplicaciones**, y ningún código lo va a cambiar. Lo que sí es paritario es
+lo que se sabe y de dónde sale: la web muestra la misma versión, las mismas notas, el mismo tamaño y
+la **misma suma de verificación**, y sirve el mismo binario desde la misma ruta. Lo que la web no
+puede hacer —lanzar el instalador— lo hace la persona al abrir el archivo. Y la web cubre algo que
+la app no puede cubrir: **la primera instalación**, que por definición ocurre cuando no hay app.
+
+##### Decisiones de diseño
+
+| Decisión | Por qué |
+|---|---|
+| Se compara **`versionCode`**, nunca `versionName` | Es lo que Android usa para decidir si algo es una actualización. Ordenar el texto daría que «0.10.0» es anterior a «0.9.0», y dos publicaciones pueden llamarse igual |
+| El APK se entrega por un **`FileProvider` propio**, no como `file://` | Desde Android 7, pasar una ruta de archivo a otro proceso lanza `FileUriExposedException` y **tumba la app**. Se creó uno con autoridad propia (`…​.actualizador`) en vez de reutilizar el de `expo-file-system`, cuyos `paths` no controlamos y podrían cambiar con el SDK |
+| El `<paths>` expone **solo el subdirectorio de descargas** | El proveedor concede lectura a quien reciba la URI, así que su alcance es lo que el instalador podrá leer. Un `path="."` abriría el caché externo entero |
+| `file` del manifiesto se trata como **nombre, no como ruta** (`basename`) | Sin eso, un `"file": "../../etc/passwd"` convertiría la descarga en una lectura arbitraria servida por HTTP. Verificado: un archivo que existe fuera del directorio se rechaza igual |
+| La suma se **normaliza** antes de validarla | Lo natural al publicar es pegar el contenido del `.sha256`, que trae «suma  nombre-del-archivo». Sin recortarlo, **toda** verificación fallaría y el síntoma —«la descarga siempre está corrupta»— apuntaría a la red |
+| Se comprueba que **el APK existe** antes de anunciarlo | Un manifiesto que nombra un archivo no copiado haría que la app avisara y la descarga diera 404, en bucle cada vez que se abre, sin forma de quitarse el aviso |
+| `UPDATER_ENABLED` y `RELEASES_DIR` se combinan en **una sola** bandera en `config.ts` | Con dos sueltas, un descuido dejaría la ruta anunciando una versión que no puede entregar |
+| Los APK se publican en un **directorio montado**, no en PostgreSQL | Publicar es copiar dos archivos. Una tabla exigiría migración, modelo y panel de administración para un dato que cambia casi nunca — y este mecanismo tiene que **poder desaparecer**, que es más fácil borrando un módulo que revirtiendo una migración en producción |
+| El estado final tras lanzar el instalador es **«instalando»**, no «instalado» | A partir de ahí decide Android y decide el usuario. La app no puede saber cómo terminó, y afirmarlo sería inventarse un resultado |
+
+##### Verificación (2026-08-20, emulador Android con APK de release firmado + la web)
+
+**El ciclo entero, en el emulador**, que es el criterio que pedía la fase:
+
+- Se compiló e instaló un APK con **`versionCode=1`** (0.1.9) que ya trae el actualizador, y se
+  publicó el **`versionCode=2`** (0.2.0) con `scripts/publicar-apk.sh` — que leyó el número del
+  binario y escribió el `latest.json`
+- Al abrir la app, pidió `/releases/android/latest` (confirmado en el registro de la API) y mostró
+  **«Hay una versión nueva: 0.2.0»** con las notas y **«97.0 MB · se descarga y se instala desde
+  aquí»**
+- El primer «Descargar e instalar» **no descargó**: detectó que faltaba el permiso y abrió «Install
+  unknown apps». Concedido (`appops` → `REQUEST_INSTALL_PACKAGES: allow`), el segundo intento
+  descargó, verificó la suma y abrió el diálogo del sistema **«NoteCore — Do you want to update
+  this app?»**
+- Confirmado: `dumpsys package` pasó a **`versionCode=2, versionName=0.2.0`**. Al reabrir, **el
+  aviso ya no aparece** —no hay bucle— y **la sesión seguía abierta**: la actualización no borra
+  datos. El directorio de descargas quedó **vacío**
+
+**Con el interruptor apagado no queda rastro**, comprobado sobre el binario y no sobre el código:
+
+- APK compilado con `EXPO_PUBLIC_UPDATER_ENABLED=false` → `aapt dump permissions` **no lista**
+  `REQUEST_INSTALL_PACKAGES`, y el manifiesto **no tiene** el `FileProvider`. Con `=true`, ambos
+  aparecen
+- API con `UPDATER_ENABLED=false` → `{"disponible":false,"release":null}` y la descarga responde
+  **404**, con el APK presente en el directorio. La web, en ese estado, dice «La descarga directa no
+  está habilitada. Busca NoteCore en Google Play»
+
+**Los fallos del manifiesto**, uno por uno: APK ausente, `versionCode` como cadena, y `file` con
+`../` apuntando a un archivo que **sí existe** fuera del directorio. Los tres devuelven
+`release: null` en lugar de anunciar algo que no se puede entregar.
+
+**La web** (`/app`), a 900px y a 390px: muestra «Versión 0.2.0», 97.0 MB, la fecha, el `versionCode`
+y la suma SHA-256 tras «Verificar la descarga». El APK descargado desde el enlace tiene **la misma
+suma** que la publicada. Enlaces desde la barra lateral (escritorio) y desde el inicio (móvil).
+
+**Lo que NO se verificó**: un teléfono físico —se usó el emulador— y la descarga sobre el túnel de
+Cloudflare, que solo se puede probar desplegando. Esta fase **no está desplegada**: producción sigue
+con la imagen anterior y el actualizador apagado.
+
+---
 
 #### Fase 16 — Widgets: familia y densidad · cerrada el 2026-08-20
 
@@ -1724,7 +1871,8 @@ Cambios que exigió la actualización:
 │   │   └── src/
 │   │       ├── db/          esquema y migraciones versionadas
 │   │       ├── routes/      endpoints por dominio (health, auth, schedule, attendance,
-│   │       │                agenda, calendar, share, semester, social, messaging)
+│   │       │                agenda, calendar, share, semester, social, messaging,
+│   │       │                releases — publicación del APK, Fase 17)
 │   │       ├── middleware/  autenticación: único lugar que fija quién eres
 │   │       ├── services/    lógica de negocio (Principio II)
 │   │       └── lib/         tokens, contraseñas, cookies, errores, validación
@@ -1733,12 +1881,18 @@ Cambios que exigió la actualización:
 │   │   └── src/
 │   │       ├── app/         rutas (/, /entrar, /registro, /perfil, /horario, /faltas,
 │   │       │                /agenda, /calendario, /compartir, /compartido/[code],
-│   │       │                /semestres)
+│   │       │                /semestres, /social, /mensajes, /u/[username],
+│   │       │                /app — descarga del APK, Fase 17)
 │   │       ├── components/  componentes propios de web
 │   │       └── lib/         cliente de API y contexto de sesión
 │   │
 │   └── mobile/              app Android — React Native + Expo
-│       ├── plugins/         plugins de configuración nativa (cleartext local)
+│       ├── modules/         módulos nativos locales (Expo autolinking)
+│       │   ├── widget-horario/  familia de cuatro widgets (Fases 11 y 16)
+│       │   └── actualizador/    descarga, verifica e instala el APK (Fase 17)
+│       ├── plugins/         plugins de configuración nativa (cleartext local, firma de
+│       │                    release, widget, y el permiso de instalación de la Fase 17,
+│       │                    que solo entra si el interruptor está encendido)
 │       ├── android/         generado por `expo prebuild` — NO se versiona
 │       └── src/
 │           ├── screens/     Entrar, Registro, Inicio, Horario, Faltas, Agenda, Calendario,
@@ -1757,9 +1911,13 @@ Cambios que exigió la actualización:
 │                            recordatorios, códigos y estado de los compartidos, codificador
 │                            de QR, ciclo y archivo de semestres, relación entre personas y
 │                            visibilidad del perfil, cache y cola sin conexión, quién puede
-│                            escribir a quién, errores de formulario, fechas)
+│                            escribir a quién, comparación de versiones para el actualizador,
+│                            errores de formulario, fechas)
 │
 ├── infra/                   Docker Compose y despliegue
+│
+├── scripts/
+│   └── publicar-apk.sh      publica una versión para el actualizador (Fase 17)
 │
 ├── specs/
 │   └── 001-plataforma-academica/
@@ -2082,12 +2240,40 @@ depuración.
 - **Paridad**: esa misma cuenta entró en la web y devolvió el mismo usuario
 - Las cuentas de prueba se borraron al terminar
 
+### Publicar una versión nueva de la app (Fase 17)
+
+Desde la Fase 17 la app se actualiza sola, pero **hay que publicar la versión**, y el primer paso
+es el que se olvida:
+
+1. **Subir el `versionCode`** en `apps/mobile/app.json`. Es lo único que decide si alguien recibe
+   la actualización; el `version` visible no se compara jamás
+2. Compilar el APK con la receta de arriba (`EXPO_PUBLIC_API_URL` en la línea de comandos, y
+   además `EXPO_PUBLIC_UPDATER_ENABLED=true`, que se lee en el **prebuild**)
+3. `scripts/publicar-apk.sh <ruta-al-apk> "qué trae de nuevo"`
+
+El script lee el `versionCode` **del propio binario** con `aapt`, calcula el SHA-256 sobre el
+archivo ya copiado y escribe el `latest.json`. La API lo relee en cada petición: **no hace falta
+reiniciar nada**.
+
+Comprobar que salió: `curl -s $PUBLIC_API_URL/releases/android/latest`. Si responde
+`"release": null` con el actualizador encendido, el motivo está en el registro de la API
+(`manifiesto_invalido`, `apk_ausente`, `sin_manifiesto`).
+
+**Para desplegar la Fase 17 a producción** hace falta, además de reconstruir las imágenes:
+`UPDATER_ENABLED=true`, `RELEASES_HOST_DIR` apuntando al directorio de los APK, y
+`PUBLIC_API_URL=https://notecore-api.ourocore.net` — sin esto último el enlace de descarga sale con
+el host interno del contenedor y el teléfono no lo alcanza.
+
 ### Pendiente antes de Play Store
 
 - Generar un **`.aab`** (`./gradlew bundleRelease`): la tienda no acepta `.apk`
-- Subir el `versionCode` en cada publicación —hoy va en `1`—
+- Subir el `versionCode` en cada publicación — hoy va en `2`, lo subió la Fase 17
 - Política de privacidad y ficha de la tienda
 - **Respaldar `~/.notecore-release/`** en un sitio seguro
+- **Apagar el actualizador**: `UPDATER_ENABLED=false` y `EXPO_PUBLIC_UPDATER_ENABLED=false`. Las
+  tiendas **prohíben** que una app se autoactualice por fuera, y con el segundo apagado el
+  `.aab` no lleva siquiera el permiso `REQUEST_INSTALL_PACKAGES`, que es de los que se revisan con
+  lupa. Apagar el del servidor desactiva además el mecanismo en los teléfonos ya instalados
 
 ---
 
@@ -2325,7 +2511,11 @@ sistema (arrastrarlos no se puede sintetizar de forma fiable).
 
 ---
 
-### Fase 17 — Actualización de la app sin tienda · P3
+### Fase 17 — Actualización de la app sin tienda · P3 ✅ *(cerrada el 2026-08-20)*
+
+> Cerrada y verificada. El detalle de lo entregado, las decisiones y la verificación están en el
+> [historial](#fase-17--actualización-de-la-app-sin-tienda--cerrada-el-2026-08-20). Lo de abajo es
+> el enunciado con el que se abrió, que se conserva porque es el diagnóstico que la originó.
 
 **Situación**: publicar en Play Store cuesta 25 USD y por ahora no se va a hacer, así que la
 app se instala a mano. Sin un mecanismo propio, cada versión nueva exige avisar a cada usuario
@@ -2440,5 +2630,5 @@ y que un periodo archivado antes de esta fase sigue apareciendo como semestre.
 echa al usuario de la app. La **14** va después porque afecta a cualquiera que abra la web en
 una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el orden que prefieras.
 
-**Ese orden ya se cumplió salvo la 17**, que es la única que queda. Las demás se cerraron el
-2026-08-20 en el orden 12 → 13 → 14 → 15 → 18 → 16.
+**Ese orden ya se cumplió por completo.** Las siete se cerraron el 2026-08-20, en el orden
+12 → 13 → 14 → 15 → 18 → 16 → 17.

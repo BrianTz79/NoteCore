@@ -346,6 +346,18 @@ function Navegacion() {
           </li>
         ))}
       </ul>
+
+      {/*
+        La app Android (Fase 17). Fuera de la rejilla y en texto menor: no es una sección del
+        producto sino una descarga, y en escritorio vive en la barra lateral. Aquí hace más
+        falta que allí — quien lee esto en el móvil es justo quien puede instalarla.
+      */}
+      <Link
+        href="/app"
+        className="inline-block pt-nc-xs text-sm text-tinta3 transition-colors duration-100 hover:text-tinta"
+      >
+        Descargar la app para Android →
+      </Link>
     </nav>
   );
 }

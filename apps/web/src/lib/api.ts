@@ -9,6 +9,7 @@ import {
   createSemesterApi,
   createShareApi,
   createSocialApi,
+  createUpdatesApi,
 } from '@notecore/shared';
 
 /**
@@ -68,6 +69,14 @@ export const shareApi = createShareApi(apiClient);
 export const semesterApi = createSemesterApi(apiClient);
 export const socialApi = createSocialApi(apiClient);
 export const messagingApi = createMessagingApi(apiClient);
+/**
+ * Publicación de versiones de la app Android (Fase 17).
+ *
+ * La web no instala nada —no puede—, pero es **de donde sale el APK la primera vez**: quien
+ * todavía no tiene la app entra aquí desde el navegador del teléfono y la descarga. El
+ * actualizador de dentro de la app solo cubre a quien ya la tiene.
+ */
+export const updatesApi = createUpdatesApi(apiClient);
 
 /**
  * URL base de la API, para el canal en vivo de la mensajería (Fase 10).
