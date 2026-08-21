@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-21** (fases 19 a 24 abiertas: el camino a Play Store)
+> Última actualización: **2026-08-21** (fases 19 a 25 abiertas: Play Store y el panel de números)
 
 ---
 
@@ -34,13 +34,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. Las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas. **Quedan seis fases abiertas —19 a 24— para publicar en Play Store**, con la cuenta de desarrollador ya adquirida. Ver la [sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store) |
+| **Fase actual** | Ninguna en curso. Las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas. **Quedan siete fases abiertas —19 a 25—**: seis para publicar en Play Store, con la cuenta de desarrollador ya adquirida, y una para el panel de números. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno para el producto. Para Play Store: falta política de privacidad y borrado de cuenta (rechazo automático), y **la clave de firma sigue sin respaldar** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
-**Camino a Play Store (19-24)**: `······` 0 de 6
+**Fases abiertas (19-25)**: `·······` 0 de 7
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -221,12 +221,15 @@ esta vía fue la `0.2.0 (3)`.
 **Lo que queda ahora sí son fases.** El 2026-08-21 se adquirió la cuenta de desarrollador de Google
 Play, y una auditoría del código contra los requisitos de la tienda destapó **seis frentes**:
 política de privacidad, borrado de cuenta, reporte de contenido, permisos de más en el manifiesto,
-el `.aab` con su ficha, y apagar el actualizador. Están escritas como las **fases 19 a 24** en la
-[sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store).
+el `.aab` con su ficha, y apagar el actualizador. Ese mismo día se pidió además un **panel de
+números** —cuánta gente usa el producto, qué hay en la base, qué se usa y qué no—, que es la
+**Fase 25**. Las siete están escritas en la
+[sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir).
 
-Ninguna añade producto —la app está funcionalmente completa—: resuelven **lo que hace que la tienda
-rechace una publicación**. Las dos primeras son rechazo automático; la última, apagar el
-actualizador, va deliberadamente al final.
+Las seis de la tienda no añaden producto —la app está funcionalmente completa—: resuelven **lo que
+hace que la tienda rechace una publicación**. Las dos primeras son rechazo automático; la última,
+apagar el actualizador, va deliberadamente al final. La 25 sí construye algo nuevo, pero para el
+operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 
 ---
 
@@ -256,6 +259,14 @@ actualizador, va deliberadamente al final.
 | 16 | Widgets: familia y densidad | P3 | ✅ | — | — | ✅ |
 | 17 | Actualización de la app sin tienda | P3 | ✅ | ✅ | ✅ | ✅ |
 | 18 | Cuatrimestres además de semestres | P2 | ✅ | ✅ | ✅ | ✅ |
+| — | *Fase 17 desplegada a producción (2026-08-21)* | — | ✅ | ✅ | ✅ | ✅ |
+| 19 | Política de privacidad y datos declarados | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
+| 20 | Borrar la cuenta | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
+| 21 | Reportar contenido y cerrar la moderación | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 22 | Limpiar los permisos del manifiesto | P1 | ⬜ | — | — | ⬜ |
+| 23 | El `.aab` y la ficha de la tienda | P1 | ⬜ | — | — | ⬜ |
+| 24 | Apagar el actualizador | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
+| 25 | Panel de números: seguimiento y telemetría | P2 | ⬜ | ⬜ | ⬜ | — |
 
 > Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
 > original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
@@ -263,6 +274,14 @@ actualizador, va deliberadamente al final.
 > **Van por prioridad, no por número.** La 18 se numeró así por llegar la última, pero era P2 y
 > por eso se hizo antes que la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
 > los enlaces del documento, sin ganar nada.
+>
+> **Las fases 19 a 25 están abiertas** y son el camino a Play Store —con la cuenta ya adquirida—
+> más el panel de números. Su enunciado completo está en la
+> [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir); el orden en que
+> conviene hacerlas es **19 → 20 → 25 → 21 → 22 → 23 → 24**, y la **24 va la última a propósito**.
+>
+> La **25 no toca la app**, y es deliberado: el panel de números es una herramienta de operación
+> que se consulta en pantalla grande. Es la misma excepción de la Fase 14, no un cierre a medias.
 
 ### Regla de cierre
 
@@ -2279,7 +2298,8 @@ el host interno del contenedor y el teléfono no lo alcanza.
 ### Pendiente antes de Play Store
 
 La cuenta de desarrollador se adquirió el **2026-08-21**, y lo que falta está desglosado como las
-**fases 19 a 24** en la [sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store). En
+**fases 19 a 24** en la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir)
+—junto con la **25**, el panel de números, que no es de la tienda—. En
 resumen, y por orden:
 
 | | Qué | Fase |
@@ -2290,6 +2310,7 @@ resumen, y por orden:
 | **P1** | Quitar los permisos que ninguna parte de la app usa | [22](#fase-22--limpiar-los-permisos-del-manifiesto--p1) |
 | **P1** | Generar el `.aab` y montar la ficha de la tienda | [23](#fase-23--el-aab-y-la-ficha-de-la-tienda--p1) |
 | **P2** | Apagar el actualizador — **la última puerta** | [24](#fase-24--apagar-el-actualizador--p2-la-última-a-propósito) |
+| **P2** | *(no es de la tienda)* Panel de números, antes de que entre gente | [25](#fase-25--panel-de-números-seguimiento-y-telemetría--p2) |
 
 **Y antes que todas, fuera de las fases**: **respaldar `~/.notecore-release/`** en un sitio seguro
 y fuera de esta máquina. Sigue sin respaldo. Perder esa clave impide volver a actualizar la app
@@ -2658,26 +2679,34 @@ una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el or
 
 ---
 
-## 9. Fases pendientes (19 a 24) — el camino a Play Store
+## 9. Fases pendientes (19 a 25) — el camino a Play Store, y medir
 
-Estas seis fases salieron de una **auditoría del proyecto contra los requisitos de Google Play**,
-hecha el 2026-08-21 sobre el código real —manifiesto, rutas de la API y pantallas de la web—, no
-sobre una lista genérica de la tienda. La cuenta de desarrollador **ya está adquirida**, así que
-esto deja de ser hipotético: es el camino a publicar.
+Siete fases, de dos orígenes distintos:
+
+- **Las 19 a 24** salieron de una **auditoría del proyecto contra los requisitos de Google Play**,
+  hecha el 2026-08-21 sobre el código real —manifiesto, rutas de la API y pantallas de la web—, no
+  sobre una lista genérica de la tienda. La cuenta de desarrollador **ya está adquirida**, así que
+  esto deja de ser hipotético: es el camino a publicar
+- **La 25** se pidió el mismo día y no es de la tienda: un **panel de números** para el dueño del
+  proyecto, para dejar de publicar a ciegas
 
 **Qué cambia respecto de las fases 12-18**: aquellas salieron de usar el producto y mejoraban lo
-que ya hacía. Estas no añaden producto —la app está funcionalmente completa—, sino que resuelven
-**lo que hace que la tienda rechace una publicación**. Es papeleo de plataforma con código detrás.
+que ya hacía. Las seis de Play Store no añaden producto —la app está funcionalmente completa—:
+resuelven **lo que hace que la tienda rechace una publicación**. La 25 sí construye algo nuevo,
+pero para el operador, no para el estudiante.
 
 Sigue valiendo la regla de siempre: una fase por conversación, y no se cierra hasta verificarla en
-app **y** en web.
+app **y** en web. **La 25 es la excepción prevista**: es una pantalla de web que no tiene —ni debe
+tener— equivalente en la app, como ya pasó con la 14.
 
 ### Cómo están ordenadas
 
-Las tres primeras (**19, 20, 21**) son las que **llevan código de producto** y son motivo de
-rechazo automático. Las dos siguientes (**22, 23**) son configuración y compilación. La **24 va
-deliberadamente al final**: apagar el actualizador es lo último que se toca, porque mientras se
-prepara todo lo demás sigue siendo la vía por la que llegan las versiones nuevas al teléfono.
+Las dos primeras (**19, 20**) llevan código de producto y son motivo de rechazo automático. La
+**25 va justo después**, porque hay que estar midiendo **antes** de que la tienda empiece a traer
+gente. La **21** también es rechazo, en cuanto un revisor abra el muro. Las **22 y 23** son
+configuración y compilación. La **24 va deliberadamente al final**: apagar el actualizador es lo
+último que se toca, porque mientras se prepara todo lo demás sigue siendo la vía por la que llegan
+las versiones nuevas al teléfono.
 
 > **Antes de nada, y no es una fase**: **respaldar `~/.notecore-release/`** en un sitio seguro y
 > fuera de esta máquina. La clave de firma no está respaldada. Si se pierde el disco, no se puede
@@ -2877,13 +2906,107 @@ petición a `/releases/android/latest`. Y que la app sigue funcionando igual en 
 
 ---
 
+### Fase 25 — Panel de números: seguimiento y telemetría · **P2**
+
+**Lo que se pidió** (2026-08-21): una **página única de acceso propio** —del dueño del proyecto, no
+de los usuarios— para ver cómo va NoteCore: cuánta gente lo usa, qué hay en la base de datos, qué
+se está usando y qué no. **En la web, no en la app**: es una herramienta de operación, y se
+consulta en una pantalla grande donde caben tablas.
+
+**Por qué hace falta**: hoy no hay una sola cifra. Para saber cuántas personas usan el producto hay
+que entrar a PostgreSQL a mano y escribir SQL. Con la app a punto de entrar en Play Store, eso deja
+de ser sostenible: publicar sin poder medir es no enterarse de si funciona.
+
+#### Cómo se entra
+
+**Marca de administrador en la propia cuenta** (decidido el 2026-08-21). Se añade un campo
+`isAdmin` a la tabla `users`, en `false` por defecto para todo el mundo, y se activa **a mano con
+SQL** solo para la cuenta del dueño. Se entra con el login de siempre y aparece el panel.
+
+Se descartaron las dos alternativas y conviene dejar escrito por qué, para no rediscutirlo:
+
+- **Lista de usuarios en el `.env`**: no toca el esquema, pero cambiar quién es admin exige
+  reiniciar el contenedor, y deja la autorización fuera del sitio donde vive todo lo demás
+- **Contraseña propia del panel**: es una segunda credencial que mantener y rotar, y rompe el
+  principio de que la sesión es una sola cosa en todo el producto
+
+**Lo que hay que cuidar, y es lo más importante de esta fase**: la comprobación va **en el
+servidor, en cada petición**, nunca en el cliente. Un panel que se esconde ocultando un enlace no
+está protegido —la ruta sigue respondiendo a quien la escriba—. Y las rutas del panel deben
+responder **404, no 403**: un 403 confirma que el panel existe. Es el Principio III (aislamiento
+de datos) aplicado a la única pantalla del producto que, por definición, mira datos de todos.
+
+#### Qué números salen
+
+Las cuatro categorías se piden completas, y **la lista queda abierta a propósito**: si al usarlo
+aparece algo que falta, se añade.
+
+**1 · Lo que ya está en la base** — sale de consultar las 13 tablas, sin guardar nada nuevo ni
+tocar los clientes:
+
+- Usuarios totales y altas por semana
+- Cuántos tienen horario capturado (y el porcentaje: es el indicador de si el producto "prendió")
+- Materias, sesiones, faltas registradas, tareas en agenda, publicaciones, mensajes
+- Semestres y cuatrimestres activos vs. archivados
+- Comparticiones creadas y cuántas se aceptaron
+
+**2 · Uso y actividad** — de la tabla `sessions`, que ya guarda `lastUsedAt` y `client`:
+
+- Activos hoy y en 7 días
+- Reparto entre **app Android y navegador web** — el dato que dice si la paridad de plataformas
+  está sirviendo de algo o si un cliente se usa y el otro no
+
+**3 · Salud del sistema**:
+
+- Si la API responde y desde cuándo, tamaño de la base de datos, errores recientes
+- **Qué `versionCode` tiene instalado cada quien.** Este es útil de verdad: dice cuánta gente se
+  quedó en una versión vieja, y ahora mismo no hay forma de saberlo. Requiere que la app mande su
+  versión —cabecera en las peticiones, o al refrescar sesión— y guardarla en `sessions`
+
+**4 · Retención y embudo** — el más laborioso y el más valioso:
+
+- Cuántos vuelven a los 7 y a los 30 días de registrarse (cohortes por fecha de alta)
+- Dónde se cae quien se registra: **se registra → captura horario → vuelve**. Si mucha gente se
+  registra y no llega a capturar su horario, el problema está en esa pantalla y no en otro sitio
+
+#### Lo que hay que cuidar
+
+- **Números agregados, no espionaje.** El panel cuenta **cuántos**, no **quién**: nada de leer
+  mensajes ni mirar la agenda de nadie. Aparte de ser lo correcto, la Fase 19 va a publicar una
+  política de privacidad que promete justo esto, y las dos tienen que decir lo mismo
+- **La Fase 19 debe mencionar este panel.** Si la política dice "no compartimos datos con nadie"
+  pero existe una pantalla que los agrega, hay que declarar que existe y qué mira
+- **Las consultas de conteo se hacen lentas con datos.** `COUNT(*)` sobre tablas que crecen es
+  aceptable hoy con pocos usuarios, pero conviene medirlo y no dejar que el panel tumbe la API
+  que están usando los estudiantes. Si hace falta, se cachea el resultado unos minutos
+- **La versión instalada exige tocar los tres clientes**, así que es la parte que puede quedarse
+  para una segunda pasada si la fase se alarga: el resto del panel funciona sin ella
+
+**Depende de**: nada técnico — se puede hacer ya. Pero conviene **antes de publicar en Play
+Store**, porque el día que empiece a entrar gente es cuando los números valen, y montarlo después
+significa perderse la única cohorte que no se repite: la primera.
+
+**Verificación**: entrar al panel con la cuenta marcada como admin y ver los números; comprobar
+con SQL directo que **coinciden** —un panel que miente es peor que no tenerlo—; e intentar entrar
+con una cuenta normal, comprobando que la ruta responde **404** y que la API rechaza la petición
+aunque se llame directamente sin pasar por la interfaz.
+
+---
+
 ### Orden sugerido
 
-**19 → 20 → 21 → 22 → 23 → 24.**
+**19 → 20 → 25 → 21 → 22 → 23 → 24.**
 
-Las tres primeras llevan código de producto y son las que convierten «casi lista» en «subible»:
-la **19 y la 20 son rechazo automático**, y la **21** lo es en cuanto un revisor abra el muro de
-publicaciones. La **22** y la **23** son compilación y consola. La **24 es la última puerta**, y
-solo se cruza cuando todo lo demás está listo.
+Las dos primeras llevan código de producto y son las que convierten «casi lista» en «subible»:
+la **19 y la 20 son rechazo automático**.
+
+La **25 (el panel de números) se cuela en tercer lugar** y no por capricho: hay que tenerlo
+**antes** de que empiece a entrar gente desde la tienda. Montarlo después significa perderse la
+única cohorte que no se repite —la primera— y publicar a ciegas, sin saber si el producto prende.
+Va después de la 19 porque la política de privacidad tiene que declarar que ese panel existe.
+
+La **21** es rechazo en cuanto un revisor abra el muro de publicaciones. La **22** y la **23** son
+compilación y consola. La **24 es la última puerta**, y solo se cruza cuando todo lo demás está
+listo.
 
 **Fuera de las fases y antes que todas**: respaldar `~/.notecore-release/`.
