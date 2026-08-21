@@ -28,10 +28,14 @@ export const PRIVACIDAD_ACTUALIZADA = '2026-08-21';
 /**
  * Contacto para ejercer derechos sobre los datos.
  *
- * Es el correo del responsable del proyecto, y Google exige que sea uno alcanzable de verdad:
- * el revisor puede escribir a comprobar.
+ * Es el correo **del proyecto**, no el personal de quien lo desarrolla, y esa distinción es
+ * deliberada: esta dirección va escrita en una página pública, en la ficha de Play Store y en el
+ * cuestionario de Data Safety. Un correo personal ahí queda expuesto para siempre y mezcla la
+ * identidad privada con la marca.
+ *
+ * Google exige además que sea alcanzable de verdad: el revisor puede escribir a comprobar.
  */
-export const PRIVACIDAD_CONTACTO = 'lucio.tellez@gmail.com';
+export const PRIVACIDAD_CONTACTO = 'ourocore.contacto@gmail.com';
 
 /**
  * Las cadenas de este archivo van en **texto plano, sin Markdown**.
