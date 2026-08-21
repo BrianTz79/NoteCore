@@ -2716,7 +2716,12 @@ las versiones nuevas al teléfono.
 
 ---
 
-### Fase 19 — Política de privacidad y datos declarados · **P0**
+### Fase 19 — Política de privacidad y datos declarados · **P0** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada y verificada en web y en app. El detalle está en el
+> [historial](#fase-19--política-de-privacidad-y-datos-declarados--cerrada-el-2026-08-21). Lo de
+> abajo es el enunciado con el que se abrió, que se conserva porque es el diagnóstico que la
+> originó.
 
 **Por qué es P0**: Google exige una URL pública de política de privacidad para **cualquier** app
 que maneje datos personales. NoteCore guarda nombre, `@usuario`, horarios, faltas, agenda y
@@ -3010,3 +3015,52 @@ compilación y consola. La **24 es la última puerta**, y solo se cruza cuando t
 listo.
 
 **Fuera de las fases y antes que todas**: respaldar `~/.notecore-release/`.
+
+---
+
+## 10. Historial de las fases 19 a 25
+
+### Fase 19 — Política de privacidad y datos declarados ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`packages/shared/src/logic/privacidad.ts`** — el texto completo de la política, en `shared`.
+  Es el corazón de la fase: exporta `DATOS_DECLARADOS` (una entrada por dato, con las columnas
+  reales de las tablas que lo guardan), `NO_SE_HACE`, `PERMISOS_DECLARADOS`, `PANEL_OPERADOR` y
+  `BORRADO_EXPLICADO`
+- **`/privacidad` en la web** — página pública, **sin sesión** y renderizada en el servidor, con el
+  texto completo en el HTML inicial. Es la URL que se declara en la consola de Play
+- **`PrivacidadScreen` en la app** — el mismo contenido dentro de Ajustes → Tus datos
+- Enlace a privacidad en la barra lateral de la web
+
+**Las decisiones**
+
+- **El texto vive en `shared`, no en la página.** Hay tres consumidores que tienen que decir lo
+  mismo: la web (que revisa Google), la app, y el cuestionario de Data Safety (que se rellena a
+  mano contra `DATOS_DECLARADOS`). Una política copiada es una política que diverge, y Google
+  compara la política con lo declarado: dos versiones del mismo documento suspenden una publicación
+- **La regla que gobierna el archivo**: todo lo enumerado existe en el esquema y todo lo que el
+  esquema guarda está enumerado. No es redacción legal genérica — cada entrada nombra columnas
+  reales, y por eso se puede comprobar mecánicamente
+- **Se dice lo incómodo**: que los mensajes se guardan **sin cifrado extremo a extremo** y que
+  quien administra la base tendría acceso técnico. Prometer una protección que no existe es peor
+  que no tenerla
+- **Se declara el panel de la Fase 25** antes de construirlo. Si la política dice «no compartimos
+  datos con nadie» y existe una pantalla que los agrega, la política es falsa por omisión
+
+**Verificación (2026-08-21)**
+
+- `/privacidad` y `/borrar-cuenta` responden **200 sin sesión iniciada**, con el contenido completo
+  en el HTML inicial (un rastreador sin JavaScript las lee igual). Ambas se prerenderizan como
+  estáticas en el build de producción
+- **Comprobación mecánica contra el esquema**, en las dos direcciones: los 20 destinos declarados
+  existen en `information_schema`, y **ninguna de las 13 tablas queda sin mencionar**
+- La pantalla de la app muestra el mismo contenido, verificada en el emulador
+
+**Lo que se corrigió al verificar**
+
+- **Faltaba `users.profile_visibility`**: lo detectó la comprobación mecánica. Es un ajuste de la
+  persona —quién ve su perfil— y merecía estar declarado. Las otras cinco columnas sin declarar son
+  metadatos técnicos sin contenido personal (`id`, fechas, `is_admin`, `anonymized_at`)
+- **Los asteriscos de Markdown salían literales** en pantalla: las cadenas las pintan tres motores
+  distintos y ninguno interpreta Markdown. Ahora van en texto plano, con una nota en el archivo
