@@ -99,6 +99,32 @@ export const users = pgTable('users', {
    * una sola cosa en todo el producto.
    */
   isAdmin: boolean('is_admin').notNull().default(false),
+  /**
+   * Si esta cuenta se creó para probar y **no cuenta en las estadísticas del panel**.
+   *
+   * Se decide **una sola vez, al registrarse**, mirando el dominio del correo contra
+   * `DOMINIOS_DE_PRUEBA` en `shared`. No se recalcula al editar el perfil: una cuenta no debería
+   * dejar de ser de prueba —ni convertirse en una— por cambiar un campo.
+   *
+   * ## Por qué una columna y no un `LIKE` en cada consulta del panel
+   *
+   * El panel hace doce conteos y cada uno tendría que repetir el mismo patrón sobre el correo. Un
+   * criterio repetido doce veces acaba divergiendo: se añade un dominio a la lista, se actualizan
+   * once consultas y la duodécima sigue contando de más. Aquí el criterio se evalúa una vez y
+   * todas las consultas filtran por lo mismo.
+   *
+   * ## Qué NO es
+   *
+   * No es un permiso ni una restricción. Una cuenta de prueba funciona exactamente igual que
+   * cualquier otra —entra, captura horario, escribe mensajes—; lo único que cambia es que el panel
+   * no la cuenta. Tampoco es un estado que el usuario pueda ver o cambiar: no sale en ninguna
+   * respuesta de la API.
+   *
+   * Existe porque hasta el 2026-08-21 había **315 cuentas en producción y solo una era real**: cada
+   * verificación desde la Fase 1 dejaba las suyas. Limpiar a mano no resolvía nada, porque la
+   * siguiente fase volvía a llenarlo.
+   */
+  isTestAccount: boolean('is_test_account').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -47,6 +47,7 @@ export * from './logic/offline.js';
 export * from './logic/sync-engine.js';
 export * from './logic/updates.js';
 export * from './logic/privacidad.js';
+export * from './logic/cuentas-de-prueba.js';
 export * from './api/client.js';
 export * from './api/auth.js';
 export * from './api/schedule.js';

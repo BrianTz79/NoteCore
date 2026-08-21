@@ -38,6 +38,8 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. **Las fases 19, 20 y 25 se desplegaron el 2026-08-21**: `/privacidad`, `/borrar-cuenta` y `/panel` ya responden. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
 | **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad ni el borrado de cuenta —los dos motivos de rechazo automático, cerrados y desplegados el 2026-08-21—; quedan reportar contenido, los permisos del manifiesto, el `.aab` con su ficha y apagar el actualizador. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
+| **Contacto público** | `ourocore.contacto@gmail.com` — el del proyecto, **nunca el personal**. Va en la política de privacidad, en la ficha de Play Store y en Data Safety. Ver la [sección 13](#13-el-correo-de-contacto-público-2026-08-21) |
+| **Datos en producción** | **Una sola cuenta real** (`@mizllet`). Las 313 de prueba acumuladas desde la Fase 1 se retiraron el 2026-08-21 para que el panel no mintiera. Ver la [sección 12](#12-limpieza-de-datos-de-prueba-2026-08-21) |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
 **Fases 19-25**: `██····█` 3 de 7 (19, 20 y 25 cerradas; abiertas 21 a 24)
@@ -260,13 +262,14 @@ operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 | 17 | Actualización de la app sin tienda | P3 | ✅ | ✅ | ✅ | ✅ |
 | 18 | Cuatrimestres además de semestres | P2 | ✅ | ✅ | ✅ | ✅ |
 | — | *Fase 17 desplegada a producción (2026-08-21)* | — | ✅ | ✅ | ✅ | ✅ |
-| 19 | Política de privacidad y datos declarados | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
-| 20 | Borrar la cuenta | **P0** | ⬜ | ⬜ | ⬜ | ⬜ |
+| 19 | Política de privacidad y datos declarados | **P0** | ✅ | — | ✅ | ✅ |
+| 20 | Borrar la cuenta | **P0** | ✅ | ✅ | ✅ | ✅ |
 | 21 | Reportar contenido y cerrar la moderación | P1 | ⬜ | ⬜ | ⬜ | ⬜ |
 | 22 | Limpiar los permisos del manifiesto | P1 | ⬜ | — | — | ⬜ |
 | 23 | El `.aab` y la ficha de la tienda | P1 | ⬜ | — | — | ⬜ |
 | 24 | Apagar el actualizador | P2 | ⬜ | ⬜ | ⬜ | ⬜ |
-| 25 | Panel de números: seguimiento y telemetría | P2 | ⬜ | ⬜ | ⬜ | — |
+| 25 | Panel de números: seguimiento y telemetría | P2 | ✅ | ✅ | ✅ | — |
+| — | *Fases 19, 20 y 25 desplegadas a producción (2026-08-21)* | — | ✅ | ✅ | ✅ | ✅ |
 
 > Las fases 12 a 18 salieron de **usar el producto desplegado** (2026-08-20), no del plan
 > original. Un `—` en una columna significa que esa capa no participa: no es trabajo pendiente.
@@ -275,13 +278,19 @@ operador, y conviene tenerla **antes** de que la tienda empiece a traer gente.
 > por eso se hizo antes que la 16 y la 17. Renumerar habría movido cinco fases ya escritas y roto
 > los enlaces del documento, sin ganar nada.
 >
-> **Las fases 19 a 25 están abiertas** y son el camino a Play Store —con la cuenta ya adquirida—
-> más el panel de números. Su enunciado completo está en la
-> [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir); el orden en que
-> conviene hacerlas es **19 → 20 → 25 → 21 → 22 → 23 → 24**, y la **24 va la última a propósito**.
+> **De las fases 19 a 25 quedan abiertas la 21, 22, 23 y 24.** Las **19, 20 y 25 se cerraron y
+> desplegaron el 2026-08-21**: con ellas fuera, los dos motivos de **rechazo automático** de Play
+> Store —no tener política de privacidad ni borrado de cuenta— ya no aplican. Su enunciado está en
+> la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y lo que se entregó
+> en el [historial](#10-historial-de-las-fases-19-a-25). El orden restante es
+> **21 → 22 → 23 → 24**, y la **24 va la última a propósito**.
 >
 > La **25 no toca la app**, y es deliberado: el panel de números es una herramienta de operación
 > que se consulta en pantalla grande. Es la misma excepción de la Fase 14, no un cierre a medias.
+>
+> La **19 no toca la API**, y también es deliberado: la política de privacidad es texto, y ese
+> texto vive en `packages/shared` para que la web, la app y el cuestionario de Data Safety digan
+> exactamente lo mismo. No hay nada que servir desde la API.
 
 ### Regla de cierre
 
@@ -3288,3 +3297,83 @@ real y se comprobó que su huella SHA-256 coincide con la del original
 > borrado accidental, no de que el disco muera. Falta llevarse el `.tar.gz` fuera de la máquina —y
 > cifrarlo si va a la nube, porque lleva las contraseñas en texto plano—. Es el único paso que
 > queda y cuesta un minuto.
+
+
+---
+
+## 12. Limpieza de datos de prueba (2026-08-21)
+
+La base de producción llevaba **315 cuentas, y solo una era real**. Las otras 314 se habían ido
+acumulando desde la Fase 1: cada verificación de cada fase creaba las suyas y ninguna las
+retiraba. Con el panel de la Fase 25 recién estrenado eso dejó de ser inofensivo — un panel que
+dice «315 usuarios» cuando hay uno no informa, desinforma, y era su primera lectura.
+
+**Cómo se distinguieron**: por el dominio del correo. Las cuentas de prueba usaban `notecore.test`
+(142), `test.local` (50), `test.mx` (34), `ejemplo.test` (24), `prueba.mx` (15) y siete dominios
+más; la real es la única con un dominio de verdad. No hizo falta juzgar cuenta por cuenta.
+
+**Antes de borrar se comprobaron dos cosas**, y esa comprobación es lo que hizo el borrado seguro:
+
+1. **Ninguna cuenta de prueba tenía contacto, conversación ni mensaje con la cuenta real** — cero
+   en las tres. Sin ese cero, borrarlas habría dejado huecos en datos legítimos
+2. Se hizo un **volcado completo** a `~/respaldos-notecore/base-de-datos/` antes de tocar nada
+
+El borrado fue **una sola transacción**, de las hojas hacia la raíz y con la lista de víctimas en
+una tabla temporal, para que ninguna sentencia pudiera usar un criterio distinto de la anterior.
+Los mensajes y las conversaciones van antes que `users` porque desde la Fase 20 sus claves
+foráneas son `restrict`: un orden equivocado aborta la transacción en vez de borrar a medias.
+
+**Resultado**: 313 cuentas fuera (una ya se había ido antes), y la cuenta real **intacta** —7
+materias, 32 sesiones de clase, 1 periodo y 3 comparticiones—. Cero filas huérfanas en las seis
+tablas que se comprobaron.
+
+El panel pasó de «315 usuarios · 147 con horario» a **«2 usuarios · 1 con horario»** en el momento
+de la lectura (el segundo era una cuenta temporal de verificación, ya borrada). Es el número que
+de verdad hay.
+
+### Y para que no vuelva a pasar: las cuentas de prueba ya no cuentan
+
+Limpiar a mano no resuelve nada, porque la siguiente fase vuelve a llenarlo. Así que el mismo día
+se cerró el problema de raíz: **una cuenta creada con un dominio de prueba nace marcada, y el panel
+la ignora en todos sus números**.
+
+- `users.is_test_account`, decidido **una vez al registrarse** mirando el dominio del correo contra
+  `DOMINIOS_DE_PRUEBA` en `packages/shared/src/logic/cuentas-de-prueba.ts`
+- La lista son dominios **reservados o propios**: los del RFC 2606 (`test`, `example`, `invalid`,
+  `localhost`, `example.com`…) más `ourocoreprueba.com` y `notecore.test`
+
+**`prueba.mx` se dejó fuera a propósito**: `.mx` es un dominio de país real y alguien podría
+poseerlo. Marcar cuentas por un dominio ajeno las excluiría de las estadísticas sin que lo
+supieran.
+
+**Por qué una columna y no un `LIKE` en cada consulta**: el panel hace doce conteos y cada uno
+tendría que repetir el patrón. Un criterio repetido doce veces acaba divergiendo — se añade un
+dominio, se actualizan once consultas y la duodécima sigue contando de más. En el servicio el
+criterio vive en **una** constante, `CUENTA_REAL`, y los conteos sobre otras tablas usan
+`IDS_REALES`: no basta con excluir la cuenta, porque sus materias y sus mensajes inflaban el panel
+igual. Excluir la cuenta y contar sus datos habría sido peor que no excluir nada — la pantalla
+diría «1 usuario · 246 materias».
+
+**Verificado el 2026-08-21**: con 5 cuentas en la base (4 de prueba, con 10 materias y 3 tareas
+entre todas), el panel seguía diciendo **1 usuario · 7 materias · 0 tareas** — solo lo real.
+
+Una cuenta de prueba **funciona igual que cualquier otra**: entra, captura horario, escribe. Lo
+único que cambia es que no ensucia una estadística. Y sigue siendo buena costumbre borrarlas al
+terminar, para que la base no crezca sin motivo.
+
+---
+
+## 13. El correo de contacto público (2026-08-21)
+
+La política de privacidad y la página de borrado llevaban `lucio.tellez@gmail.com`, un correo
+**personal**. Se cambió a **`ourocore.contacto@gmail.com`**, el del proyecto.
+
+**Por qué importa más de lo que parece**: esa dirección no vive solo en una página. Va escrita en
+la ficha de Play Store, en el cuestionario de Data Safety y en una página pública que Google
+indexa — queda expuesta para siempre y mezcla la identidad privada con la marca OuroCore.
+
+Se cambió también en `package.json` (campo `author`), que lo llevaba desde el inicio del proyecto.
+
+> **Regla para lo que venga**: en los proyectos que se publican como **Mizllet / OuroCore**, el
+> correo de contacto es `ourocore.contacto@gmail.com`. El personal no se usa en nada que sea
+> público.

@@ -1,4 +1,17 @@
-import { and, count, eq, gt, gte, isNotNull, isNull, lte, sql, type SQL } from 'drizzle-orm';
+import {
+  and,
+  count,
+  eq,
+  gt,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  sql,
+  type SQL,
+} from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type {
   PanelActividad,
@@ -54,6 +67,31 @@ import {
  */
 
 /**
+ * Qué cuentas entran en las estadísticas: las reales y vivas.
+ *
+ * Se define **una vez** y lo usan todas las consultas de este archivo. Es el criterio del que
+ * cuelga la honestidad del panel entero, y repetirlo en cada `where` es cómo se acaba con una
+ * sección que cuenta 315 y otra que cuenta 1 en la misma pantalla.
+ *
+ * Excluye dos cosas distintas:
+ *
+ * - **Las anonimizadas** (Fase 20): ya no son usuarios, son lápidas que conservan los mensajes que
+ *   esa persona envió a otras. Se cuentan aparte, en `cuentasBorradas`
+ * - **Las de prueba**: las que se crean al verificar una fase, marcadas al registrarse por su
+ *   dominio. Antes de existir esta marca había 315 cuentas en producción y solo una era real
+ */
+const CUENTA_REAL = and(isNull(users.anonymizedAt), eq(users.isTestAccount, false));
+
+/**
+ * Los identificadores de las cuentas que cuentan, como subconsulta.
+ *
+ * Lo usan los conteos que van sobre **otras** tablas: las materias de una cuenta de prueba también
+ * inflaban el panel, no solo la cuenta. Es un `IN` sobre una subconsulta y no un `JOIN` porque las
+ * doce consultas de inventario son conteos simples y un `JOIN` las obligaría a agrupar.
+ */
+const IDS_REALES = db.select({ id: users.id }).from(users).where(CUENTA_REAL);
+
+/**
  * Un conteo simple de una tabla, con condición opcional.
  *
  * Existe para no repetir trece veces el mismo `select({ n: count() }).from(...)` con su
@@ -77,11 +115,13 @@ async function inventario(): Promise<PanelInventario> {
    */
   const [conHorarioFila] = await db
     .select({ n: sql<number>`count(distinct ${subjects.userId})::int` })
-    .from(subjects);
+    .from(subjects)
+    .where(inArray(subjects.userId, IDS_REALES));
 
   const [aceptadasFila] = await db
     .select({ n: sql<number>`coalesce(sum(${shares.acceptedCount}), 0)::int` })
-    .from(shares);
+    .from(shares)
+    .where(inArray(shares.userId, IDS_REALES));
 
   const [
     usuarios,
@@ -99,20 +139,47 @@ async function inventario(): Promise<PanelInventario> {
     comparticionesCreadas,
   ] = await Promise.all([
     // Las cuentas borradas no son usuarios: contarlas inflaría el número que más se mira.
-    contar(users, isNull(users.anonymizedAt)),
+    // Las de prueba tampoco, por lo mismo (ver `CUENTA_REAL`).
+    contar(users, CUENTA_REAL),
     contar(users, isNotNull(users.anonymizedAt)),
-    contar(subjects),
-    contar(scheduleBlocks),
-    contar(absenceRecords),
-    contar(agendaItems),
-    contar(posts),
+    /*
+     * Todo lo demás se filtra también por `IDS_REALES`, no solo el conteo de usuarios: las
+     * materias, las faltas y los mensajes de una cuenta de prueba inflaban el panel igual que
+     * la cuenta. Excluir la cuenta y contar sus datos habría sido peor que no excluir nada —
+     * la pantalla diría «1 usuario · 246 materias» y no habría forma de entenderlo.
+     */
+    contar(subjects, inArray(subjects.userId, IDS_REALES)),
+    contar(scheduleBlocks, inArray(scheduleBlocks.userId, IDS_REALES)),
+    contar(absenceRecords, inArray(absenceRecords.userId, IDS_REALES)),
+    contar(agendaItems, inArray(agendaItems.userId, IDS_REALES)),
+    contar(posts, inArray(posts.userId, IDS_REALES)),
     // Los borrados por su autor no cuentan: son huecos, no mensajes.
-    contar(messages, isNull(messages.deletedAt)),
-    contar(conversations),
-    contar(contacts, eq(contacts.status, 'aceptada')),
-    contar(semesters, eq(semesters.status, 'activo')),
-    contar(semesters, eq(semesters.status, 'archivado')),
-    contar(shares),
+    contar(messages, and(isNull(messages.deletedAt), inArray(messages.senderId, IDS_REALES))),
+    // Una conversación cuenta si **alguno** de los dos lados es real: un hilo entre una cuenta
+    // real y una de prueba sigue siendo un hilo que existe en la bandeja de alguien real.
+    contar(
+      conversations,
+      or(
+        inArray(conversations.userAId, IDS_REALES),
+        inArray(conversations.userBId, IDS_REALES),
+      ),
+    ),
+    contar(
+      contacts,
+      and(
+        eq(contacts.status, 'aceptada'),
+        or(inArray(contacts.userAId, IDS_REALES), inArray(contacts.userBId, IDS_REALES)),
+      ),
+    ),
+    contar(
+      semesters,
+      and(eq(semesters.status, 'activo'), inArray(semesters.userId, IDS_REALES)),
+    ),
+    contar(
+      semesters,
+      and(eq(semesters.status, 'archivado'), inArray(semesters.userId, IDS_REALES)),
+    ),
+    contar(shares, inArray(shares.userId, IDS_REALES)),
   ]);
 
   return {
@@ -148,7 +215,7 @@ async function altasPorSemana(): Promise<readonly PanelAltaSemanal[]> {
       altas: sql<number>`count(*)::int`,
     })
     .from(users)
-    .where(isNull(users.anonymizedAt))
+    .where(CUENTA_REAL)
     .groupBy(sql`date_trunc('week', ${users.createdAt})`)
     .orderBy(sql`date_trunc('week', ${users.createdAt}) desc`)
     .limit(12);
@@ -172,14 +239,14 @@ async function actividad(): Promise<PanelActividad> {
     const [fila] = await db
       .select({ n: sql<number>`count(distinct ${sessions.userId})::int` })
       .from(sessions)
-      .where(gte(sessions.lastUsedAt, hace(dias)));
+      .where(and(gte(sessions.lastUsedAt, hace(dias)), inArray(sessions.userId, IDS_REALES)));
     return fila?.n ?? 0;
   };
 
   const porCliente = await db
     .select({ client: sessions.client, n: count() })
     .from(sessions)
-    .where(gt(sessions.expiresAt, new Date()))
+    .where(and(gt(sessions.expiresAt, new Date()), inArray(sessions.userId, IDS_REALES)))
     .groupBy(sessions.client);
 
   const [activosHoy, activos7Dias, activos30Dias] = await Promise.all([
@@ -211,7 +278,7 @@ async function versiones(): Promise<readonly PanelVersion[]> {
       sesiones: count(),
     })
     .from(sessions)
-    .where(gt(sessions.expiresAt, new Date()))
+    .where(and(gt(sessions.expiresAt, new Date()), inArray(sessions.userId, IDS_REALES)))
     .groupBy(sessions.client, sessions.clientVersion)
     .orderBy(sessions.client, sessions.clientVersion);
 
@@ -266,7 +333,7 @@ async function retencion(): Promise<PanelRetencion> {
       // `sql` lo pasa al driver tal cual, y `postgres` solo acepta texto o buffer como
       // parámetro —falla con «Received an instance of Date»—. Los ayudantes de Drizzle
       // conocen el tipo de la columna y serializan la fecha por su cuenta.
-      .where(and(isNull(users.anonymizedAt), lte(users.createdAt, corte)));
+      .where(and(CUENTA_REAL, lte(users.createdAt, corte)));
 
     return { elegibles: fila?.elegibles ?? 0, volvieron: fila?.volvieron ?? 0 };
   };
@@ -320,7 +387,7 @@ async function embudo(): Promise<PanelEmbudo> {
       )::int`,
     })
     .from(users)
-    .where(isNull(users.anonymizedAt));
+    .where(CUENTA_REAL);
 
   return {
     registrados: fila?.registrados ?? 0,

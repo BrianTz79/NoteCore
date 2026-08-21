@@ -1,4 +1,5 @@
 import { and, eq, lt, ne, or } from 'drizzle-orm';
+import { esCorreoDePrueba } from '@notecore/shared';
 import type {
   AuthenticatedUser,
   ChangePasswordInput,
@@ -115,6 +116,13 @@ export async function register(
         username: input.username,
         displayName: input.displayName,
         passwordHash,
+        /**
+         * Si es una cuenta de prueba se decide **aquí, una vez**, y no se vuelve a mirar.
+         *
+         * El panel de la Fase 25 la excluirá de todos sus números. Ver
+         * `users.isTestAccount` en el esquema para el porqué de la columna.
+         */
+        isTestAccount: esCorreoDePrueba(input.email),
       })
       .returning();
   } catch (error) {
