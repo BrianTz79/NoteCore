@@ -35,8 +35,8 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta** y un **panel de números** para quien opera el servicio |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
 | **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18) y **las fases 19, 20 y 25** (2026-08-21). **Quedan cuatro abiertas —21 a 24—**, todas del camino a Play Store. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y el [historial](#10-historial-de-las-fases-19-a-25) |
-| **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad ni el borrado de cuenta —los dos motivos de rechazo automático, cerrados el 2026-08-21—; quedan reportar contenido, los permisos del manifiesto, el `.aab` con su ficha y apagar el actualizador. **La clave de firma sigue sin respaldar** |
+| **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. **Las fases 19, 20 y 25 se desplegaron el 2026-08-21**: `/privacidad`, `/borrar-cuenta` y `/panel` ya responden. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
+| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad ni el borrado de cuenta —los dos motivos de rechazo automático, cerrados y desplegados el 2026-08-21—; quedan reportar contenido, los permisos del manifiesto, el `.aab` con su ficha y apagar el actualizador. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
@@ -2252,6 +2252,24 @@ mano desaparece en la siguiente compilación limpia, en silencio y justo cuando 
 faltan las credenciales, el plugin **aborta la compilación** en vez de firmar con la clave de
 depuración.
 
+### Despliegue del 2026-08-21 (fases 19, 20 y 25)
+
+Se reconstruyeron las imágenes de `api` y `web` y se recrearon los contenedores. La migración
+`0011` ya se había aplicado antes, durante la verificación; es **compatible hacia atrás** —solo
+añade columnas y endurece claves foráneas—, así que el código anterior siguió funcionando con ella
+durante el rato que estuvo desplegada sin su código.
+
+Se añadió `NEXT_PUBLIC_APP_VERSION=0.2.0` al `.env`. Es la versión que la web manda en la cabecera
+`x-notecore-version` y que el panel agrega. **Va en la compilación, no en el entorno del
+contenedor**: `NEXT_PUBLIC_*` se incrusta en el bundle, así que cambiarla exige reconstruir la
+imagen, no solo reiniciarla.
+
+Verificado desde las direcciones públicas: `/privacidad` y `/borrar-cuenta` responden 200 **sin
+sesión** con el contenido completo, `/panel` responde 404 a una cuenta normal y 401 sin sesión, y
+con una cuenta administradora devuelve los números reales de producción.
+
+**La cuenta `@mizllet` quedó marcada como administradora** (`is_admin = true`), y es la única.
+
 ### Otros arreglos que salieron al desplegar
 
 | Qué estaba mal | Por qué importaba |
@@ -2712,11 +2730,20 @@ configuración y compilación. La **24 va deliberadamente al final**: apagar el 
 último que se toca, porque mientras se prepara todo lo demás sigue siendo la vía por la que llegan
 las versiones nuevas al teléfono.
 
-> **Antes de nada, y no es una fase**: **respaldar `~/.notecore-release/`** en un sitio seguro y
-> fuera de esta máquina. La clave de firma no está respaldada. Si se pierde el disco, no se puede
-> volver a actualizar la app bajo la misma identidad en Play Store, y eso no tiene arreglo
-> posterior — ni Google puede deshacerlo. Es cinco minutos de trabajo y bloquea todo lo demás en
-> el peor sentido posible: en silencio, y solo se descubre cuando ya es tarde.
+> **Antes de nada, y no es una fase**: respaldar `~/.notecore-release/`.
+>
+> **Hecho a medias el 2026-08-21.** Hay dos copias verificadas en `~/respaldos-notecore/claves/`
+> —una carpeta y un `.tar.gz` de 5 KB—, ambas comprobadas abriendo el keystore con su contraseña
+> real y contrastando la huella SHA-256 contra el original. Eso protege de un borrado accidental.
+>
+> **Lo que sigue faltando es sacar una copia fuera de esta máquina**, que es lo que protege de que
+> el disco muera. El `.tar.gz` cabe en cualquier USB; si va a la nube, hay que cifrarlo antes
+> (`gpg -c`) porque lleva las contraseñas en texto plano. Las instrucciones están en
+> `~/respaldos-notecore/LEEME.md`.
+>
+> Si se pierde la clave, no se puede volver a actualizar la app bajo la misma identidad en Play
+> Store, y eso no tiene arreglo posterior — ni Google puede deshacerlo. El fallo es silencioso: no
+> se descubre el día que muere el disco, sino meses después, al intentar publicar.
 
 ---
 
@@ -3177,6 +3204,18 @@ panel, no la petición del estudiante. En la app sale del `versionCode` de `app.
 del actualizador: **la Fase 24 va a apagar ese módulo**, y depender de él sería escribir una avería
 con fecha.
 
+**Cómo entrar al panel**
+
+```sql
+update users set is_admin = true where username = 'mizllet';
+```
+
+Se hizo el 2026-08-21 y **`@mizllet` es la única cuenta administradora**. Para quitar el permiso,
+lo mismo con `false`. No hay ninguna ruta de la API que lo conceda, y es deliberado.
+
+El panel vive en https://notecore.ourocore.net/panel y el enlace aparece al pie de la barra
+lateral, solo para esa cuenta.
+
 **Verificación (2026-08-21)**
 
 - **Los 15 conteos cuadran uno a uno con SQL directo.** Más actividad, versiones y retención,
@@ -3202,3 +3241,50 @@ consultas tardan milisegundos y las lanza una sola persona; cachear ahora añadi
 una respuesta que puede mentir unos minutos, a cambio de nada. Tocará cuando abrir el panel se note
 en la latencia de la API que usan los estudiantes, y la forma es un cache de unos minutos delante
 de `resumen()`, que el archivo deja fácil por devolver todo de una sola función.
+
+
+---
+
+## 11. Despliegue y respaldo del 2026-08-21
+
+Cerradas las tres fases, se hicieron las dos cosas que faltaban para que sirvieran de algo.
+
+### Desplegado
+
+Imágenes de `api` y `web` reconstruidas y contenedores recreados. El detalle está en la
+[sección 7](#despliegue-del-2026-08-21-fases-19-20-y-25). En resumen: `/privacidad`,
+`/borrar-cuenta` y `/panel` ya responden en producción, y `@mizllet` es administradora.
+
+**La URL que se declara en la consola de Play** —el campo que hoy bloquea la publicación— es:
+
+```
+https://notecore.ourocore.net/privacidad
+```
+
+Y la de borrado de cuenta, que Google pide aparte:
+
+```
+https://notecore.ourocore.net/borrar-cuenta
+```
+
+Las dos responden 200 sin sesión, con el contenido en el HTML inicial: un revisor las lee sin
+instalar nada ni registrarse.
+
+### Respaldo de la clave de firma
+
+Dos copias en `~/respaldos-notecore/claves/`, con un `LEEME.md` que explica qué son, por qué
+importan y cómo restaurarlas:
+
+| Copia | Para qué |
+|---|---|
+| `notecore-release-20260820/` | El directorio tal cual, con permisos |
+| `notecore-release-20260820.tar.gz` | 5 KB, listo para llevarse a un USB o cifrar |
+
+**Verificadas de verdad**, no solo copiadas: se abrió el keystore de cada copia con la contraseña
+real y se comprobó que su huella SHA-256 coincide con la del original
+(`4D:2C:D8:71:...:87:96`, alias `notecore`, vigente hasta 2056).
+
+> **Esto todavía no es un respaldo completo.** Son copias en el **mismo disco**: protegen de un
+> borrado accidental, no de que el disco muera. Falta llevarse el `.tar.gz` fuera de la máquina —y
+> cifrarlo si va a la nube, porque lleva las contraseñas en texto plano—. Es el único paso que
+> queda y cuesta un minuto.
