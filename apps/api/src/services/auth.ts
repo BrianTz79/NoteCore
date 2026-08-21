@@ -1,7 +1,8 @@
-import { and, eq, lt, ne } from 'drizzle-orm';
+import { and, eq, lt, ne, or } from 'drizzle-orm';
 import type {
   AuthenticatedUser,
   ChangePasswordInput,
+  DeleteAccountInput,
   LoginInput,
   RegisterInput,
   SessionClient,
@@ -9,7 +10,20 @@ import type {
   UpdateProfileInput,
 } from '@notecore/shared';
 import { db } from '../db/client.js';
-import { sessions, users, type UserRow } from '../db/schema.js';
+import {
+  absenceRecords,
+  agendaItems,
+  contacts,
+  posts,
+  scheduleBlocks,
+  semesters,
+  sessions,
+  shares,
+  subjects,
+  userSettings,
+  users,
+  type UserRow,
+} from '../db/schema.js';
 import { errors, isUniqueViolation } from '../lib/errors.js';
 import { hashPassword, verifyPassword, wastePasswordComparison } from '../lib/passwords.js';
 import { generateRefreshToken, hashRefreshToken, signAccessToken } from '../lib/tokens.js';
@@ -39,6 +53,7 @@ function toAuthenticatedUser(row: UserRow): AuthenticatedUser {
     email: row.email,
     username: row.username,
     displayName: row.displayName,
+    isAdmin: row.isAdmin,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -307,6 +322,146 @@ export async function revokeSession(userId: string, sessionId: string): Promise<
    * resto de sus dispositivos reconecta solo en un segundo —la reconexión con espera creciente
    * ya está escrita— mientras que cerrar de menos dejaría el dispositivo revocado recibiendo
    * conversación privada, que es justo lo que el usuario acaba de pedir que no pase.
+   */
+  disconnectUser(userId);
+}
+
+/* ─────────────────────────── Borrado de cuenta (Fase 20) ─────────────────────────── */
+
+/**
+ * Borra la cuenta y todos sus datos, sin vuelta atrás.
+ *
+ * ## Qué se destruye y qué sobrevive
+ *
+ * Se destruye **todo lo que es de esta persona**: horario, materias, faltas, agenda,
+ * periodos —archivados incluidos—, publicaciones, comparticiones, contactos, ajustes y todas
+ * sus sesiones. Casi todo cae solo por las cascadas que el esquema ya tenía; lo que no, se
+ * borra explícitamente aquí.
+ *
+ * Sobreviven **los mensajes que envió a otras personas**, porque también son de ellas: un
+ * mensaje que Ana le mandó a Beto vive en la conversación de Beto, y borrarlo dejaría sus
+ * respuestas colgando de nada. Dejan de estar ligados a Ana —el remitente pasa a ser una fila
+ * anonimizada, sin correo, sin `@usuario` y sin nombre— y esa es la forma que la política de
+ * Play permite: retener datos **plenamente anonimizados**, declarándolo antes. La Fase 19 lo
+ * declara, y por eso esta fase va después.
+ *
+ * ## Por qué la fila de `users` se vacía en lugar de borrarse
+ *
+ * Está razonado en `users.anonymizedAt`, en el esquema. En corto: `conversations` guarda el
+ * par de personas con un índice único, así que reapuntar los hilos de todas las cuentas
+ * borradas a un único centinela global haría chocar dos hilos distintos de la misma persona.
+ * Una lápida por cuenta borrada conserva cada par distinto.
+ *
+ * Lo que queda tras esto es un identificador y una fecha. **No es una cuenta desactivada**:
+ * no hay contraseña que satisfacer, no hay correo con el que entrar, y no queda un solo dato
+ * que permita saber de quién fue.
+ *
+ * ## Por qué en una transacción
+ *
+ * Porque a mitad son doce tablas. Si el proceso muere entre el borrado del horario y el
+ * vaciado de `users`, la cuenta quedaría entrando con su contraseña y sin sus datos, que es
+ * peor que cualquiera de los dos extremos. O se va todo, o no se va nada y la persona puede
+ * volver a intentarlo.
+ */
+export async function deleteAccount(
+  userId: string,
+  input: DeleteAccountInput,
+): Promise<void> {
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!user) throw errors.noEncontrado('No se encontró tu cuenta.');
+
+  /**
+   * La contraseña se comprueba **aquí**, en el servidor, aunque el formulario ya la pidiera.
+   *
+   * Principio II: la validación del cliente es comodidad, no seguridad. Sin esto, quien
+   * encontrara un teléfono con la sesión abierta podría vaciar la cuenta llamando a la ruta
+   * directamente, sin saber la contraseña.
+   */
+  if (!(await verifyPassword(input.password, user.passwordHash))) {
+    throw errors.validacion('La contraseña no es correcta.', [
+      { field: 'password', message: 'La contraseña no es correcta' },
+    ]);
+  }
+
+  await db.transaction(async (tx) => {
+    /*
+     * El orden importa donde hay claves foráneas entre las propias tablas del usuario, y no
+     * importa donde solo cuelgan de `users`. Se borra de las hojas hacia la raíz.
+     */
+
+    // Faltas y sesiones de clase cuelgan de materias y periodos; van primero.
+    await tx.delete(absenceRecords).where(eq(absenceRecords.userId, userId));
+    await tx.delete(scheduleBlocks).where(eq(scheduleBlocks.userId, userId));
+    await tx.delete(agendaItems).where(eq(agendaItems.userId, userId));
+    await tx.delete(subjects).where(eq(subjects.userId, userId));
+    await tx.delete(semesters).where(eq(semesters.userId, userId));
+
+    await tx.delete(posts).where(eq(posts.userId, userId));
+    await tx.delete(shares).where(eq(shares.userId, userId));
+    await tx.delete(userSettings).where(eq(userSettings.userId, userId));
+
+    /**
+     * Los contactos: las relaciones en las que aparece, esté en el lado que esté.
+     *
+     * Se borran de verdad y no se anonimizan, a diferencia de los mensajes: una relación no
+     * es contenido de nadie, es un vínculo entre dos personas, y cuando una se va el vínculo
+     * deja de existir. A la otra persona simplemente le desaparece de su lista.
+     */
+    await tx
+      .delete(contacts)
+      .where(
+        or(
+          eq(contacts.userAId, userId),
+          eq(contacts.userBId, userId),
+          eq(contacts.requesterId, userId),
+        ),
+      );
+
+    /**
+     * Las sesiones, que es lo que cierra el teléfono y el navegador a la vez.
+     *
+     * Va dentro de la transacción para que no exista un instante en el que la cuenta esté
+     * vaciada pero su sesión siga sirviendo peticiones.
+     */
+    await tx.delete(sessions).where(eq(sessions.userId, userId));
+
+    /**
+     * Y la lápida.
+     *
+     * El correo y el `@usuario` llevan el identificador de la fila —que ya no dice nada de
+     * nadie— solo para no chocar con los índices únicos de la tabla. El hash es una cadena
+     * que **no es un hash bcrypt válido**, así que `verifyPassword` devuelve `false` para
+     * cualquier entrada: la cuenta no se puede abrir ni acertando la contraseña de antes.
+     */
+    await tx
+      .update(users)
+      .set({
+        email: `eliminado+${userId}@notecore.invalid`,
+        username: `eliminado_${userId.replace(/-/g, '')}`,
+        displayName: 'Usuario eliminado',
+        passwordHash: 'cuenta-eliminada',
+        bio: null,
+        career: null,
+        school: null,
+        age: null,
+        // El más cerrado de los dos valores que existen (`todos` / `contactos`). Con la fila
+        // ya vacía y sin contactos, no queda nada que mostrar de ninguna forma; es cinturón
+        // sobre tirantes por si algún día se añade un camino de lectura que no se prevé hoy.
+        profileVisibility: 'contactos',
+        isAdmin: false,
+        anonymizedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId));
+  });
+
+  /**
+   * Y se cortan sus canales en vivo, por lo mismo que en `logout`: un WebSocket comprueba la
+   * sesión una sola vez, en el handshake, así que sin esto seguiría entregando mensajes a un
+   * dispositivo cuya cuenta acaba de dejar de existir.
+   *
+   * Va **fuera** de la transacción: no toca la base de datos y, si fallara, no debería
+   * deshacer un borrado ya consumado.
    */
   disconnectUser(userId);
 }

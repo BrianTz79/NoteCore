@@ -65,3 +65,26 @@ export const offlineStorage: OfflineStorage = {
     }
   },
 };
+
+/**
+ * Borra **todo** lo que la app guardó en disco: cache, cola y perfil recordado (Fase 20).
+ *
+ * Existe para el borrado de cuenta, y solo para eso. `logout` no la usa a propósito: cerrar
+ * sesión en el teléfono es reversible —se vuelve a entrar y el cache sigue sirviendo sin
+ * conexión—, mientras que borrar la cuenta no lo es, y dejar el horario y la agenda de
+ * alguien que pidió que se borrara todo en el disco del teléfono sería incumplir esa promesa
+ * justo donde nadie mira.
+ *
+ * Se borra la carpeta entera en lugar de recorrer claves conocidas: una clave nueva que se
+ * añada en una fase futura se limpiaría sola, mientras que una lista que hay que acordarse de
+ * actualizar es una lista que se queda corta en silencio.
+ */
+export async function borrarTodoElAlmacenamiento(): Promise<void> {
+  try {
+    if (ROOT.exists) ROOT.delete();
+  } catch {
+    // Si no se puede borrar, la cuenta ya no existe en el servidor y lo que quede aquí no
+    // abre ninguna sesión: no hay nada que hacer, y lanzar aquí haría creer que el borrado
+    // falló cuando ya se consumó.
+  }
+}

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 import type {
   AuthenticatedUser,
+  DeleteAccountInput,
   LoginInput,
   RegisterInput,
   UpdateProfileInput,
@@ -26,6 +27,15 @@ interface AuthState {
   register(input: RegisterInput): Promise<void>;
   logout(): Promise<void>;
   updateProfile(input: UpdateProfileInput): Promise<void>;
+  /**
+   * Borra la cuenta y deja la sesión cerrada (Fase 20).
+   *
+   * A diferencia de `logout`, si la llamada falla **no** se cierra la sesión en la interfaz:
+   * sacar a alguien de su cuenta haciéndole creer que se borró, cuando el servidor la
+   * rechazó por contraseña incorrecta, es el peor error posible en esta pantalla. El error
+   * sube al formulario para que lo muestre.
+   */
+  deleteAccount(input: DeleteAccountInput): Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -141,6 +151,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const deleteAccount = useCallback(async (input: DeleteAccountInput) => {
+    // Sin `catch`: un fallo tiene que llegar al formulario. Si esta línea pasa, la cuenta
+    // ya no existe en el servidor y solo queda limpiar lo que quedó en el navegador.
+    await authApi.deleteAccount(input);
+    forgetProfile();
+    /**
+     * El cache sin conexión de la Fase 9 se va con la cuenta.
+     *
+     * Sus claves llevan el identificador del usuario, así que no lo vería nadie más — pero
+     * son el horario, las faltas y la agenda de alguien que acaba de pedir que se borre todo,
+     * y dejarlos en el disco del navegador sería incumplir eso justo donde nadie mira.
+     */
+    try {
+      const claves = Object.keys(window.localStorage).filter((clave) =>
+        clave.startsWith('notecore:'),
+      );
+      for (const clave of claves) window.localStorage.removeItem(clave);
+    } catch {
+      // Sin almacenamiento no hay nada que limpiar.
+    }
+    setUser(null);
+  }, []);
+
   const updateProfile = useCallback(async (input: UpdateProfileInput) => {
     const actualizado = await authApi.updateProfile(input);
     setUser(actualizado);
@@ -148,8 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ user, loading, login, register, logout, updateProfile }),
-    [user, loading, login, register, logout, updateProfile],
+    () => ({ user, loading, login, register, logout, updateProfile, deleteAccount }),
+    [user, loading, login, register, logout, updateProfile, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

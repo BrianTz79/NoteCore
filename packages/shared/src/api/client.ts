@@ -82,6 +82,21 @@ export interface ApiClientOptions {
   readonly baseUrl: string;
   /** Identifica al cliente en las sesiones del usuario. */
   readonly client: 'web' | 'mobile';
+  /**
+   * Qué versión de este cliente es (Fase 25).
+   *
+   * Viaja en la cabecera `x-notecore-version` de cada petición y el servidor la guarda en la
+   * sesión. Es lo que permite responder «cuánta gente se quedó en una versión vieja», que
+   * hoy no tiene respuesta: sin esto, publicar un arreglo y no saber si llegó a nadie.
+   *
+   * En la app es el `versionCode` de Android; en la web, la versión del paquete. Opcional:
+   * un cliente que no la mande sigue funcionando igual, y su sesión se queda sin versión —lo
+   * cual también es un dato.
+   *
+   * **No es una credencial y no se usa para autorizar nada.** Un valor manipulado solo
+   * ensucia una cifra del panel; por eso basta con una cabecera, igual que `x-notecore-client`.
+   */
+  readonly version?: string;
   readonly tokens: TokenStore;
   /**
    * `true` en web: el navegador envía y recibe las cookies de sesión.
@@ -151,13 +166,25 @@ export class ApiClient {
     return this.request<T>(path, { method: 'PATCH', body });
   }
 
-  delete<T>(path: string): Promise<T> {
-    return this.request<T>(path, { method: 'DELETE' });
+  /**
+   * `DELETE`, con cuerpo opcional.
+   *
+   * El cuerpo lo estrenó el borrado de cuenta de la Fase 20, que manda la contraseña y la
+   * palabra de confirmación. Podría haber sido un `POST /auth/delete`, pero el recurso es la
+   * cuenta y el verbo correcto es este; `DELETE` con cuerpo es legal en HTTP y la API ya
+   * analiza el JSON de cualquier método. Las demás llamadas lo omiten y no cambian en nada:
+   * sin `body`, `send` ni siquiera pone la cabecera `content-type`.
+   */
+  delete<T>(path: string, body?: unknown): Promise<T> {
+    return this.request<T>(path, { method: 'DELETE', ...(body !== undefined && { body }) });
   }
 
   private async send(path: string, options: RequestOptions): Promise<Response> {
     const headers: Record<string, string> = {
       'x-notecore-client': this.options.client,
+      ...(this.options.version !== undefined && {
+        'x-notecore-version': this.options.version,
+      }),
     };
 
     if (options.body !== undefined) {

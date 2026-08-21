@@ -68,3 +68,30 @@ export const refreshSchema = z.object({
 });
 
 export type RefreshInput = z.infer<typeof refreshSchema>;
+
+/**
+ * Confirmación del borrado de cuenta (Fase 20).
+ *
+ * Pide **dos** cosas y no una: la contraseña, que prueba que quien pulsa es el dueño de la
+ * cuenta y no alguien que encontró el teléfono desbloqueado; y escribir una palabra exacta,
+ * que convierte el gesto en un acto deliberado. Un solo diálogo de «¿seguro?» se acepta por
+ * reflejo — y esta es la única operación del producto que destruye datos a propósito y sin
+ * vuelta atrás.
+ *
+ * La palabra se compara sin distinguir mayúsculas ni espacios sobrantes: el requisito es que
+ * la persona la teclee entendiendo lo que hace, no que acierte con el `Shift`.
+ */
+export const DELETE_ACCOUNT_CONFIRMATION = 'BORRAR';
+
+export const deleteAccountSchema = z.object({
+  password: requiredString('la contraseña').min(1, 'Escribe tu contraseña'),
+  confirmation: z
+    .string()
+    .transform((valor) => valor.trim().toUpperCase())
+    .refine(
+      (valor) => valor === DELETE_ACCOUNT_CONFIRMATION,
+      `Escribe ${DELETE_ACCOUNT_CONFIRMATION} para confirmar`,
+    ),
+});
+
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

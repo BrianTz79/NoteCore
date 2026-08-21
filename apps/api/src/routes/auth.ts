@@ -2,6 +2,7 @@ import type { FastifyPluginAsync, FastifyReply } from 'fastify';
 import {
   AUTH_ROUTES,
   changePasswordSchema,
+  deleteAccountSchema,
   entityIdSchema,
   loginSchema,
   refreshSchema,
@@ -137,6 +138,28 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     await auth.changePassword(userId, sessionId, input);
     return reply.code(204).send();
   });
+
+  /**
+   * Borrar la cuenta (Fase 20).
+   *
+   * Lleva el mismo límite que las demás rutas con contraseña: sin él, esta sería la ruta
+   * ideal para probar contraseñas contra una sesión robada —cada intento fallido es barato y
+   * el acierto vacía la cuenta—.
+   *
+   * Las cookies se limpian en la web aunque la sesión ya no exista en la base: el navegador
+   * seguiría mandando credenciales muertas en cada petición hasta que caducaran solas.
+   */
+  app.delete(
+    AUTH_ROUTES.deleteAccount,
+    { ...passwordRateLimit, preHandler: requireAuth },
+    async (request, reply) => {
+      const input = parseBody(deleteAccountSchema, request.body);
+      await auth.deleteAccount(authOf(request).userId, input);
+
+      if (clientOf(request) === 'web') clearAuthCookies(reply);
+      return reply.code(204).send();
+    },
+  );
 
   app.get(AUTH_ROUTES.sessions, { preHandler: requireAuth }, async (request) => {
     const { userId, sessionId } = authOf(request);

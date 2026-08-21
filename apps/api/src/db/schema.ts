@@ -54,6 +54,51 @@ export const users = pgTable('users', {
    * hace que el requisito se cumpla por defecto y no solo si el usuario configura.
    */
   profileVisibility: text('profile_visibility').notNull().default('contactos'),
+  /**
+   * Cuándo se anonimizó esta fila al borrar la cuenta (Fase 20). `null` en una cuenta viva.
+   *
+   * ## Qué es una fila anonimizada, y por qué no es una cuenta desactivada
+   *
+   * Cuando alguien borra su cuenta, todos sus datos se destruyen —horario, faltas, agenda,
+   * periodos, publicaciones, comparticiones, ajustes, contactos y sesiones— y **esta fila se
+   * vacía**: el correo y el `@usuario` pasan a valores aleatorios sin significado, el nombre
+   * a «Usuario eliminado», la contraseña a un hash que ninguna contraseña satisface, y todos
+   * los campos de perfil a `null`. Lo que queda es un identificador y una fecha: no hay nada
+   * que permita reasociar la fila con la persona que fue.
+   *
+   * Eso **no** es la desactivación que Google prohíbe. Lo prohibido es congelar la cuenta
+   * dejando los datos dentro para poder revivirla; aquí no queda ningún dato que revivir, y
+   * la política de privacidad (Fase 19) lo explica antes de ofrecer el borrado. Retener datos
+   * plenamente anonimizados, declarándolo, es lo que la política de Play permite.
+   *
+   * ## Por qué la fila sobrevive en lugar de borrarse
+   *
+   * Por los mensajes. Un mensaje que Ana le mandó a Beto vive en la conversación de Beto y
+   * también es suyo: borrar la fila de Ana con el `cascade` que había se llevaría medio hilo
+   * de Beto y dejaría sus respuestas colgando de nada. Y `conversations` guarda el par de
+   * personas con un índice único sobre las dos columnas, así que reapuntar los hilos de todas
+   * las cuentas borradas a un **único** centinela global haría chocar dos hilos distintos de
+   * Beto —uno con Ana, otro con Carlos, ambos ahora «con el centinela»— contra ese índice.
+   *
+   * Una lápida por cuenta borrada resuelve las dos cosas a la vez: cada hilo conserva su par
+   * distinto y su forma, y no hay ninguna cascada que atraviese hacia los datos de un tercero.
+   */
+  anonymizedAt: timestamp('anonymized_at', { withTimezone: true }),
+  /**
+   * Si esta cuenta puede ver el panel de números del operador (Fase 25).
+   *
+   * `false` para todo el mundo, y se activa **a mano con SQL** solo para la cuenta de quien
+   * mantiene el proyecto. No hay ninguna ruta de la API que lo ponga a `true`: convertir a
+   * alguien en administrador tiene que exigir acceso a la base de datos, porque un endpoint
+   * que conceda ese permiso es, por definición, el endpoint que hay que comprometer para
+   * verlo todo.
+   *
+   * Vive aquí y no en una lista del `.env` porque así la autorización está donde está todo lo
+   * demás —y cambiarla no exige reiniciar el contenedor—, ni en una contraseña propia del
+   * panel, que sería una segunda credencial que mantener y rotar rompiendo que la sesión sea
+   * una sola cosa en todo el producto.
+   */
+  isAdmin: boolean('is_admin').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -78,6 +123,24 @@ export const sessions = pgTable(
     refreshTokenHash: text('refresh_token_hash').notNull(),
     /** `web` o `mobile`, para que el usuario reconozca el dispositivo. */
     client: text('client').notNull(),
+    /**
+     * Qué versión del cliente usó esta sesión la última vez (Fase 25).
+     *
+     * En la app es el `versionCode` de Android como texto («4»); en la web, la versión del
+     * paquete. `null` en las sesiones que existían antes de esta fase y en cualquier cliente
+     * que no mande la cabecera `x-notecore-version` — que es información en sí misma, no un
+     * fallo: una sesión sin versión es una que no ha vuelto a usarse desde entonces.
+     *
+     * Vive en la sesión y no en el usuario porque la misma persona puede tener el teléfono en
+     * una versión vieja y el navegador al día: guardarlo por cuenta obligaría a que una de las
+     * dos sobrescribiera a la otra, y la pregunta que esto responde —cuánta gente se quedó
+     * atrás— dejaría de tener respuesta.
+     *
+     * Es un dato de operación, no de producto: nadie lo ve en su lista de dispositivos, y solo
+     * lo agrega el panel de la Fase 25. Se declara en la política de privacidad igual que el
+     * resto de lo que guarda esta tabla.
+     */
+    clientVersion: text('client_version'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }).notNull().defaultNow(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
@@ -629,14 +692,19 @@ export const conversations = pgTable(
   'conversations',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    /** El menor de los dos identificadores. Lo impone `orderedPair`, no el orden de llegada. */
+    /**
+     * El menor de los dos identificadores. Lo impone `orderedPair`, no el orden de llegada.
+     *
+     * **`restrict`**, por lo mismo que `messages.sender_id` (Fase 20): una conversación es de
+     * dos personas, y en cascada el borrado de una vaciaría la bandeja de la otra.
+     */
     userAId: uuid('user_a_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    /** El mayor de los dos identificadores. */
+      .references(() => users.id, { onDelete: 'restrict' }),
+    /** El mayor de los dos identificadores. También `restrict`. */
     userBId: uuid('user_b_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id, { onDelete: 'restrict' }),
     /**
      * Hasta cuándo ha leído cada uno.
      *
@@ -693,9 +761,23 @@ export const messages = pgTable(
      * conversación va ordenado por identificador y deliberadamente pierde quién es quién,
      * exactamente igual que `requesterId` en los contactos.
      */
+    /**
+     * **`restrict`, no `cascade`** (Fase 20).
+     *
+     * Es la única referencia a `users` del esquema que no cae en cascada, y es deliberado: un
+     * mensaje que Ana le mandó a Beto vive en la conversación de Beto y también es suyo. Con
+     * `cascade`, un `DELETE` sobre la fila de Ana se llevaría medio hilo de Beto y dejaría sus
+     * respuestas colgando de nada.
+     *
+     * El borrado de cuenta de la Fase 20 no borra esa fila —la vacía y la anonimiza, ver
+     * `users.anonymizedAt`—, así que en la operación normal esta restricción nunca se dispara.
+     * Está para el caso que no es normal: un `DELETE FROM users` escrito a mano en una consola
+     * de psql. Con `restrict`, PostgreSQL lo rechaza y la conversación de un tercero se salva;
+     * con `cascade`, se ejecuta en silencio y no hay forma de saber qué se perdió.
+     */
     senderId: uuid('sender_id')
       .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
+      .references(() => users.id, { onDelete: 'restrict' }),
     text: text('text').notNull(),
     /**
      * Cuándo lo borró su autor. `null` si sigue vigente.

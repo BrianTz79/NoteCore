@@ -7,6 +7,7 @@
 
 import type {
   ChangePasswordInput,
+  DeleteAccountInput,
   LoginInput,
   RegisterInput,
   UpdateProfileInput,
@@ -22,6 +23,14 @@ export const AUTH_ROUTES = {
   me: '/auth/me',
   password: '/auth/password',
   sessions: '/auth/sessions',
+  /**
+   * Borrado de cuenta (Fase 20).
+   *
+   * `DELETE /auth/me` y no `POST /auth/delete`: el recurso es la propia cuenta y el verbo ya
+   * dice qué se le hace. Quién se borra sale del token, nunca de la ruta ni del cuerpo — con
+   * un identificador en la URL, esta sería la ruta que hay que probar con el `id` de otro.
+   */
+  deleteAccount: '/auth/me',
 } as const;
 
 export function createAuthApi(client: ApiClient) {
@@ -61,6 +70,16 @@ export function createAuthApi(client: ApiClient) {
     /** Cierra una sesión concreta por su identificador. */
     revokeSession(sessionId: string): Promise<void> {
       return client.delete<void>(`${AUTH_ROUTES.sessions}/${sessionId}`);
+    },
+
+    /**
+     * Borra la cuenta y todos sus datos, sin vuelta atrás (Fase 20).
+     *
+     * Al volver, la sesión de este cliente ya no existe —ni ninguna otra de la cuenta—, así
+     * que quien llame debe llevar a la persona fuera en lugar de intentar refrescar nada.
+     */
+    deleteAccount(input: DeleteAccountInput): Promise<void> {
+      return client.delete<void>(AUTH_ROUTES.deleteAccount, input);
     },
   };
 }

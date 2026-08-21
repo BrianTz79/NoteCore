@@ -2752,7 +2752,11 @@ no se recoja.
 
 ---
 
-### Fase 20 — Borrar la cuenta · **P0**
+### Fase 20 — Borrar la cuenta · **P0** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada y verificada en web y en app. El detalle está en el
+> [historial](#fase-20--borrar-la-cuenta--cerrada-el-2026-08-21). Lo de abajo es el enunciado con
+> el que se abrió, que se conserva porque es el diagnóstico que la originó.
 
 **Por qué es P0**: desde 2023 Google exige que quien se registró pueda **eliminar su cuenta y sus
 datos** desde dentro de la app, y además por una **URL web alcanzable sin instalarla**. Se
@@ -3064,3 +3068,66 @@ listo.
   metadatos técnicos sin contenido personal (`id`, fechas, `is_admin`, `anonymized_at`)
 - **Los asteriscos de Markdown salían literales** en pantalla: las cadenas las pintan tres motores
   distintos y ninguno interpreta Markdown. Ahora van en texto plano, con una nota en el archivo
+
+
+---
+
+### Fase 20 — Borrar la cuenta ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`DELETE /auth/me`** en la API, con `deleteAccount` en el servicio de auth: una transacción que
+  borra las diez tablas de la persona y vacía su fila de `users`
+- **Migración `0011`**: columna `users.anonymized_at`, y las claves foráneas de `messages.sender_id`
+  y de las dos columnas de `conversations` pasan de `cascade` a **`restrict`**
+- **`/borrar-cuenta` en la web** — página pública con las instrucciones, alcanzable **sin la app**
+- El formulario real en **Mi cuenta** (web) y en **Ajustes → Tus datos** (app)
+- Las cuentas borradas dejan de aparecer en búsquedas, perfiles y mensajería nueva
+
+**La decisión de diseño, y por qué es la correcta**
+
+El choque estaba entre el borrado que Google exige y el principio de datos históricos. Un mensaje
+que Ana le mandó a Beto vive en la conversación de Beto y **también es suyo**: borrarlo dejaría sus
+respuestas colgando de nada.
+
+La solución es **una lápida por cuenta borrada**. Se destruyen todos los datos de la persona y su
+fila de `users` se vacía: correo y `@usuario` a valores aleatorios sin significado, nombre a
+«Usuario eliminado», contraseña a un hash que ninguna contraseña satisface, perfil a `null`. Lo que
+queda es un identificador y una fecha.
+
+**No es la desactivación que Google prohíbe.** Lo prohibido es congelar la cuenta dejando los datos
+dentro para revivirla; aquí no queda ningún dato que revivir. La política de Play permite retener
+datos **plenamente anonimizados** cuando la política de privacidad lo explica — y la Fase 19 lo
+explica, que es exactamente por qué esta fase iba después.
+
+**Por qué una lápida por cuenta y no un centinela global**: `conversations` guarda el par de
+personas con un índice único. Reapuntar los hilos de todas las cuentas borradas a un único
+centinela haría chocar dos hilos distintos de la misma persona contra ese índice.
+
+**Por qué `restrict` y no `cascade`**: con la lápida, la fila de `users` no se borra, así que la
+cascada nunca se dispararía en la operación normal. `restrict` está para lo que no es normal — un
+`DELETE FROM users` escrito a mano en una consola: PostgreSQL lo rechaza y la conversación de un
+tercero se salva, en lugar de ejecutarse en silencio.
+
+**La confirmación pide dos cosas distintas**: la contraseña prueba **quién** es (sin ella, un
+teléfono desbloqueado sobre una mesa basta para vaciar la cuenta de su dueño); escribir BORRAR
+prueba que **entendió** (un «¿seguro?» se acepta por reflejo, teclear una palabra no).
+
+**Verificación (2026-08-21)**
+
+El escenario completo que pedía el enunciado, contra una API de desarrollo en el 3102:
+
+- Dos cuentas, contactos aceptados, **mensajes cruzados** y un horario compartido y aceptado
+- Al borrar Ana: **cero filas suyas** en las diez tablas (materias, bloques, semestres, faltas,
+  agenda, publicaciones, comparticiones, ajustes, contactos y sesiones), su mensaje a Beto
+  **conservado**, y su fila vaciada sin ningún dato personal
+- **Beto conserva** su hilo —con el remitente como «Usuario eliminado»— y su copia del horario
+- Ana no puede entrar ni con su sesión (`sesion_expirada`) ni con su contraseña
+  (`credenciales_invalidas`)
+- Los tres guardianes: contraseña incorrecta → rechaza; sin la palabra → rechaza; con las dos → 204
+- **Borrado real desde el emulador Android**, con APK de release: la app cae sola en la pantalla de
+  entrar y la base confirma la lápida
+
+**Lo que se descubrió al verificar**: el guardián de contraseña se disparó de verdad en el
+emulador —`adb shell input text` había metido caracteres de más—, lo que confirmó de paso que
+marca el campo correcto.

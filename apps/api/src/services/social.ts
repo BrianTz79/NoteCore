@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, ne, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import {
   areConnected,
   canSeeProfileDetails,
@@ -212,6 +212,11 @@ export async function searchUsers(
     .where(
       and(
         ne(users.id, userId),
+        // Las cuentas borradas (Fase 20) no se buscan ni se encuentran. La lápida existe
+        // para que los mensajes que esa persona envió conserven su sitio en la conversación
+        // de quien los recibió, no para seguir figurando en el directorio: sin este filtro,
+        // buscar «eliminado» devolvería la lista de todo el que se ha ido.
+        isNull(users.anonymizedAt),
         or(ilike(users.username, pattern), ilike(users.displayName, pattern)),
       ),
     )
@@ -242,9 +247,18 @@ export async function searchUsers(
 
 /* ─────────────────────────── Perfil ajeno ─────────────────────────── */
 
-/** Busca a alguien por su `@usuario`, para las rutas que lo reciben. */
+/**
+ * Busca a alguien por su `@usuario`, para las rutas que lo reciben.
+ *
+ * Una cuenta borrada (Fase 20) responde igual que una que nunca existió. Es el único punto
+ * por el que pasan el perfil ajeno, la solicitud de contacto, el bloqueo y el muro, así que
+ * filtrar aquí cierra los cuatro de una vez: sin esto, se podría abrir el perfil de una
+ * lápida escribiendo su `@usuario`, o mandarle una solicitud de contacto a nadie.
+ */
 async function findByUsername(username: string): Promise<UserRow> {
-  const user = await db.query.users.findFirst({ where: eq(users.username, username) });
+  const user = await db.query.users.findFirst({
+    where: and(eq(users.username, username), isNull(users.anonymizedAt)),
+  });
   if (!user) throw errors.noEncontrado('No encontramos a esa persona.');
   return user;
 }

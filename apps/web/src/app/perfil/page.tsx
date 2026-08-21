@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
+  BORRADO_EXPLICADO,
+  DELETE_ACCOUNT_CONFIRMATION,
   changePasswordSchema,
+  deleteAccountSchema,
   formatDateTime,
   toFormErrors,
   updateProfileSchema,
@@ -39,6 +43,7 @@ function Perfil() {
       <DatosDelPerfil />
       <CambiarContrasena />
       <Dispositivos />
+      <BorrarCuenta />
     </main>
   );
 }
@@ -249,6 +254,138 @@ function Dispositivos() {
           ))}
         </ul>
       )}
+    </Card>
+  );
+}
+
+/* ==========================================================================
+ * Borrar la cuenta (Fase 20)
+ * ======================================================================== */
+
+/**
+ * La única operación del producto que destruye datos a propósito.
+ *
+ * ## Por qué está detrás de un despliegue y no a la vista
+ *
+ * Porque no es una acción de esta pantalla, es una salida del producto. Un botón rojo
+ * permanente al final de «Mi cuenta» se convierte en parte del paisaje —se ve cada vez que
+ * alguien entra a cambiar su nombre— y lo que se ve cada día se acaba tocando. Plegado, hay
+ * que decidir abrirlo antes de poder decidir borrar.
+ *
+ * ## Por qué pide contraseña *y* una palabra
+ *
+ * Son dos cosas distintas. La contraseña prueba **quién** es —sin ella, un teléfono
+ * desbloqueado sobre una mesa basta para vaciar la cuenta de su dueño—. Escribir BORRAR
+ * prueba que **entendió**: un diálogo de «¿seguro?» se acepta por reflejo, y teclear una
+ * palabra no. La API exige las dos otra vez por su cuenta (Principio II); esto es lo que
+ * evita llegar hasta allí por accidente.
+ */
+function BorrarCuenta() {
+  const { deleteAccount } = useAuth();
+  const router = useRouter();
+
+  const [abierto, setAbierto] = useState(false);
+  const [values, setValues] = useState({ password: '', confirmation: '' });
+  const [errors, setErrors] = useState<FormErrors>({ fields: {} });
+  const [borrando, setBorrando] = useState(false);
+
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setBorrando(true);
+    setErrors({ fields: {} });
+
+    const parsed = deleteAccountSchema.safeParse(values);
+    if (!parsed.success) {
+      const fields: Record<string, string> = {};
+      for (const issue of parsed.error.issues) fields[issue.path.join('.')] = issue.message;
+      setErrors({ fields });
+      setBorrando(false);
+      return;
+    }
+
+    try {
+      await deleteAccount(parsed.data);
+      /**
+       * `replace` y no `push`: la cuenta ya no existe, así que el botón de atrás no puede
+       * devolver a una pantalla que consulta datos de una sesión muerta.
+       */
+      router.replace('/entrar');
+    } catch (error) {
+      setErrors(toFormErrors(error));
+      setBorrando(false);
+    }
+  }
+
+  if (!abierto) {
+    return (
+      <Card title="Borrar mi cuenta">
+        <p className="text-sm text-tinta2">
+          Elimina tu cuenta y todos tus datos de NoteCore. No se puede deshacer.
+        </p>
+        <Button variant="ghost" onClick={() => setAbierto(true)}>
+          Quiero borrar mi cuenta
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <Card title="Borrar mi cuenta">
+      <div className="rounded-md border border-error/40 bg-error/10 px-nc-md py-nc-sm">
+        <p className="text-sm font-medium text-error">
+          Esto borra tu cuenta y todos tus datos. No hay vuelta atrás.
+        </p>
+      </div>
+
+      <ul className="space-y-nc-2xs text-sm text-tinta2">
+        {BORRADO_EXPLICADO.map((linea) => (
+          <li key={linea} className="flex gap-nc-xs">
+            <span aria-hidden className="text-tinta3">
+              ·
+            </span>
+            <span>{linea}</span>
+          </li>
+        ))}
+      </ul>
+
+      <form onSubmit={onSubmit} noValidate className="space-y-nc-md">
+        <FormError message={errors.general} />
+
+        <Field
+          label="Tu contraseña"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          value={values.password}
+          onChange={(event) => setValues((c) => ({ ...c, password: event.target.value }))}
+          error={errors.fields.password}
+        />
+
+        <Field
+          label={`Escribe ${DELETE_ACCOUNT_CONFIRMATION} para confirmar`}
+          name="confirmation"
+          value={values.confirmation}
+          onChange={(event) => setValues((c) => ({ ...c, confirmation: event.target.value }))}
+          error={errors.fields.confirmation}
+        />
+
+        <div className="flex flex-wrap items-center gap-nc-sm">
+          <Button type="submit" variant="danger" loading={borrando}>
+            Borrar mi cuenta para siempre
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setAbierto(false);
+              setValues({ password: '', confirmation: '' });
+              setErrors({ fields: {} });
+            }}
+          >
+            Cancelar
+          </Button>
+        </div>
+      </form>
     </Card>
   );
 }

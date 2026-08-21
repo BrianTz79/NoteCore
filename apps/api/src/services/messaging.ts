@@ -171,9 +171,18 @@ async function countUnread(conversationId: string, viewerId: string, mine: Date 
 
 /* ─────────────────────────── La conversación ─────────────────────────── */
 
-/** Busca a alguien por su `@usuario`. */
+/**
+ * Busca a alguien por su `@usuario`.
+ *
+ * Una cuenta borrada (Fase 20) responde como una que no existe: no se le puede abrir un hilo
+ * nuevo ni escribirle. La conversación que ya existía **sí** sigue viéndose —se lista por el
+ * par de identificadores, no por el nombre— con sus mensajes intactos y el remitente
+ * anonimizado, que es justo lo que la fase promete: lo que te escribieron sigue siendo tuyo.
+ */
 async function findByUsername(username: string): Promise<UserRow> {
-  const user = await db.query.users.findFirst({ where: eq(users.username, username) });
+  const user = await db.query.users.findFirst({
+    where: and(eq(users.username, username), isNull(users.anonymizedAt)),
+  });
   if (!user) throw errors.noEncontrado('No encontramos a esa persona.');
   return user;
 }

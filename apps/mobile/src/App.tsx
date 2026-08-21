@@ -19,6 +19,8 @@ import { SemestresScreen } from './screens/SemestresScreen';
 import { SocialScreen } from './screens/SocialScreen';
 import { MensajesScreen } from './screens/MensajesScreen';
 import { AjustesScreen } from './screens/AjustesScreen';
+import { PrivacidadScreen } from './screens/PrivacidadScreen';
+import { BorrarCuentaScreen } from './screens/BorrarCuentaScreen';
 import { colors } from './components/ui';
 
 /**
@@ -152,6 +154,15 @@ function Root() {
     | 'social'
     | 'mensajes'
     | 'ajustes'
+    /**
+     * Privacidad (Fase 19). Es una sub-pantalla de Ajustes, no una sección del menú: se llega
+     * desde ahí y se vuelve ahí, no al inicio. La navegación de la app es plana —un estado y
+     * una lista de `if`—, así que la jerarquía se expresa en a dónde vuelve cada pantalla y
+     * no en un árbol de rutas que esta app no necesita.
+     */
+    | 'privacidad'
+    /** Borrar la cuenta (Fase 20). Igual que privacidad: cuelga de Ajustes. */
+    | 'borrar-cuenta'
   >('inicio');
 
   /**
@@ -273,7 +284,19 @@ function Root() {
       return <SemestresScreen onVolver={() => setSeccion('inicio')} />;
     }
     if (seccion === 'ajustes') {
-      return <AjustesScreen onVolver={() => setSeccion('inicio')} />;
+      return (
+        <AjustesScreen
+          onVolver={() => setSeccion('inicio')}
+          onIrAPrivacidad={() => setSeccion('privacidad')}
+          onIrABorrarCuenta={() => setSeccion('borrar-cuenta')}
+        />
+      );
+    }
+    if (seccion === 'privacidad') {
+      return <PrivacidadScreen onVolver={() => setSeccion('ajustes')} />;
+    }
+    if (seccion === 'borrar-cuenta') {
+      return <BorrarCuentaScreen onVolver={() => setSeccion('ajustes')} />;
     }
     if (seccion === 'social') {
       return (

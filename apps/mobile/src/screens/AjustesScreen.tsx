@@ -38,7 +38,15 @@ import {
  * Es una pantalla de configuración, no de consulta: nada de aquí se refresca solo ni alimenta
  * los widgets, y por eso no participa en el ciclo de sincronización del resto de la app.
  */
-export function AjustesScreen({ onVolver }: { onVolver: () => void }) {
+export function AjustesScreen({
+  onVolver,
+  onIrAPrivacidad,
+  onIrABorrarCuenta,
+}: {
+  onVolver: () => void;
+  onIrAPrivacidad: () => void;
+  onIrABorrarCuenta: () => void;
+}) {
   const { user, logout } = useAuth();
 
   useBotonAtras([{ cuando: true, hacer: onVolver }]);
@@ -51,6 +59,20 @@ export function AjustesScreen({ onVolver }: { onVolver: () => void }) {
 
       <DatosDelPerfil />
       <Dispositivos />
+
+      {/*
+        Tus datos (Fase 19 y 20). Las dos cosas que Google exige que estén dentro de la app y
+        que hasta ahora no tenían sitio: qué se guarda de ti, y cómo irte. Van juntas porque
+        se leen juntas —nadie borra su cuenta sin antes preguntarse qué había en ella—, y
+        antes de «cerrar sesión» porque son decisiones sobre la cuenta, no sobre este rato.
+      */}
+      <Card title="Tus datos">
+        <Text style={base.tenue}>
+          Qué guarda NoteCore de ti, para qué, y cómo llevarte o borrar todo.
+        </Text>
+        <Button title="Política de privacidad" variant="secondary" onPress={onIrAPrivacidad} />
+        <Button title="Borrar mi cuenta" variant="danger" onPress={onIrABorrarCuenta} />
+      </Card>
 
       {/*
         Salir va al final y separado de lo demás: es la única acción de esta pantalla que
