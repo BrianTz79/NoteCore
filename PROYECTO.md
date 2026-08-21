@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-20** (Fase 17 cerrada y verificada — **el plan está completo**)
+> Última actualización: **2026-08-21** (fases 19 a 24 abiertas: el camino a Play Store)
 
 ---
 
@@ -34,12 +34,13 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 |---|---|
 | **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. **Fase 17 cerrada** el 2026-08-20. **No queda ninguna fase pendiente**: las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas |
+| **Fase actual** | Ninguna en curso. Las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas. **Quedan seis fases abiertas —19 a 24— para publicar en Play Store**, con la cuenta de desarrollador ya adquirida. Ver la [sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno |
+| **Bloqueos** | Ninguno para el producto. Para Play Store: falta política de privacidad y borrado de cuenta (rechazo automático), y **la clave de firma sigue sin respaldar** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
-**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7
+**Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
+**Camino a Play Store (19-24)**: `······` 0 de 6
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -177,7 +178,7 @@ tras el túnel de Cloudflare, y un APK **firmado con clave propia** (ver la secc
 
 **Usarlo destapó seis cosas** que no se ven hasta que el producto está en manos de alguien, y ese
 mismo día se pidió una séptima: **cuatrimestres** para quien no cursa por semestres. Están
-escritas como las fases 12 a 18 en la [sección 8](#8-fases-pendientes-12-a-18).
+escritas como las fases 12 a 18 en la [sección 8](#8-fases-12-a-18--todas-cerradas).
 
 **Las fases 12 a 16 y la 18 están cerradas y verificadas** (2026-08-20). La 12 redesplegó la API con
 `WEB_API_PREFIX=/api` y arregló el botón atrás; la 13 le dio a NoteCore su logo —el ouroboros
@@ -199,7 +200,7 @@ web`), producción muestra el código anterior aunque el commit ya esté en `mai
 fases 13 y 14, y el síntoma —«la página no la veo cambiada»— parece caché del navegador y no lo
 es.
 
-**La 17 también está cerrada, y con ella no queda ninguna fase pendiente.** La app comprueba al
+**La 17 también está cerrada, y con ella se agotaron las fases 12 a 18.** La app comprueba al
 abrir si hay una versión nueva, la descarga, **comprueba su SHA-256** y se la pasa al instalador de
 Android; la web tiene una página `/app` de donde sale el APK la primera vez. Todo detrás de un
 interruptor: con `UPDATER_ENABLED=false` y `EXPO_PUBLIC_UPDATER_ENABLED=false` el APK **no lleva
@@ -212,9 +213,20 @@ compilar el APK y ejecutar `scripts/publicar-apk.sh <ruta-al-apk> "notas"`. El s
 `versionCode` **del propio binario** y escribe el `latest.json`, así que no se puede publicar un
 manifiesto que no describa el archivo que lo acompaña. La API lo sirve sin reiniciarse.
 
-**Lo que queda no son fases, es operación**: desplegar esta fase a producción (reconstruir las
-imágenes, montar el directorio de publicación y encender el interruptor) y, si algún día se sube a
-Play Store, apagarlo. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20).
+**La Fase 17 se desplegó a producción el 2026-08-21**: se reconstruyeron las imágenes de la web y
+de la API —las rutas `/releases/*` daban 404 porque la imagen era anterior a la fase—, se montó el
+directorio de publicación y se encendieron los dos interruptores. La primera versión publicada por
+esta vía fue la `0.2.0 (3)`.
+
+**Lo que queda ahora sí son fases.** El 2026-08-21 se adquirió la cuenta de desarrollador de Google
+Play, y una auditoría del código contra los requisitos de la tienda destapó **seis frentes**:
+política de privacidad, borrado de cuenta, reporte de contenido, permisos de más en el manifiesto,
+el `.aab` con su ficha, y apagar el actualizador. Están escritas como las **fases 19 a 24** en la
+[sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store).
+
+Ninguna añade producto —la app está funcionalmente completa—: resuelven **lo que hace que la tienda
+rechace una publicación**. Las dos primeras son rechazo automático; la última, apagar el
+actualizador, va deliberadamente al final.
 
 ---
 
@@ -2266,18 +2278,29 @@ el host interno del contenedor y el teléfono no lo alcanza.
 
 ### Pendiente antes de Play Store
 
-- Generar un **`.aab`** (`./gradlew bundleRelease`): la tienda no acepta `.apk`
-- Subir el `versionCode` en cada publicación — hoy va en `2`, lo subió la Fase 17
-- Política de privacidad y ficha de la tienda
-- **Respaldar `~/.notecore-release/`** en un sitio seguro
-- **Apagar el actualizador**: `UPDATER_ENABLED=false` y `EXPO_PUBLIC_UPDATER_ENABLED=false`. Las
-  tiendas **prohíben** que una app se autoactualice por fuera, y con el segundo apagado el
-  `.aab` no lleva siquiera el permiso `REQUEST_INSTALL_PACKAGES`, que es de los que se revisan con
-  lupa. Apagar el del servidor desactiva además el mecanismo en los teléfonos ya instalados
+La cuenta de desarrollador se adquirió el **2026-08-21**, y lo que falta está desglosado como las
+**fases 19 a 24** en la [sección 9](#9-fases-pendientes-19-a-24--el-camino-a-play-store). En
+resumen, y por orden:
+
+| | Qué | Fase |
+|---|---|---|
+| **P0** | Política de privacidad pública y cuestionario de Data Safety | [19](#fase-19--política-de-privacidad-y-datos-declarados--p0) |
+| **P0** | Borrar la cuenta desde la app y desde una URL web | [20](#fase-20--borrar-la-cuenta--p0) |
+| **P1** | Reportar publicaciones y mensajes (el bloqueo ya existe) | [21](#fase-21--reportar-contenido-y-cerrar-la-moderación--p1) |
+| **P1** | Quitar los permisos que ninguna parte de la app usa | [22](#fase-22--limpiar-los-permisos-del-manifiesto--p1) |
+| **P1** | Generar el `.aab` y montar la ficha de la tienda | [23](#fase-23--el-aab-y-la-ficha-de-la-tienda--p1) |
+| **P2** | Apagar el actualizador — **la última puerta** | [24](#fase-24--apagar-el-actualizador--p2-la-última-a-propósito) |
+
+**Y antes que todas, fuera de las fases**: **respaldar `~/.notecore-release/`** en un sitio seguro
+y fuera de esta máquina. Sigue sin respaldo. Perder esa clave impide volver a actualizar la app
+bajo la misma identidad, y no tiene arreglo posterior.
+
+El `versionCode` hay que subirlo en **cada** publicación: hoy va en `4`, lo subió la sesión del
+2026-08-21.
 
 ---
 
-## 8. Fases pendientes (12 a 18)
+## 8. Fases 12 a 18 — todas cerradas
 
 Estas siete fases **no venían en el plan original**: seis salieron de usar el producto ya
 desplegado, el 2026-08-20, y la última (**18, cuatrimestres**) se pidió el mismo día. Se mantiene la regla de siempre —una fase por conversación, y no se cierra hasta
@@ -2632,3 +2655,235 @@ una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el or
 
 **Ese orden ya se cumplió por completo.** Las siete se cerraron el 2026-08-20, en el orden
 12 → 13 → 14 → 15 → 18 → 16 → 17.
+
+---
+
+## 9. Fases pendientes (19 a 24) — el camino a Play Store
+
+Estas seis fases salieron de una **auditoría del proyecto contra los requisitos de Google Play**,
+hecha el 2026-08-21 sobre el código real —manifiesto, rutas de la API y pantallas de la web—, no
+sobre una lista genérica de la tienda. La cuenta de desarrollador **ya está adquirida**, así que
+esto deja de ser hipotético: es el camino a publicar.
+
+**Qué cambia respecto de las fases 12-18**: aquellas salieron de usar el producto y mejoraban lo
+que ya hacía. Estas no añaden producto —la app está funcionalmente completa—, sino que resuelven
+**lo que hace que la tienda rechace una publicación**. Es papeleo de plataforma con código detrás.
+
+Sigue valiendo la regla de siempre: una fase por conversación, y no se cierra hasta verificarla en
+app **y** en web.
+
+### Cómo están ordenadas
+
+Las tres primeras (**19, 20, 21**) son las que **llevan código de producto** y son motivo de
+rechazo automático. Las dos siguientes (**22, 23**) son configuración y compilación. La **24 va
+deliberadamente al final**: apagar el actualizador es lo último que se toca, porque mientras se
+prepara todo lo demás sigue siendo la vía por la que llegan las versiones nuevas al teléfono.
+
+> **Antes de nada, y no es una fase**: **respaldar `~/.notecore-release/`** en un sitio seguro y
+> fuera de esta máquina. La clave de firma no está respaldada. Si se pierde el disco, no se puede
+> volver a actualizar la app bajo la misma identidad en Play Store, y eso no tiene arreglo
+> posterior — ni Google puede deshacerlo. Es cinco minutos de trabajo y bloquea todo lo demás en
+> el peor sentido posible: en silencio, y solo se descubre cuando ya es tarde.
+
+---
+
+### Fase 19 — Política de privacidad y datos declarados · **P0**
+
+**Por qué es P0**: Google exige una URL pública de política de privacidad para **cualquier** app
+que maneje datos personales. NoteCore guarda nombre, `@usuario`, horarios, faltas, agenda y
+mensajes entre usuarios. **No existe ninguna página de privacidad** — se comprobó el 2026-08-21
+buscando en `apps/web/src/app`: no hay ni ruta ni texto. Sin esto la publicación se rechaza antes
+de que nadie mire la app.
+
+**Qué hay que hacer**:
+
+- Una página real en la web (`/privacidad`), enlazada desde el pie y desde Ajustes en la app.
+  Debe ser **accesible sin sesión**: Google la revisa sin instalar ni registrarse
+- Que diga la verdad y sea comprobable contra el código: qué se guarda (los campos reales de las
+  tablas), para qué, cuánto tiempo, con quién se comparte (**con nadie**: no hay analítica ni
+  terceros, y eso es una ventaja que conviene decir explícitamente), y cómo se ejerce el borrado
+- El **cuestionario de Data Safety** de la consola de Play, que es un formulario aparte de la
+  política y debe coincidir con ella. Declarar de menos aquí es motivo de suspensión, no de
+  simple rechazo
+
+**Lo que hay que cuidar**: la política tiene que mencionar la mensajería y la sección social —son
+datos de *otras* personas dentro de la cuenta de una— y el permiso de cámara (se usa para leer
+QR de compartición, **no** para almacenar imágenes; decirlo evita una pregunta del revisor).
+
+**Depende de**: nada. Se puede hacer ya.
+
+**Verificación**: abrir `/privacidad` en un navegador **sin sesión iniciada** y desde la app;
+comprobar que cada dato que enumera existe de verdad en el esquema, y que no enumera ninguno que
+no se recoja.
+
+---
+
+### Fase 20 — Borrar la cuenta · **P0**
+
+**Por qué es P0**: desde 2023 Google exige que quien se registró pueda **eliminar su cuenta y sus
+datos** desde dentro de la app, y además por una **URL web alcanzable sin instalarla**. Se
+comprobó el 2026-08-21: no hay endpoint de borrado en `apps/api`, ni nada equivalente en
+`shared`. Un usuario hoy no puede irse.
+
+**Qué hay que hacer**:
+
+- Endpoint de borrado en la API, con la lógica de negocio del lado del servidor como siempre
+- Entrada en la pantalla de **Ajustes** de la app (creada el 2026-08-21, es su sitio natural) y en
+  el perfil de la web
+- Una ruta web pública que explique cómo borrar la cuenta sin tener la app instalada
+- Confirmación explícita e inequívoca antes de ejecutar: es la única operación del producto que
+  destruye datos del usuario a propósito
+
+**La decisión de diseño que hay que tomar en esa conversación**, y que choca de frente con el
+principio de datos históricos: **qué pasa con lo compartido y lo enviado**. Un mensaje que Ana le
+mandó a Beto vive en la conversación de Beto; un horario que Ana compartió ya es una **copia
+independiente** de Beto, por el principio de "compartir es copia". Borrar la cuenta de Ana no
+puede vaciar la de Beto. La propuesta a discutir: **borrar todo lo que es de Ana, y anonimizar lo
+que ya es de otro** —el mensaje queda, el remitente pasa a ser "Usuario eliminado"—. Google acepta
+esto siempre que la política de privacidad lo explique, y por eso esta fase va **después** de la 19.
+
+**Lo que hay que cuidar**: el borrado debe cerrar todas las sesiones abiertas de esa cuenta (el
+teléfono y el navegador a la vez), y ser irreversible de verdad — no un `estado = borrado` que
+deje los datos ahí, porque eso es exactamente lo que Google prohíbe.
+
+**Depende de**: la Fase 19, porque la política tiene que describir este comportamiento.
+
+**Verificación**: crear dos cuentas, compartir un horario y cruzar mensajes entre ellas, borrar
+una, y comprobar en **app y web** que la otra conserva su copia y su historial con el remitente
+anonimizado; que la cuenta borrada no puede entrar; y que sus datos ya no están en la base.
+
+---
+
+### Fase 21 — Reportar contenido y cerrar la moderación · **P1**
+
+**Por qué**: la app tiene contenido generado por usuarios —el muro de publicaciones de la Fase 15
+y la mensajería—, y para eso Google pide un mecanismo de **denuncia**. Se comprobó el 2026-08-21:
+el **bloqueo de usuarios sí existe** (`SOCIAL_ROUTES.block`, FR-042, ya cerrado en su fase), pero
+**no hay forma de reportar una publicación ni un mensaje**. Falta la mitad de la pareja.
+
+**Qué hay que hacer**:
+
+- Reportar una publicación y reportar un mensaje, con un motivo de una lista corta
+- Que el reporte llegue a algún sitio donde pueda leerse. **No hace falta un panel de moderación
+  completo** para publicar — con que quede registrado y sea consultable basta para el requisito—,
+  y montar un backoffice entero aquí sería inventar alcance
+- Dejar visible que el bloqueo ya existe: desde la propia publicación o el hilo, no solo desde el
+  perfil
+
+**Lo que hay que cuidar**: no confundir bloquear con reportar. Bloquear es una decisión privada
+del usuario y ya funciona; reportar es avisar a quien mantiene el servicio. Google los cuenta como
+requisitos distintos.
+
+**Depende de**: nada técnico, pero conviene después de la 19 y la 20 por prioridad.
+
+**Verificación**: reportar una publicación y un mensaje desde **app y web**, comprobar que el
+reporte queda registrado con quién, qué y por qué, y que el bloqueo sigue funcionando.
+
+---
+
+### Fase 22 — Limpiar los permisos del manifiesto · **P1**
+
+**Por qué**: el APK declara **más permisos de los que la app pide**. Medido el 2026-08-21 sobre
+el manifiesto generado, contra lo que declara `app.json` (solo `POST_NOTIFICATIONS`):
+
+| Permiso en el APK | ¿Lo pide `app.json`? | Situación |
+|---|---|---|
+| `INTERNET` | no (implícito) | correcto, hace falta |
+| `POST_NOTIFICATIONS` | **sí** | correcto, son los recordatorios |
+| `CAMERA` | no | se usa de verdad, para los QR — hay que **declararlo a propósito** |
+| `VIBRATE` | no | lo mete una librería; inofensivo pero conviene revisarlo |
+| `SYSTEM_ALERT_WINDOW` | no | **dibujar sobre otras apps.** La app no lo usa. Es de los permisos que más escrutinio atraen |
+| `READ_EXTERNAL_STORAGE` | no | **obsoleto** en Android 13+ |
+| `WRITE_EXTERNAL_STORAGE` | no | **obsoleto** en Android 13+ |
+| `REQUEST_INSTALL_PACKAGES` | condicionado | lo mete el actualizador — **se va en la Fase 24** |
+
+Los está añadiendo alguna dependencia por su cuenta, no el código del proyecto. Un permiso que no
+se usa no solo llama la atención del revisor: sale escrito en la ficha de la tienda y **el usuario
+lo lee antes de instalar**.
+
+**Qué hay que hacer**: averiguar qué librería mete cada uno, quitarlos con `remove` en el
+manifiesto vía plugin de Expo, y declarar explícitamente los que sí se usan.
+
+**Lo que hay que cuidar**: esto va en un **plugin de `plugins/`**, nunca editando `android/` a
+mano — `expo prebuild` regenera esa carpeta entera y el arreglo desaparecería en silencio, que es
+exactamente lo que documenta la [sección 7](#la-firma-del-apk) sobre la firma de release.
+
+**Depende de**: nada.
+
+**Verificación**: `aapt2 dump badging` sobre el `.aab` o el APK resultante, comprobando que la
+lista de permisos es exactamente la que se pretende — y que la cámara sigue leyendo QR y las
+notificaciones siguen llegando.
+
+---
+
+### Fase 23 — El `.aab` y la ficha de la tienda · **P1**
+
+**Por qué**: la tienda **no acepta `.apk`**, solo `.aab` (`./gradlew bundleRelease`). Y la ficha
+—icono, capturas, textos— es requisito de publicación, no un adorno.
+
+**Qué hay que hacer**:
+
+- Generar el `.aab` firmado con la clave de `~/.notecore-release/`, con la misma receta de
+  variables de entorno que el APK (`EXPO_PUBLIC_API_URL` en la línea de comandos, o el bundle sale
+  apuntando a `localhost` — ver la [sección 7](#7-despliegue-en-producción-2026-08-20))
+- Subir el `versionCode` (hoy va en **4**, lo subió la sesión del 2026-08-21)
+- Ficha: icono 512×512, gráfico de cabecera 1024×500, **mínimo 2 capturas** de teléfono,
+  descripción corta y larga. El ouroboros de la Fase 13 ya da la identidad visual
+- Clasificación de contenido y país/precio en la consola
+
+**Lo que hay que cuidar**: al subir el primer `.aab`, Google ofrece **Play App Signing**. Conviene
+entender qué se acepta antes de pulsar: Google pasa a gestionar la clave de distribución y la de
+`~/.notecore-release/` queda como clave de *carga*. Es lo recomendable —protege de perder la
+clave—, pero es una decisión de una sola vez y no se revierte.
+
+**Depende de**: la 22 (los permisos salen escritos en la ficha) y, en la práctica, de la 24 —
+conviene que el `.aab` que se sube ya no lleve el actualizador.
+
+**Verificación**: instalar el `.aab` mediante `bundletool` en un teléfono real y comprobar que
+arranca, entra y sincroniza contra producción — no dar por bueno un artefacto que solo se ha
+compilado.
+
+---
+
+### Fase 24 — Apagar el actualizador · **P2** *(la última, a propósito)*
+
+**Por qué va al final**: las tiendas **prohíben** que una app se actualice por fuera, así que esto
+tiene que estar apagado el día de publicar. Pero mientras se preparan las fases 19 a 23, el
+actualizador **sigue siendo la vía por la que las versiones nuevas llegan al teléfono** para poder
+verificarlas. Apagarlo antes de tiempo obligaría a instalar cada prueba a mano y no ganaría nada.
+
+**Qué hay que hacer**: los dos interruptores, que van emparejados y hacen cosas distintas:
+
+- **`EXPO_PUBLIC_UPDATER_ENABLED=false`** (app): se lee en el **prebuild**, así que exige rehacer
+  el prebuild, no solo recompilar. Con él apagado el `.aab` no lleva siquiera el permiso
+  `REQUEST_INSTALL_PACKAGES`
+- **`UPDATER_ENABLED=false`** (servidor): apaga el mecanismo en **los teléfonos ya instalados**,
+  sin publicar nada. Este es el que importa el día de Play Store, porque actúa sobre lo que ya
+  está fuera
+
+La Fase 17 se diseñó para que esto fuera un interruptor y no una cirugía: todo vive en un módulo
+propio. Esta fase es cobrar esa deuda a favor.
+
+**Lo que hay que cuidar**: hay que decidir **qué ven los teléfonos que ya tienen la app instalada
+por fuera**. Al apagar el servidor dejan de recibir avisos, y si no se les da un camino a la
+versión de la tienda se quedan congelados en la que tengan. Conviene que la última versión
+distribuida por fuera avise de que a partir de ahí se actualiza por Play Store.
+
+**Depende de**: que las fases 19 a 23 estén cerradas. Es la última puerta.
+
+**Verificación**: compilar con el interruptor apagado y comprobar que **no queda rastro**: ni
+permiso en el manifiesto (`aapt2 dump badging`), ni aviso en la pantalla de inicio, ni una sola
+petición a `/releases/android/latest`. Y que la app sigue funcionando igual en todo lo demás.
+
+---
+
+### Orden sugerido
+
+**19 → 20 → 21 → 22 → 23 → 24.**
+
+Las tres primeras llevan código de producto y son las que convierten «casi lista» en «subible»:
+la **19 y la 20 son rechazo automático**, y la **21** lo es en cuanto un revisor abra el muro de
+publicaciones. La **22** y la **23** son compilación y consola. La **24 es la última puerta**, y
+solo se cruza cuando todo lo demás está listo.
+
+**Fuera de las fases y antes que todas**: respaldar `~/.notecore-release/`.
