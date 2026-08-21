@@ -98,6 +98,37 @@ function Sidebar() {
         App para Android
       </Link>
 
+      {/*
+        El panel de operación (Fase 25), solo para quien lo tiene. No va en `SECCIONES` porque
+        no es una sección del producto y porque esa lista la comparte con el inicio en móvil,
+        donde el panel no existe.
+
+        **Esconder este enlace no protege nada**: la ruta `/panel/resumen` de la API responde
+        404 a quien no sea administrador, y esa es la protección. Esto solo evita ofrecerle a
+        todo el mundo una puerta que no abre.
+      */}
+      {user.isAdmin ? (
+        <Link
+          href="/panel"
+          className="mx-nc-sm rounded-md px-nc-sm py-nc-xs text-sm text-tinta3 transition-colors duration-100 hover:bg-papel3 hover:text-tinta"
+        >
+          Panel
+        </Link>
+      ) : null}
+
+      {/*
+        Privacidad (Fase 19). Al pie de la barra, en el tono más tenue: es un documento que se
+        consulta una vez, no una sección que se navega. Pero tiene que ser alcanzable desde
+        dentro del producto —no solo desde la portada—, porque es donde alguien se pregunta
+        qué se está guardando de él justo mientras lo usa.
+      */}
+      <Link
+        href="/privacidad"
+        className="mx-nc-sm rounded-md px-nc-sm py-nc-xs text-sm text-tinta3 transition-colors duration-100 hover:bg-papel3 hover:text-tinta"
+      >
+        Privacidad
+      </Link>
+
       <div className="space-y-nc-xs border-t border-filete px-nc-md py-nc-md">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-tinta">{user.displayName}</p>

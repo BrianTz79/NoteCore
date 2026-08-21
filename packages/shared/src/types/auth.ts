@@ -28,6 +28,17 @@ export interface AuthenticatedUser {
   readonly email: string;
   readonly username: string;
   readonly displayName: string;
+  /**
+   * Si esta cuenta ve el panel de operación (Fase 25).
+   *
+   * Está aquí para que la web sepa si pintar el enlace, y **para nada más**: quien ponga esto
+   * a `true` en las herramientas del navegador verá aparecer un enlace que lleva a un 404,
+   * porque la autorización la decide el servidor en cada petición (`requireAdmin`). Es
+   * comodidad de interfaz, no una medida de seguridad — igual que `RequireSession`.
+   *
+   * No aparece en `PublicUser`: quién administra el servicio no es asunto de los demás.
+   */
+  readonly isAdmin: boolean;
   readonly createdAt: Instant;
   readonly updatedAt: Instant;
 }

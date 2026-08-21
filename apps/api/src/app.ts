@@ -17,6 +17,7 @@ import { semesterRoutes } from './routes/semester.js';
 import { socialRoutes } from './routes/social.js';
 import { messagingRoutes } from './routes/messaging.js';
 import { releaseRoutes } from './routes/releases.js';
+import { panelRoutes } from './routes/panel.js';
 
 /**
  * Construye la instancia de Fastify.
@@ -42,8 +43,15 @@ export async function buildApp(): Promise<FastifyInstance> {
     origin: config.corsOrigins,
     // Necesario para que el navegador envíe y acepte las cookies de sesión.
     credentials: true,
-    // El cliente se identifica con esta cabecera para etiquetar su sesión.
-    allowedHeaders: ['content-type', 'authorization', 'x-notecore-client'],
+    // El cliente se identifica con estas cabeceras para etiquetar su sesión: cuál es
+    // (`client`) y en qué versión va (`version`, Fase 25). Sin declararlas aquí el navegador
+    // rechaza la petición entera en la comprobación previa, no solo la cabecera.
+    allowedHeaders: [
+      'content-type',
+      'authorization',
+      'x-notecore-client',
+      'x-notecore-version',
+    ],
   });
 
   await app.register(cookie);
@@ -175,6 +183,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(socialRoutes);
   await app.register(messagingRoutes);
   await app.register(releaseRoutes);
+  await app.register(panelRoutes);
 
   return app;
 }

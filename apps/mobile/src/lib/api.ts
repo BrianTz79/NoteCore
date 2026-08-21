@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import appConfig from '../../app.json';
 import {
   ApiClient,
   createAgendaApi,
@@ -33,6 +34,26 @@ const REFRESH_KEY = 'notecore_refresh_token';
  */
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3101';
 
+/**
+ * Qué versión de la app es (Fase 25).
+ *
+ * Viaja en la cabecera `x-notecore-version` de cada petición y el panel la agrega para saber
+ * cuánta gente se quedó en una versión vieja — que hoy no tiene forma de saberse.
+ *
+ * Sale del `versionCode` de `app.json`, leído en la compilación: Metro resuelve el import de
+ * JSON y el valor queda dentro del bundle. Se eligió sobre las dos alternativas que había:
+ *
+ * - **El módulo nativo del actualizador** (`versionInstalada()`, Fase 17) lee el
+ *   `versionCode` real del paquete instalado, que es más fiel — pero la **Fase 24 lo apaga**
+ *   para publicar en Play Store, y entonces esta cifra desaparecería justo cuando empieza a
+ *   importar. Depender de algo que está previsto quitar es escribir una avería con fecha.
+ * - **Una variable `EXPO_PUBLIC_*`** obligaría a acordarse de pasarla en cada compilación, y
+ *   olvidarla no rompe nada visible: simplemente se registra la versión anterior para siempre.
+ *   `app.json` es donde el `versionCode` ya se sube al publicar, así que no hay un segundo
+ *   sitio que mantener sincronizado.
+ */
+const APP_VERSION = String(appConfig.expo.android.versionCode);
+
 export const tokenStore: TokenStore = {
   getAccessToken: () => SecureStore.getItemAsync(ACCESS_KEY),
   getRefreshToken: () => SecureStore.getItemAsync(REFRESH_KEY),
@@ -58,6 +79,7 @@ export function setSessionExpiredHandler(handler: () => void): void {
 
 export const apiClient = new ApiClient({
   baseUrl: BASE_URL,
+  version: APP_VERSION,
   client: 'mobile',
   tokens: tokenStore,
   onSessionExpired: () => onSessionExpired?.(),

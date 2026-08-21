@@ -5,6 +5,7 @@ import {
   createAuthApi,
   createCalendarApi,
   createMessagingApi,
+  createPanelApi,
   createScheduleApi,
   createSemesterApi,
   createShareApi,
@@ -51,6 +52,14 @@ function baseUrlAbsoluta(): string {
 export const apiClient = new ApiClient({
   baseUrl,
   client: 'web',
+  /**
+   * Qué versión de la web es (Fase 25).
+   *
+   * Sale de `NEXT_PUBLIC_APP_VERSION`, que el `Dockerfile` fija en la compilación. Sin ella
+   * queda `dev`, que es lo correcto en la máquina de desarrollo: las sesiones abiertas
+   * mientras se programa no deben contarse como una versión publicada.
+   */
+  version: process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev',
   useCookies: true,
   tokens: {
     getAccessToken: () => null,
@@ -77,6 +86,15 @@ export const messagingApi = createMessagingApi(apiClient);
  * actualizador de dentro de la app solo cubre a quien ya la tiene.
  */
 export const updatesApi = createUpdatesApi(apiClient);
+
+/**
+ * El panel de operación (Fase 25).
+ *
+ * Solo la web lo tiene, y solo responde a la cuenta marcada como administradora: a cualquier
+ * otra, la ruta contesta 404. Se declara aquí como cualquier otra API porque desde el punto
+ * de vista del cliente lo es — quien decide si hay panel es el servidor.
+ */
+export const panelApi = createPanelApi(apiClient);
 
 /**
  * URL base de la API, para el canal en vivo de la mensajería (Fase 10).

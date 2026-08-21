@@ -32,15 +32,15 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta** y un **panel de números** para quien opera el servicio |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. Las 12 del plan original y las 7 nuevas (12 a 18) están cerradas y verificadas. **Quedan siete fases abiertas —19 a 25—**: seis para publicar en Play Store, con la cuenta de desarrollador ya adquirida, y una para el panel de números. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) |
+| **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18) y **las fases 19, 20 y 25** (2026-08-21). **Quedan cuatro abiertas —21 a 24—**, todas del camino a Play Store. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y el [historial](#10-historial-de-las-fases-19-a-25) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno para el producto. Para Play Store: falta política de privacidad y borrado de cuenta (rechazo automático), y **la clave de firma sigue sin respaldar** |
+| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad ni el borrado de cuenta —los dos motivos de rechazo automático, cerrados el 2026-08-21—; quedan reportar contenido, los permisos del manifiesto, el `.aab` con su ficha y apagar el actualizador. **La clave de firma sigue sin respaldar** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
-**Fases abiertas (19-25)**: `·······` 0 de 7
+**Fases 19-25**: `██····█` 3 de 7 (19, 20 y 25 cerradas; abiertas 21 a 24)
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -2681,6 +2681,10 @@ una laptop. El resto —13, 15, 16, 17, 18— son mejoras que pueden ir en el or
 
 ## 9. Fases pendientes (19 a 25) — el camino a Play Store, y medir
 
+> **Estado al 2026-08-21**: las fases **19, 20 y 25 están cerradas** — su detalle está en la
+> [sección 10](#10-historial-de-las-fases-19-a-25). Quedan abiertas la **21, 22, 23 y 24**. Con la
+> 19 y la 20 cerradas, los dos motivos de **rechazo automático** ya no aplican.
+
 Siete fases, de dos orígenes distintos:
 
 - **Las 19 a 24** salieron de una **auditoría del proyecto contra los requisitos de Google Play**,
@@ -2915,7 +2919,11 @@ petición a `/releases/android/latest`. Y que la app sigue funcionando igual en 
 
 ---
 
-### Fase 25 — Panel de números: seguimiento y telemetría · **P2**
+### Fase 25 — Panel de números: seguimiento y telemetría · **P2** ✅ *(cerrada el 2026-08-21)*
+
+> Cerrada y verificada. El detalle está en el
+> [historial](#fase-25--panel-de-números-seguimiento-y-telemetría--cerrada-el-2026-08-21). Lo de
+> abajo es el enunciado con el que se abrió.
 
 **Lo que se pidió** (2026-08-21): una **página única de acceso propio** —del dueño del proyecto, no
 de los usuarios— para ver cómo va NoteCore: cuánta gente lo usa, qué hay en la base de datos, qué
@@ -3004,7 +3012,7 @@ aunque se llame directamente sin pasar por la interfaz.
 
 ### Orden sugerido
 
-**19 → 20 → 25 → 21 → 22 → 23 → 24.**
+**19 → 20 → 25 → 21 → 22 → 23 → 24.** ~~19~~ · ~~20~~ · ~~25~~ hechas; **queda 21 → 22 → 23 → 24**.
 
 Las dos primeras llevan código de producto y son las que convierten «casi lista» en «subible»:
 la **19 y la 20 son rechazo automático**.
@@ -3131,3 +3139,66 @@ El escenario completo que pedía el enunciado, contra una API de desarrollo en e
 **Lo que se descubrió al verificar**: el guardián de contraseña se disparó de verdad en el
 emulador —`adb shell input text` había metido caracteres de más—, lo que confirmó de paso que
 marca el campo correcto.
+
+
+---
+
+### Fase 25 — Panel de números: seguimiento y telemetría ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**
+
+- **`GET /panel/resumen`** con `requireAuth` + `requireAdmin`, y `services/panel.ts` con las siete
+  secciones de números
+- **`/panel` en la web** — la excepción prevista al Principio I: no tiene ni debe tener equivalente
+  en la app, como ya pasó con la Fase 14
+- **`users.is_admin`**, en `false` por defecto y activable **solo con SQL**
+- **`sessions.client_version`** y la cabecera `x-notecore-version` desde app y web
+
+**Cómo se entra, y qué protege qué**
+
+La comprobación va **en el servidor, en cada petición**, y responde **404, no 403**: para cualquiera
+que no sea administrador, `/panel/resumen` es indistinguible de una dirección inventada —mismo
+estado, mismo cuerpo, mismo mensaje—. Se verificó comparando ambas respuestas: son idénticas.
+
+Que la web no pinte el enlace es **comodidad**, no seguridad. Quien lo fuerce verá un enlace que
+lleva a un 404.
+
+**No hay ninguna ruta que conceda `is_admin`.** Convertir a alguien en administrador exige acceso a
+la base de datos, porque un endpoint que concediera ese permiso sería, por definición, el endpoint
+que hay que comprometer para verlo todo.
+
+**Números agregados, no espionaje**: ni una consulta del servicio devuelve el texto de un mensaje,
+el título de una tarea o el `@usuario` de nadie. Todas son `count`, `sum` o `group by` sobre
+columnas que no identifican a nadie. Es lo que la Fase 19 promete por escrito.
+
+**La versión instalada**: la cabecera se anota en la sesión **solo cuando cambia** y sin esperar al
+`await` — esto corre antes de *todo* endpoint autenticado, y un fallo debe costar una cifra del
+panel, no la petición del estudiante. En la app sale del `versionCode` de `app.json`, no del módulo
+del actualizador: **la Fase 24 va a apagar ese módulo**, y depender de él sería escribir una avería
+con fecha.
+
+**Verificación (2026-08-21)**
+
+- **Los 15 conteos cuadran uno a uno con SQL directo.** Más actividad, versiones y retención,
+  también contrastados
+- Una cuenta normal recibe 404 con el mismo cuerpo que una ruta inventada; sin sesión, 401
+- El desglose de versiones registró `dev-verificacion` al entrar desde la web: la cabecera funciona
+  de punta a punta
+
+**Los dos fallos que la verificación atrapó** — y la razón por la que la comprobación de esta fase
+es «cuadrar los números con SQL» y no «que la pantalla cargue»:
+
+1. **El embudo decía 0 usuarios con horario mientras la base tenía 147.** Interpolar `${users.id}`
+   dentro de una subconsulta emite `"id"` sin calificar, y dentro de
+   `select 1 from subjects s where s.user_id = "id"` PostgreSQL lo resuelve contra `subjects`, que
+   también tiene una columna `id`. La comparación quedaba en `s.user_id = s.id` —nunca cierta— y el
+   `filter` no contaba nada. **No hay error: la consulta es válida y devuelve 0.** Un panel que
+   miente no se cae, se lee
+2. **«Aceptadas 68 · 106%»**: un compartido se puede aceptar muchas veces, así que la proporción
+   pasa de 100 y se lee como un error de cálculo. Se quitó el porcentaje
+
+**Lo que queda abierto a propósito**: el servicio **no cachea**. Con los usuarios de hoy las
+consultas tardan milisegundos y las lanza una sola persona; cachear ahora añadiría invalidación y
+una respuesta que puede mentir unos minutos, a cambio de nada. Tocará cuando abrir el panel se note
+en la latencia de la API que usan los estudiantes, y la forma es un cache de unos minutos delante
+de `resumen()`, que el archivo deja fácil por devolver todo de una sola función.

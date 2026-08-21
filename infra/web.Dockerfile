@@ -15,6 +15,14 @@ RUN npm ci
 FROM base AS build
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
+# Qué versión de la web es (Fase 25). Viaja en la cabecera `x-notecore-version` de cada
+# petición y el panel la agrega para saber quién sigue en una versión vieja. Tiene que
+# fijarse **aquí**, en el build: `NEXT_PUBLIC_*` se incrusta en el bundle al compilar, y
+# ponerla en el `environment` del contenedor no cambiaría el JavaScript ya generado.
+ARG NEXT_PUBLIC_APP_VERSION=desconocida
+ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # npm iza casi todo a la raíz, pero deja en cada workspace lo que no puede subir

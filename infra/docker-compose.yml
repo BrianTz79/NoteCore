@@ -88,6 +88,10 @@ services:
       dockerfile: infra/web.Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3101}
+        # La versión de la web para el panel de la Fase 25. Se pasa en la compilación
+        # porque `NEXT_PUBLIC_*` se incrusta en el bundle; por defecto `dev`, que es lo
+        # correcto en la máquina de desarrollo.
+        NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-dev}
     container_name: notecore-web
     restart: unless-stopped
     environment:
