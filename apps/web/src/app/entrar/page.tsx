@@ -91,6 +91,20 @@ export default function EntrarPage() {
           Crea una
         </Link>
       </p>
+
+      {/*
+        Privacidad (Fase 26). La página ya era pública desde la Fase 19 —el revisor de Play la
+        abre sin registrarse—, pero no había forma de llegar a ella desde aquí: los únicos
+        enlaces salían de la barra lateral, que exige sesión. Una política alcanzable solo por
+        URL escrita a mano es, en la práctica, una política que nadie lee.
+
+        Más tenue que el enlace de registro: crear la cuenta es lo que se viene a hacer.
+      */}
+      <p className="text-center text-xs text-tinta3">
+        <Link href="/privacidad" className="hover:text-tinta2">
+          Política de privacidad
+        </Link>
+      </p>
     </main>
   );
 }

@@ -1,0 +1,1 @@
+ALTER TABLE "agenda_items" ADD COLUMN "reminder_snoozed_until" timestamp with time zone;

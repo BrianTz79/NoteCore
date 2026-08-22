@@ -1,7 +1,7 @@
 # NoteCore — Estado del Proyecto
 
 > **Documento vivo.** Se actualiza al cerrar cada fase.
-> Última actualización: **2026-08-21** (fases 24 y 23 cerradas: actualizador apagado y `.aab` firmado — **las siete fases del camino a Play Store, hechas**)
+> Última actualización: **2026-08-21** (fases 26 a 29 cerradas: privacidad antes de entrar, aviso de la siguiente clase, botones en la notificación y consejos en el inicio)
 
 ---
 
@@ -32,17 +32,17 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 | | |
 |---|---|
-| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta**, **reporte de contenido** y un **panel de números** para quien opera el servicio. Ese mismo día quedó **listo para Google Play**: `.aab` firmado, actualizador apagado y la ficha escrita |
+| **Estado general** | Producto completo: horario, faltas, agenda, calendario con recordatorios **y aviso antes de cada clase**, compartición por QR/código/enlace, ciclo de **semestres o cuatrimestres** con archivo histórico, sección social, consulta sin conexión, mensajería en tiempo real, una **familia de cuatro widgets** de pantalla principal, **actualización de la app sin pasar por la tienda** e **identidad visual propia** (el ouroboros formando una C), sobre un **sistema de diseño único** que web y app derivan de los mismos tokens. Desde el 2026-08-21, además: **política de privacidad**, **borrado de cuenta**, **reporte de contenido** y un **panel de números** para quien opera el servicio. Ese mismo día quedó **listo para Google Play**: `.aab` firmado, actualizador apagado y la ficha escrita. Y se cerraron cuatro fases más de uso: la **política de privacidad accesible sin iniciar sesión**, el **aviso de la siguiente clase**, **botones de «Cumplida» y «Recordar más tarde» en la propia notificación** y **consejos en el inicio** que enseñan lo que la app sabe hacer |
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
-| **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18) y **las fases 19, 20, 21, 22 y 25**. **Quedan dos abiertas —23 y 24—**, las dos últimas del camino a Play Store. Ver la [sección 9](#9-fases-pendientes-19-a-25--el-camino-a-play-store-y-medir) y el [historial](#10-historial-de-las-fases-19-a-25) |
+| **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18), **las siete del camino a Play Store (19 a 25)** y **las cuatro de uso (26 a 29)**. Ver la [sección 14](#14-fases-26-a-29--avisos-acciones-y-descubrimiento-2026-08-21) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. **Las fases 19, 20 y 25 se desplegaron el 2026-08-21**: `/privacidad`, `/borrar-cuenta` y `/panel` ya responden. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno para el producto. Para Play Store ya **no** faltan la política de privacidad, el borrado de cuenta, el mecanismo de denuncia ni la limpieza de permisos: quedan **el `.aab` con su ficha (23) y apagar el actualizador (24)**. Las fases 21 y 22 están cerradas pero **sin desplegar** — la web con los reportes y el APK limpio siguen sin subirse. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
+| **Bloqueos** | Ninguno para el producto. **Pendiente de desplegar**: las fases 21, 22 y **26 a 29** están cerradas y verificadas pero **no están en producción**. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 | **Contacto público** | `ourocore.contacto@gmail.com` — el del proyecto, **nunca el personal**. Va en la política de privacidad, en la ficha de Play Store y en Data Safety. Ver la [sección 13](#13-el-correo-de-contacto-público-2026-08-21) |
 | **Datos en producción** | **Una sola cuenta real** (`@mizllet`). Las 313 de prueba acumuladas desde la Fase 1 se retiraron el 2026-08-21 para que el panel no mintiera. Ver la [sección 12](#12-limpieza-de-datos-de-prueba-2026-08-21) |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
-**Fases 19-25**: `█████·█` 5 de 7 (19, 20, 21, 22 y 25 cerradas; abiertas 23 y 24)
+**Fases 19-25**: `███████` 7 de 7 · **Fases de uso (26-29)**: `████` 4 de 4
 
 > **Nota de entorno**: compilar el APK exige un **JDK 21**. Durante esta fase solo estaba el JRE y
 > hubo que instalarlo (`sudo apt install openjdk-21-jdk-headless`). Si Gradle sigue diciendo que el
@@ -195,6 +195,11 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
   programándose**: `dumpsys alarm` muestra la alarma `RTC_WAKEUP` en su hora
 
 ### Próximo paso
+
+**Lo pendiente es un despliegue, no una fase.** Las fases 21, 22 y 26 a 29 están cerradas y
+verificadas en app y web, pero **no están en producción**. Antes de subirlas hay que incrementar
+el `versionCode` y recompilar el APK apuntando a la API real —el que se verificó apunta a la de
+pruebas—. El detalle está en la [sección 14](#14-fases-26-a-29--avisos-acciones-y-descubrimiento-2026-08-21).
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
 cerradas y verificadas en app y web. El **2026-08-20** se puso en producción: web y API en HTTPS
@@ -3660,3 +3665,165 @@ Se cambió también en `package.json` (campo `author`), que lo llevaba desde el 
 > **Regla para lo que venga**: en los proyectos que se publican como **Mizllet / OuroCore**, el
 > correo de contacto es `ourocore.contacto@gmail.com`. El personal no se usa en nada que sea
 > público.
+
+---
+
+## 14. Fases 26 a 29 — avisos, acciones y descubrimiento (2026-08-21)
+
+Cuatro fases nacidas de sugerencias de uso, no del plan original. Las tres primeras vienen de
+pedir que la app **avise** —antes de clase, y con botones en el propio aviso—; la cuarta, de que
+NoteCore hace muchas cosas y **ninguna se anuncia**.
+
+### Fase 26 — La privacidad, antes de entrar ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**: la política de privacidad es alcanzable **sin sesión** desde entrar y desde
+registro, en app y web.
+
+**Qué estaba roto**. La página web ya era pública desde la Fase 19 —requisito de Play: el revisor
+la abre sin registrarse—, pero **no había ni un enlace hacia ella** desde el login: los únicos
+salían de la barra lateral, que exige sesión. En la app era peor: `PrivacidadScreen` colgaba de
+Ajustes, así que para leer qué se guarda de ti tenías que **entregar tus datos primero**.
+
+| Decisión | Por qué |
+|---|---|
+| Es la **misma** pantalla, no una copia | El texto ya vivía en `shared` y lo pintan los dos clientes. Duplicarla habría creado dos políticas que divergen |
+| El rótulo del botón de volver es un **parámetro** | Llega desde entrar o desde registro; decir «Ajustes» a quien vino del formulario sería mentir sobre dónde le deja |
+| `privacidadDesde` recuerda de cuál se vino | Volver siempre a entrar le borraría los cuatro campos a quien estaba registrándose |
+| En registro pesa más que en entrar | El registro es donde alguien **entrega** sus datos, y el único momento en que leer la política todavía cambia su decisión |
+
+**Verificado en Android real**: «Política de privacidad» visible en la pantalla de entrada sin
+sesión; al tocarla, la política se abre con el botón **«← Entrar»**; desde registro, el mismo
+enlace abre la misma pantalla rotulada **«← Crear cuenta»**, y atrás devuelve al formulario con
+sus campos. En navegador real: 11/11, incluida la comprobación de que la política **está en el
+HTML inicial** —un rastreador sin JavaScript la lee—.
+
+---
+
+### Fase 27 — Aviso de la siguiente clase ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**: NoteCore avisa unos minutos antes de que empiece cada clase, con la materia y
+el aula. Antelación configurable (5, 10, 15 o 30 minutos). **Arranca apagado.**
+
+**La decisión que define la fase: arranca apagado.** Se pidió que viniera encendido por defecto.
+Un horario completo son unas **veinticinco clases a la semana**, así que encenderlo para todos
+serían veinticinco notificaciones semanales que nadie pidió — exactamente el volumen que lleva a
+desactivar los avisos de la app **entera**, incluidos los recordatorios de entrega que sí se
+querían. Es la misma decisión que ya tomó la Fase 5 y por el mismo motivo.
+
+| Decisión | Por qué |
+|---|---|
+| **Recurrencia semanal**, no fechas | Una entrega vence una vez; una clase se repite cada semana. Con fechas habría que reprogramar cada siete días, y quien no abriera la app se quedaría sin avisos. Un disparador `WEEKLY` lo repite el sistema operativo |
+| Vive en `class-alerts.ts`, no en `calendar.ts` | Comparte tipo de dato con el **horario** (`Weekday` + `ClockTime`), no con el calendario. Mezclarlos habría empujado a tratar la clase como un instante, que es lo que la Fase 2 decidió no hacer |
+| **Canal de Android propio** | El canal es la unidad que el usuario silencia desde los ajustes del sistema. Con un solo canal, callar los avisos de clase callaría también los de entrega |
+| La hora del aviso la calcula el **servidor** | Igual que `remindOn` en la Fase 5: si cada cliente restara los minutos, app y web discreparían y el fallo no se vería hasta que la notificación llegara tarde |
+| `crossesMidnight` se marca y **no se programa** | Una clase a las 00:10 con 30 minutos de antelación avisaría el día anterior a las 23:40: correcto en aritmética, absurdo en la práctica, y en el día de la semana equivocado |
+| El `UPDATE` toca **solo sus dos columnas** | `user_settings` la comparte con las semanas del semestre (Fase 3) y la hora del recordatorio (Fase 5). Escribir la fila entera reescribiría ajustes de otras pantallas |
+
+**El hallazgo de la fase**: `reprogramarRecordatorios` empezaba con
+`cancelAllScheduledNotificationsAsync()`, que **arrasa con todo**. Con dos familias conviviendo,
+abrir el calendario —que reprograma las entregas— habría borrado en silencio los avisos de clase
+de toda la semana. Se resolvió con identificadores por prefijo (`entrega:` / `clase:`) y
+cancelación selectiva. Se verificó explícitamente: tras reprogramar las entregas, los dos avisos
+de clase **seguían en `dumpsys alarm`**.
+
+**Verificado en Android real** (emulador Pixel, Android 15, APK de release):
+
+| Comprobación | Resultado |
+|---|---|
+| Viene **apagado** por defecto | correcto |
+| Android pide `POST_NOTIFICATIONS` al encender | correcto, concedido |
+| Alarmas programadas en el sistema | `RTC_WAKEUP` **2026-08-28 06:55** y **10:55** — las dos clases menos 5 minutos |
+| Recurrencia semanal | ambas caen el **viernes siguiente**, no hoy |
+| Cambiar la antelación a 30 min reprograma | `06:30` y `10:30` |
+| Contador en pantalla | «2 clases avisadas cada semana», coincide con el horario |
+| Las dos familias conviven | tras reprogramar entregas, los avisos de clase **siguen ahí** |
+
+**API**: 29/29, incluida la comprobación cruzada de que cambiar el aviso de clase **no toca** la
+hora ni la anticipación del recordatorio de entrega, y al revés.
+
+---
+
+### Fase 28 — Acciones en la notificación y aplazar ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**: la notificación de una entrega lleva dos botones —**«Cumplida»** y **«En 1
+hora»**— que resuelven **sin abrir la app**. Dentro de la app y de la web, el aplazamiento ofrece
+las cuatro opciones (30 min, 1, 3 y 4 horas).
+
+**Lo que ya existía**: la anticipación configurable que se pidió *ya estaba hecha* desde la Fase 5
+(mismo día, 1, 2, 3 días o una semana, más hora de aviso). Lo nuevo son los botones y el
+aplazamiento.
+
+| Decisión | Por qué |
+|---|---|
+| `reminderSnoozedUntil` es la **única** columna del aviso que se guarda | Todo lo demás se calcula: `remindOn` es `dueDate` menos la anticipación. Un aplazamiento nace de un **acto** y no se deduce de ningún otro dato |
+| Es `timestamp`, no `date` como `dueDate` | Aplazar cuatro horas necesita hora. No reabre el problema de husos de la Fase 4: lo que se mueve es **cuándo suena el aviso**, no cuándo vence la entrega |
+| Viajan los **minutos**, no el instante | El cliente que pide esto es una notificación, y el reloj del teléfono puede ir mal o en otro huso. Con una duración, el momento sale del reloj del servidor |
+| Ruta propia (`POST …/aplazar`), no un campo de `PATCH` | Es una **acción**, no una edición: mueve el aviso, no lo que la actividad es. Y evita que un cliente escriba a mano el instante |
+| **Dos** botones, no cuatro aplazamientos | Android esconde tras «expandir» lo que pase de dos o tres. Gastarlos en variantes de lo mismo dejaría fuera «Cumplida», que es el que más se usa |
+| El escucha vive en `App.tsx`, no en la pantalla de agenda | Los botones están declarados para **no abrir la app**. La respuesta llega con la app cerrada, cuando una pantalla concreta no está montada |
+| «Cumplida» pasa por la **cola offline**; aplazar **no** | El aviso salta donde no hay señal. Completar se encola y sube solo (Fase 9). Aplazar no puede: subirlo horas después lo movería a «una hora desde que hubo red», una hora que nadie eligió |
+| El aplazamiento se **limpia** al completar y al mover la fecha | En los dos casos dejaría de referirse a nada, y quedaría un aviso silenciado hasta una hora pensada para otra fecha |
+
+**Verificado en Android real** — el ciclo entero, sobre la notificación de verdad:
+
+| Comprobación | Resultado |
+|---|---|
+| La notificación llega con sus **dos botones** | `actions={[0] "Cumplida", [1] "En 1 hora"}`, ambos `broadcastIntent` (no abren la app) |
+| Pulsar **«Cumplida»** desde la sombra | la actividad quedó `completed: true` en PostgreSQL, sin abrir la app |
+| Pulsar **«En 1 hora»** | `reminderSnoozedUntil` guardado **una hora exacta** después, y `completed: false` |
+| El aviso se **reprograma** al aplazar | `dumpsys alarm`: la alarma pasó a las **23:49**, una hora después de pulsar |
+| La app muestra el estado | «Aviso aplazado hasta las 23:49» en la agenda, con las cuatro opciones |
+
+**API**: 22/22. La comprobación que más enseñó fue de huso: `remindOn` sale en fecha **local**, no
+la que daría `toISOString()` —de noche en México eso adelanta un día—. El fallo estaba en la
+prueba, no en el código: el servidor ya construía la fecha con componentes locales (Fase 5).
+
+---
+
+### Fase 29 — Consejos en el inicio ✅ *(cerrada el 2026-08-21)*
+
+**Qué se entregó**: la pantalla de inicio muestra **un** consejo, elegido según el estado real de
+la cuenta, con un botón que lleva a donde se resuelve y otro para cerrarlo para siempre.
+
+**La regla que los hace útiles y no ruido**: un consejo **solo aparece si su condición se
+cumple**. No es una lista que rota al azar: a quien ya comparte su horario no se le sugiere
+compartirlo, y a quien no tiene ni una materia no se le habla de widgets —porque el widget que
+vería estaría vacío—. Es lo que separa un tutorial de un anuncio.
+
+| Decisión | Por qué |
+|---|---|
+| La elección vive en `shared` (`siguienteTip`) | Principio II. Si cada cliente la tomara, la web sugeriría capturar el horario mientras la app felicita por tenerlo |
+| **Uno solo**, no la lista entera | Seis tarjetas de consejo convertirían el inicio en un folleto. Va **debajo** de la próxima clase y de los avisos: quien abre la app viene a ver su horario |
+| Un endpoint (`/tips/context`) y no cinco peticiones | El consejo mira seis cosas a la vez. Pedirlas por separado añadiría cinco viajes a la pantalla que más se abre, para pintar lo accesorio |
+| Devuelve **cuentas**, no listas | Las reglas solo preguntan «¿tiene alguno?». Mandar la agenda entera para responder a `pendientes > 0` expondría datos que la respuesta no necesita |
+| Los descartes viven en el **dispositivo** | Haber cerrado un consejo es una preferencia de este teléfono, no un dato de la cuenta. No merece tabla ni viaje de red, y perderlo no tiene consecuencia |
+| Va en el mismo `allSettled` que el resto | Si falla, no salen consejos y la pantalla se pinta igual. Un consejo es lo primero que sobra cuando algo va mal |
+| El destino viaja como **nombre de sección** | `shared` no sabe de rutas de Next ni de la navegación de la app. Cada cliente lo traduce a lo suyo |
+
+**Verificado en Android real**: la cuenta de prueba tenía horario, así que el inicio **no** sugirió
+capturarlo sino **encender el aviso de clase** —la regla eligió según el estado real—; tocar
+«Encenderlo» llevó al calendario. En navegador real: a una cuenta vacía se le sugiere capturar el
+horario, al cerrarlo aparece el siguiente, y **el descarte persiste tras recargar**.
+
+**API**: 27/27, incluida la cadena completa de estados —sin horario → capturar horario; con
+horario → encender aviso de clase; encendido → desaparece ese consejo; con pendientes →
+recordatorios; recordatorios encendidos → botones de la notificación— y que **el mismo contexto da
+siempre el mismo consejo**, que es lo que hace que web y app coincidan.
+
+---
+
+### Lo que estas cuatro fases NO cambiaron
+
+**Los permisos del manifiesto siguen siendo los mismos.** La Fase 22 los dejó en siete y estas
+cuatro no añadieron ninguno: `aapt2 dump badging` sobre el APK compilado devuelve `CAMERA`,
+`INTERNET`, `POST_NOTIFICATIONS`, `USE_BIOMETRIC`, `USE_FINGERPRINT` y el
+`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` de siempre. Los avisos de clase y los botones de la
+notificación se apoyan en `POST_NOTIFICATIONS`, que ya estaba.
+
+### Pendiente de estas fases
+
+- **Redesplegar**: la web y la API con estas cuatro fases **no están en producción**. Se suman a
+  las fases 21 y 22, que también seguían sin desplegar.
+- **`versionCode`**: el APK verificado se compiló con `versionCode 5` sin subirlo. Antes de
+  publicar una versión hay que incrementarlo.
+- El APK verificado apunta a la **API de pruebas** (`10.0.2.2:3055`): no sirve para distribuir.

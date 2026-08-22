@@ -10,6 +10,7 @@ import {
   type AgendaQueryParsed,
   type CalendarDate,
   type CreateAgendaItemParsed,
+  type SnoozeReminderParsed,
   type UpdateAgendaItemParsed,
 } from '@notecore/shared';
 import { db } from '../db/client.js';
@@ -73,6 +74,7 @@ function toAgendaItem(
     dueDate,
     completed: row.completed,
     completedAt: row.completedAt,
+    reminderSnoozedUntil: row.reminderSnoozedUntil,
     urgency: agendaUrgency(dueDate, today, row.completed),
     // Se manda resuelto porque el cliente lo calcularía con el reloj del dispositivo, que
     // puede ir en otro huso o simplemente mal.
@@ -330,8 +332,66 @@ export async function updateAgendaItem(
       ...(input.dueDate !== undefined && { dueDate: input.dueDate }),
       ...(input.completed !== undefined && { completed: input.completed }),
       ...(completionChanged && { completedAt: input.completed ? new Date() : null }),
+      /**
+       * El aplazamiento se limpia cuando deja de referirse a algo (Fase 28).
+       *
+       * Al completar, porque no hay nada que recordar de una entrega hecha. Al mover la
+       * fecha, porque el aplazamiento se pidió sobre el aviso viejo: conservarlo dejaría un
+       * aviso silenciado hasta una hora que se eligió pensando en otra fecha, y el
+       * estudiante no volvería a saber de la entrega hasta que pasara.
+       *
+       * Reabrir una completada también lo limpia, y es correcto: `completionChanged` cubre
+       * los dos sentidos, y quien reabre una tarea quiere volver a saber de ella.
+       */
+      ...((completionChanged || input.dueDate !== undefined) && {
+        reminderSnoozedUntil: null,
+      }),
       updatedAt: new Date(),
     })
+    .where(and(eq(agendaItems.id, itemId), eq(agendaItems.userId, userId)));
+
+  return getAgendaItem(userId, itemId);
+}
+
+/**
+ * Aplaza el recordatorio de una actividad (Fase 28).
+ *
+ * ## Por qué el instante lo calcula el servidor
+ *
+ * Porque el cliente que pide esto es una **notificación**, y el reloj del teléfono puede ir
+ * en otro huso o simplemente mal. Si el aplazamiento viajara como instante, un dispositivo
+ * desfasado movería el aviso a una hora que nadie eligió. Viajan los minutos —una duración,
+ * que no depende de dónde se mida— y el momento sale del reloj del servidor (Principio II).
+ *
+ * ## Qué no hace
+ *
+ * No toca `dueDate`. Aplazar mueve **cuándo suena el aviso**, no cuándo vence la entrega:
+ * son dos cosas distintas y confundirlas haría que posponer una notificación cambiara en
+ * silencio la fecha de una entrega real.
+ */
+export async function snoozeAgendaReminder(
+  userId: string,
+  itemId: string,
+  input: SnoozeReminderParsed,
+): Promise<AgendaItem> {
+  // Mismas dos comprobaciones que editar: que sea suya (Principio III) y que su semestre
+  // siga abierto (FR-037). Un semestre archivado es de solo lectura también para esto.
+  const current = await getAgendaItem(userId, itemId);
+  await assertAgendaItemWritable(userId, itemId);
+
+  // Aplazar el aviso de algo ya entregado no significa nada, y dejarlo pasar en silencio
+  // escribiría un instante que ningún aviso va a leer.
+  if (current.completed) {
+    throw errors.validacion('Esa actividad ya está completada, no hay nada que recordar.', [
+      { field: 'minutes', message: 'La actividad ya está completada' },
+    ]);
+  }
+
+  const hasta = new Date(Date.now() + input.minutes * 60 * 1000);
+
+  await db
+    .update(agendaItems)
+    .set({ reminderSnoozedUntil: hasta, updatedAt: new Date() })
     .where(and(eq(agendaItems.id, itemId), eq(agendaItems.userId, userId)));
 
   return getAgendaItem(userId, itemId);

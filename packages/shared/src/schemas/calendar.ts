@@ -3,7 +3,7 @@ import { calendarDateSchema } from './attendance.js';
 // La hora del aviso se valida con el mismo esquema que las horas del horario: además de
 // comprobar la forma, normaliza `7:00` y `07:00:00` a `HH:MM`, que es como se guarda.
 import { clockTimeSchema } from './schedule.js';
-import { REMINDER_LEAD_DAYS } from '../types/calendar.js';
+import { CLASS_ALERT_LEAD_MINUTES, REMINDER_LEAD_DAYS } from '../types/calendar.js';
 import { MAX_CALENDAR_RANGE_DAYS } from '../logic/calendar.js';
 import { daysBetween } from '../logic/agenda.js';
 import { isCalendarDate } from '../logic/dates.js';
@@ -104,3 +104,36 @@ export type UpdateReminderSettingsParsed = z.infer<typeof updateReminderSettings
  * ya normalizada, y un selector que ofrezca `7:00` no compilaría.
  */
 export type UpdateReminderSettingsInput = z.input<typeof updateReminderSettingsSchema>;
+
+/**
+ * Minutos de antelación del aviso de clase (Fase 27).
+ *
+ * Conjunto cerrado, como la anticipación de los recordatorios y por el mismo motivo: son las
+ * antelaciones que se usan, y así la pantalla las ofrece como botones.
+ */
+export const classAlertLeadMinutesSchema = z.union(
+  CLASS_ALERT_LEAD_MINUTES.map((minutes) => z.literal(minutes)) as [
+    z.ZodLiteral<5>,
+    z.ZodLiteral<10>,
+    ...z.ZodLiteral<(typeof CLASS_ALERT_LEAD_MINUTES)[number]>[],
+  ],
+  { error: 'Esa antelación no está disponible' },
+);
+
+/**
+ * Ajustes del aviso de clase (Fase 27).
+ *
+ * Campos opcionales por lo mismo que en los recordatorios: la pantalla cambia una cosa a la
+ * vez, y exigir el objeto entero haría que dos pantallas abiertas se pisaran los ajustes.
+ */
+export const updateClassAlertSettingsSchema = z
+  .object({
+    enabled: z.boolean().optional(),
+    leadMinutes: classAlertLeadMinutesSchema.optional(),
+  })
+  .refine((data) => data.enabled !== undefined || data.leadMinutes !== undefined, {
+    message: 'No hay nada que actualizar',
+  });
+
+export type UpdateClassAlertSettingsParsed = z.infer<typeof updateClassAlertSettingsSchema>;
+export type UpdateClassAlertSettingsInput = z.input<typeof updateClassAlertSettingsSchema>;

@@ -3,6 +3,7 @@ import {
   CALENDAR_ROUTES,
   calendarDateSchema,
   calendarRangeQuerySchema,
+  updateClassAlertSettingsSchema,
   updateReminderSettingsSchema,
 } from '@notecore/shared';
 import { authOf, requireAuth } from '../middleware/auth.js';
@@ -71,5 +72,30 @@ export const calendarRoutes: FastifyPluginAsync = async (app) => {
    */
   app.get(CALENDAR_ROUTES.reminderPlan, { preHandler: requireAuth }, async (request) => {
     return calendar.getReminderPlan(authOf(request).userId);
+  });
+
+  /** Ajustes del aviso de la siguiente clase (Fase 27). */
+  app.get(CALENDAR_ROUTES.classAlertSettings, { preHandler: requireAuth }, async (request) => {
+    return calendar.getClassAlertSettings(authOf(request).userId);
+  });
+
+  /** Enciende el aviso de clase, o cambia su antelación (Fase 27). */
+  app.patch(
+    CALENDAR_ROUTES.classAlertSettings,
+    { preHandler: requireAuth },
+    async (request) => {
+      const input = parseBody(updateClassAlertSettingsSchema, request.body);
+      return calendar.updateClassAlertSettings(authOf(request).userId, input);
+    },
+  );
+
+  /**
+   * Los avisos de clase vigentes, con su hora resuelta (Fase 27).
+   *
+   * La app la consulta al abrir y tras cada cambio del horario: cancela lo que tenía y
+   * programa esta lista entera, igual que con los recordatorios de entrega.
+   */
+  app.get(CALENDAR_ROUTES.classAlertPlan, { preHandler: requireAuth }, async (request) => {
+    return calendar.getClassAlertPlan(authOf(request).userId);
   });
 };

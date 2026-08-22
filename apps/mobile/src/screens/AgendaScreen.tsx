@@ -10,11 +10,14 @@ import {
   formatCalendarDateShort,
   generateEntityId,
   rebuildAgendaList,
+  SNOOZE_LABELS,
+  SNOOZE_MINUTES,
   todayCalendarDate,
   toFormErrors,
   type AgendaItem,
   type AgendaList,
   type Instant,
+  type SnoozeMinutes,
   type Subject,
 } from '@notecore/shared';
 import { agendaApi, scheduleApi } from '../lib/api';
@@ -104,6 +107,28 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
    * el usuario ve la casilla marcada al instante, que es lo que FR-049 pide de una escritura
    * hecha sin red.
    */
+  /**
+   * Aplaza el recordatorio de una actividad (Fase 28).
+   *
+   * No pasa por `sync.write` a propósito, a diferencia de completar: el instante lo calcula el
+   * servidor al recibirlo, así que subir esto horas más tarde lo movería a «una hora contada
+   * desde que hubo señal» en vez de desde que se pidió. Sin red el recordatorio se queda como
+   * estaba, que es un resultado honesto; encolarlo produciría un aviso a una hora que nadie
+   * eligió.
+   */
+  async function aplazarAviso(item: AgendaItem, minutos: SnoozeMinutes) {
+    setBusy(true);
+    try {
+      await agendaApi.snooze(item.id, { minutes: minutos });
+      await load();
+      setNotice(`Te recordamos "${item.title}" ${SNOOZE_LABELS[minutos].toLowerCase()}.`);
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function alternarCompletada(item: AgendaItem) {
     setBusy(true);
     try {
@@ -316,6 +341,7 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
                   onToggle={() => void alternarCompletada(item)}
                   onEdit={() => setPanel({ kind: 'editar', item })}
                   onDelete={() => eliminar(item)}
+                  onAplazar={(minutos) => void aplazarAviso(item, minutos)}
                 />
               ))
             )}
@@ -333,6 +359,7 @@ export function AgendaScreen({ onVolver }: { onVolver: () => void }) {
                   onToggle={() => void alternarCompletada(item)}
                   onEdit={() => setPanel({ kind: 'editar', item })}
                   onDelete={() => eliminar(item)}
+                  onAplazar={(minutos) => void aplazarAviso(item, minutos)}
                 />
               ))}
             </Card>
@@ -390,11 +417,26 @@ function nuevaActividadLocal(
     dueDate: (input.dueDate ?? null) as AgendaItem['dueDate'],
     completed: false,
     completedAt: null,
+    // Recién creada, nadie ha podido aplazar su recordatorio todavía (Fase 28).
+    reminderSnoozedUntil: null,
     urgency: 'sin_fecha',
     daysUntilDue: null,
     createdAt: ahora,
     updatedAt: ahora,
   };
+}
+
+/**
+ * La hora local de un instante, para enseñar hasta cuándo está aplazado un aviso.
+ *
+ * Con componentes locales y no `toISOString()`, por lo mismo que en todo el proyecto: esa
+ * conversión pasa por UTC y en México enseñaría el aplazamiento seis horas movido.
+ */
+function horaDeInstante(instante: Instant): string {
+  const fecha = new Date(instante);
+  const hora = String(fecha.getHours()).padStart(2, '0');
+  const minuto = String(fecha.getMinutes()).padStart(2, '0');
+  return `${hora}:${minuto}`;
 }
 
 /** Una actividad de la lista, con sus acciones. */
@@ -404,12 +446,15 @@ function ItemRow({
   onToggle,
   onEdit,
   onDelete,
+  onAplazar,
 }: {
   item: AgendaItem;
   busy: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  /** Aplaza el recordatorio de esta actividad (Fase 28). */
+  onAplazar: (minutos: SnoozeMinutes) => void;
 }) {
   const color = AGENDA_URGENCY_COLORS[item.urgency];
 
@@ -470,8 +515,44 @@ function ItemRow({
               {dueDateLine(item.urgency, item.daysUntilDue)}
             </Text>
           ) : null}
+
+          {/*
+            Aplazamiento vigente (Fase 28). Solo se enseña cuando lo hay: es un estado que el
+            usuario creó desde la notificación —quizá con la app cerrada—, y sin verlo aquí no
+            tendría forma de saber por qué su aviso no ha sonado.
+          */}
+          {!item.completed && item.reminderSnoozedUntil ? (
+            <Text style={styles.aplazado}>
+              Aviso aplazado hasta las {horaDeInstante(item.reminderSnoozedUntil)}
+            </Text>
+          ) : null}
         </View>
       </View>
+
+      {/*
+        Aplazar desde dentro de la app (Fase 28), con las cuatro opciones que la notificación
+        no puede ofrecer: allí solo caben dos botones antes de que Android los esconda.
+
+        Solo para lo pendiente y con fecha: sin fecha no hay aviso que aplazar, y una
+        completada ya no recuerda nada —el servidor rechaza las dos cosas, y ofrecer un botón
+        que va a fallar sería enseñar una acción que no existe—.
+      */}
+      {!item.completed && item.dueDate ? (
+        <View style={styles.aplazarFila}>
+          <Text style={styles.tenue}>Recordar más tarde:</Text>
+          {SNOOZE_MINUTES.map((minutos) => (
+            <Pressable
+              key={minutos}
+              onPress={() => onAplazar(minutos)}
+              disabled={busy}
+              hitSlop={8}
+              accessibilityLabel={`Aplazar el aviso de ${item.title}: ${SNOOZE_LABELS[minutos]}`}
+            >
+              <Text style={styles.link}>{SNOOZE_LABELS[minutos]}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.itemActions}>
         <Pressable onPress={onEdit} disabled={busy} hitSlop={8}>
@@ -550,5 +631,8 @@ const styles = StyleSheet.create({
   subjectTag: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   colorDot: { width: 8, height: 8, borderRadius: RADIUS.sm },
   urgency: { fontSize: TEXT.sm, fontWeight: '600' },
+  /** El aplazamiento vigente, en el tono de aviso: es un estado que silencia algo. */
+  aplazado: { fontSize: TEXT.sm, color: colors.textoSuave, fontStyle: 'italic' },
+  aplazarFila: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
   itemActions: { flexDirection: 'row', gap: 16, justifyContent: 'flex-end' },
 });

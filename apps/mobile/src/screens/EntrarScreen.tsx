@@ -13,7 +13,21 @@ import { useAuth } from '../lib/auth-context';
 import { Button, Field, FormError, SPACE, TEXT, base, colors } from '../components/ui';
 import { Logo } from '../components/logo';
 
-export function EntrarScreen({ onIrARegistro }: { onIrARegistro: () => void }) {
+/**
+ * Pantalla de entrada.
+ *
+ * Lleva enlace a la política de privacidad (Fase 26) porque hasta entonces solo se alcanzaba
+ * desde Ajustes, es decir, **con sesión ya iniciada**: quien quería saber qué se guarda de él
+ * tenía que entregar sus datos primero para poder leerlo. El texto ya vivía en `shared` y la
+ * pantalla ya existía; lo que faltaba era la puerta.
+ */
+export function EntrarScreen({
+  onIrARegistro,
+  onIrAPrivacidad,
+}: {
+  onIrARegistro: () => void;
+  onIrAPrivacidad: () => void;
+}) {
   const { login } = useAuth();
 
   const [values, setValues] = useState({ email: '', password: '' });
@@ -91,6 +105,10 @@ export function EntrarScreen({ onIrARegistro }: { onIrARegistro: () => void }) {
             ¿Aún no tienes cuenta? <Text style={styles.linkStrong}>Crea una</Text>
           </Text>
         </Pressable>
+
+        <Pressable onPress={onIrAPrivacidad} hitSlop={12}>
+          <Text style={styles.linkTenue}>Política de privacidad</Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -106,4 +124,10 @@ const styles = StyleSheet.create({
   form: { gap: 16 },
   link: { color: colors.textoSuave, fontSize: TEXT.md, textAlign: 'center' },
   linkStrong: { color: colors.acentoClaro, fontWeight: '600' },
+  /**
+   * Más tenue que el enlace de registro, y a propósito: crear una cuenta es lo que se viene a
+   * hacer aquí, leer la política es lo que se puede hacer. Compiten por el mismo sitio y el
+   * peso visual dice cuál es cuál.
+   */
+  linkTenue: { color: colors.textoSuave, fontSize: TEXT.sm, textAlign: 'center' },
 });

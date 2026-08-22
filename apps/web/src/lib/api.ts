@@ -4,6 +4,7 @@ import {
   createAttendanceApi,
   createAuthApi,
   createCalendarApi,
+  createTipsApi,
   createMessagingApi,
   createModerationApi,
   createPanelApi,
@@ -75,6 +76,8 @@ export const scheduleApi = createScheduleApi(apiClient);
 export const attendanceApi = createAttendanceApi(apiClient);
 export const agendaApi = createAgendaApi(apiClient);
 export const calendarApi = createCalendarApi(apiClient);
+/** Contexto de los consejos del inicio (Fase 29). */
+export const tipsApi = createTipsApi(apiClient);
 export const shareApi = createShareApi(apiClient);
 export const semesterApi = createSemesterApi(apiClient);
 export const socialApi = createSocialApi(apiClient);

@@ -4,6 +4,7 @@ import {
   agendaQuerySchema,
   createAgendaItemSchema,
   entityIdSchema,
+  snoozeReminderSchema,
   updateAgendaItemSchema,
 } from '@notecore/shared';
 import { authOf, requireAuth } from '../middleware/auth.js';
@@ -76,6 +77,26 @@ export const agendaRoutes: FastifyPluginAsync = async (app) => {
     async (request) => {
       const input = parseBody(updateAgendaItemSchema, request.body);
       return agenda.updateAgendaItem(
+        authOf(request).userId,
+        idOf(request.params.id, 'Esa actividad no existe.'),
+        input,
+      );
+    },
+  );
+
+  /**
+   * Aplaza el recordatorio de una actividad (Fase 28).
+   *
+   * `POST` y no `PATCH` sobre la actividad porque es una acción y no una edición: mueve
+   * cuándo suena el aviso, no lo que la actividad es. El cuerpo lleva los **minutos** y el
+   * instante lo calcula el servidor, para que el reloj del teléfono no desplace el aviso.
+   */
+  app.post<{ Params: { id: string } }>(
+    `${AGENDA_ROUTES.items}/:id/aplazar`,
+    { preHandler: requireAuth },
+    async (request) => {
+      const input = parseBody(snoozeReminderSchema, request.body);
+      return agenda.snoozeAgendaReminder(
         authOf(request).userId,
         idOf(request.params.id, 'Esa actividad no existe.'),
         input,

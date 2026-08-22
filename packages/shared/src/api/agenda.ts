@@ -8,6 +8,7 @@
 import type {
   AgendaQuery,
   CreateAgendaItemInput,
+  SnoozeReminderInput,
   UpdateAgendaItemInput,
 } from '../schemas/agenda.js';
 import type { AgendaItem, AgendaList } from '../types/agenda.js';
@@ -15,6 +16,15 @@ import type { ApiClient } from './client.js';
 
 export const AGENDA_ROUTES = {
   items: '/agenda/items',
+  /**
+   * Aplazar el recordatorio de una actividad (Fase 28).
+   *
+   * Ruta propia y no un campo de `PATCH /agenda/items/:id` porque es una **acción**, no una
+   * edición: quien pulsa «Recordar más tarde» en la notificación no está cambiando la
+   * actividad, está moviendo su aviso. Separarlas deja claro en el registro qué pasó, y
+   * evita que un cliente pueda escribir a mano el instante del aplazamiento.
+   */
+  snooze: (id: string) => `/agenda/items/${id}/aplazar`,
 } as const;
 
 /** Convierte los filtros en cadena de query, omitiendo lo que no venga. */
@@ -61,6 +71,16 @@ export function createAgendaApi(client: ApiClient) {
      */
     update(id: string, input: UpdateAgendaItemInput): Promise<AgendaItem> {
       return client.patch<AgendaItem>(`${AGENDA_ROUTES.items}/${id}`, input);
+    },
+
+    /**
+     * Aplaza el recordatorio de una actividad (Fase 28).
+     *
+     * Manda los minutos, no el instante: el momento resultante lo calcula el servidor sobre
+     * su propio reloj, para que un dispositivo mal puesto en hora no desplace el aviso.
+     */
+    snooze(id: string, input: SnoozeReminderInput): Promise<AgendaItem> {
+      return client.post<AgendaItem>(AGENDA_ROUTES.snooze(id), input);
     },
 
     /** Elimina una actividad por acción explícita del usuario (FR-021). */

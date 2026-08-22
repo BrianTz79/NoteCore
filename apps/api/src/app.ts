@@ -12,6 +12,7 @@ import { scheduleRoutes } from './routes/schedule.js';
 import { attendanceRoutes } from './routes/attendance.js';
 import { agendaRoutes } from './routes/agenda.js';
 import { calendarRoutes } from './routes/calendar.js';
+import { tipsRoutes } from './routes/tips.js';
 import { shareRoutes } from './routes/share.js';
 import { semesterRoutes } from './routes/semester.js';
 import { socialRoutes } from './routes/social.js';
@@ -186,6 +187,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(releaseRoutes);
   await app.register(panelRoutes);
   await app.register(moderationRoutes);
+  // Consejos del inicio (Fase 29).
+  await app.register(tipsRoutes);
 
   return app;
 }

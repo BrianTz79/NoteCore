@@ -3,10 +3,13 @@ import {
   DEFAULT_REMINDER_LEAD_DAYS,
   DEFAULT_REMINDER_TIME,
   agendaUrgency,
+  buildClassAlerts,
   calendarDateRange,
   currentClockTime,
+  defaultClassAlertSettings,
   reminderDate,
   reminderHasPassed,
+  toCalendarDate,
   todayCalendarDate,
   weekdayOf,
   type AgendaKind,
@@ -15,11 +18,15 @@ import {
   type CalendarDay,
   type CalendarDue,
   type CalendarRange,
+  type ClassAlertLeadMinutes,
+  type ClassAlertPlan,
+  type ClassAlertSettings,
   type ClockTime,
   type ReminderLeadDays,
   type ReminderPlan,
   type ReminderSettings,
   type ScheduledReminder,
+  type UpdateClassAlertSettingsParsed,
   type UpdateReminderSettingsParsed,
   type Weekday,
 } from '@notecore/shared';
@@ -328,6 +335,7 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
       kind: agendaItems.kind,
       subjectName: subjects.name,
       dueDate: agendaItems.dueDate,
+      snoozedUntil: agendaItems.reminderSnoozedUntil,
     })
     .from(agendaItems)
     .leftJoin(subjects, eq(agendaItems.subjectId, subjects.id))
@@ -351,11 +359,29 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
       ),
     );
 
+  const ahora = new Date();
+
   const reminders: ScheduledReminder[] = rows
     .flatMap((row) => {
       if (row.dueDate === null) return [];
       const dueDate = toCalendarDateValue(row.dueDate);
-      const remindOn = reminderDate(dueDate, settings.leadDays);
+
+      /**
+       * El aplazamiento gana sobre el momento calculado (Fase 28).
+       *
+       * Quien pulsó «Recordar más tarde» pidió exactamente esto, y es la única parte del
+       * aviso que no se deduce de la fecha ni de los ajustes. Solo se respeta mientras siga
+       * en el futuro: un aplazamiento ya cumplido es historia, y seguir usándolo dejaría el
+       * aviso anclado a un instante pasado que Android descarta —el recordatorio no
+       * volvería a sonar nunca—.
+       */
+      const aplazado =
+        row.snoozedUntil !== null && row.snoozedUntil > ahora ? row.snoozedUntil : null;
+
+      const remindOn = aplazado
+        ? toCalendarDate(aplazado)
+        : reminderDate(dueDate, settings.leadDays);
+      const remindAt = aplazado ? currentClockTime(aplazado) : settings.timeOfDay;
 
       return [
         {
@@ -365,10 +391,10 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
           subjectName: row.subjectName,
           dueDate,
           remindOn,
-          remindAt: settings.timeOfDay,
+          remindAt,
           // Android descarta lo programado para un instante pasado, así que el cliente
           // necesita saberlo para no creer que lo programó cuando no llegará nada.
-          overdue: reminderHasPassed(remindOn, settings.timeOfDay, today, nowTime),
+          overdue: reminderHasPassed(remindOn, remindAt, today, nowTime),
         },
       ];
     })
@@ -376,4 +402,113 @@ export async function getReminderPlan(userId: string): Promise<ReminderPlan> {
     .sort((a, b) => a.remindOn.localeCompare(b.remindOn) || a.title.localeCompare(b.title));
 
   return { settings, reminders, today };
+}
+
+/**
+ * Ajustes del aviso de la siguiente clase (Fase 27).
+ *
+ * Van en la misma fila de `user_settings` que los recordatorios, y por eso su `UPDATE` toca
+ * solo sus dos columnas: es la misma tabla que comparte con las semanas del semestre (Fase 3)
+ * y con la hora del recordatorio (Fase 5). Escribir la fila entera aquí reescribiría la hora
+ * del aviso de entregas cada vez que alguien cambiara la antelación de las clases.
+ */
+export async function getClassAlertSettings(userId: string): Promise<ClassAlertSettings> {
+  const row = await db.query.userSettings.findFirst({
+    where: eq(userSettings.userId, userId),
+  });
+
+  if (!row) return defaultClassAlertSettings(new Date());
+
+  return {
+    enabled: row.classAlertsEnabled,
+    leadMinutes: row.classAlertLeadMinutes as ClassAlertLeadMinutes,
+    updatedAt: row.updatedAt,
+  };
+}
+
+/** Enciende el aviso de clase, o cambia su antelación (Fase 27). */
+export async function updateClassAlertSettings(
+  userId: string,
+  input: UpdateClassAlertSettingsParsed,
+): Promise<ClassAlertSettings> {
+  const current = await getClassAlertSettings(userId);
+
+  // `undefined` significa "déjalo como estaba", igual que en los recordatorios: la pantalla
+  // cambia una cosa a la vez y dos pantallas abiertas no deben pisarse.
+  const enabled = input.enabled ?? current.enabled;
+  const leadMinutes = input.leadMinutes ?? current.leadMinutes;
+
+  await db
+    .insert(userSettings)
+    .values({
+      userId,
+      classAlertsEnabled: enabled,
+      classAlertLeadMinutes: leadMinutes,
+      updatedAt: new Date(),
+    })
+    // Solo las dos columnas del aviso de clase: `semesterWeeks` y los tres campos del
+    // recordatorio de entregas viven en esta misma fila y son de otras pantallas.
+    .onConflictDoUpdate({
+      target: userSettings.userId,
+      set: {
+        classAlertsEnabled: enabled,
+        classAlertLeadMinutes: leadMinutes,
+        updatedAt: new Date(),
+      },
+    });
+
+  return getClassAlertSettings(userId);
+}
+
+/**
+ * Los avisos de clase vigentes, con su hora ya resuelta (Fase 27).
+ *
+ * Se devuelven **todos** en cada consulta, como el plan de recordatorios: el cliente cancela
+ * lo que tenía programado y programa esta lista entera. Una clase borrada del horario deja de
+ * venir y su aviso desaparece con ella, sin que nadie lleve registro de lo anterior.
+ *
+ * El filtro por semestre en curso es lo que hace que archivar un semestre calle sus avisos: una
+ * sesión es un día de la semana recurrente y no tiene fecha propia, así que sin este filtro el
+ * teléfono seguiría avisando cada lunes de una clase que ya no se cursa.
+ */
+export async function getClassAlertPlan(userId: string): Promise<ClassAlertPlan> {
+  const settings = await getClassAlertSettings(userId);
+
+  // Apagado: lista vacía y el cliente cancela todo lo que tuviera, sin caso especial.
+  if (!settings.enabled) return { settings, alerts: [] };
+
+  const semesterId = await getCurrentSemesterId(userId);
+
+  const rows = await db
+    .select({
+      blockId: scheduleBlocks.id,
+      subjectId: scheduleBlocks.subjectId,
+      subjectName: subjects.name,
+      color: subjects.color,
+      weekday: scheduleBlocks.weekday,
+      startTime: scheduleBlocks.startTime,
+      endTime: scheduleBlocks.endTime,
+      room: scheduleBlocks.room,
+    })
+    .from(scheduleBlocks)
+    .innerJoin(subjects, eq(scheduleBlocks.subjectId, subjects.id))
+    .where(and(eq(scheduleBlocks.userId, userId), eq(scheduleBlocks.semesterId, semesterId)));
+
+  // La hora del aviso y el orden los pone `shared`, que es donde los clientes leen la misma
+  // regla: aquí solo se le entregan las sesiones ya resueltas con su materia.
+  const alerts = buildClassAlerts(
+    rows.map((row) => ({
+      blockId: row.blockId,
+      subjectId: row.subjectId,
+      subjectName: row.subjectName,
+      color: row.color,
+      weekday: row.weekday as Weekday,
+      startTime: toClockTime(row.startTime),
+      endTime: toClockTime(row.endTime),
+      room: row.room,
+    })),
+    settings.leadMinutes,
+  );
+
+  return { settings, alerts };
 }

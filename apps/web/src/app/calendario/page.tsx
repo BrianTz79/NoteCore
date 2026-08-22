@@ -5,6 +5,10 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   AGENDA_KIND_LABELS,
   AGENDA_URGENCY_COLORS,
+  CLASS_ALERT_LEAD_MINUTES,
+  CLASS_ALERT_LEAD_LABELS,
+  WEEKDAYS,
+  WEEKDAY_LABELS,
   REMINDER_LEAD_DAYS,
   REMINDER_LEAD_LABELS,
   daysBetween,
@@ -22,6 +26,8 @@ import {
   type CalendarDay,
   type CalendarRange,
   type ReminderPlan,
+  type ClassAlertLeadMinutes,
+  type ClassAlertPlan,
   type ReminderLeadDays,
 } from '@notecore/shared';
 import { calendarApi } from '@/lib/api';
@@ -56,6 +62,8 @@ function Calendario() {
   const [rango, setRango] = useState<CalendarRange>();
   const [diaAbierto, setDiaAbierto] = useState<CalendarDay>();
   const [plan, setPlan] = useState<ReminderPlan>();
+  /** Aviso de la siguiente clase (Fase 27), con su propio plan. */
+  const [planClases, setPlanClases] = useState<ClassAlertPlan>();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -68,6 +76,20 @@ function Calendario() {
         await calendarApi.range(monthGridStart(mesActual), monthGridEnd(mesActual)),
       );
       setError(undefined);
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    }
+  }, []);
+
+  /**
+   * Trae el plan de avisos de clase (Fase 27).
+   *
+   * La web no programa nada —lo hace la app—, así que aquí solo sirve para mostrar el estado y
+   * la lista. Va en su propia función por lo mismo que en la app: son dos familias distintas.
+   */
+  const cargarPlanClases = useCallback(async () => {
+    try {
+      setPlanClases(await calendarApi.classAlertPlan());
     } catch (caught) {
       setError(toFormErrors(caught).general);
     }
@@ -98,11 +120,39 @@ function Calendario() {
     void cargarPlan();
   }, [cargarPlan]);
 
+  useEffect(() => {
+    void cargarPlanClases();
+  }, [cargarPlanClases]);
+
   /** Abre el detalle de un día (FR-024). */
   async function abrirDia(fecha: string) {
     setBusy(true);
     try {
       setDiaAbierto(await calendarApi.day(fecha));
+      setError(undefined);
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Cambia los ajustes del aviso de clase (Fase 27).
+   *
+   * La web **configura y muestra**; quien emite la notificación es la app, igual que con los
+   * recordatorios de entrega y por el mismo motivo: el navegador no puede hacer sonar un aviso
+   * con la pestaña cerrada. La paridad se cumple donde importa —los mismos ajustes y los mismos
+   * datos en ambos clientes—, y por eso este ajuste también se toca desde aquí.
+   */
+  async function guardarAjustesClase(input: {
+    enabled?: boolean;
+    leadMinutes?: ClassAlertLeadMinutes;
+  }) {
+    setBusy(true);
+    try {
+      await calendarApi.updateClassAlertSettings(input);
+      await cargarPlanClases();
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
@@ -266,6 +316,58 @@ function Calendario() {
                 </div>
 
                 <ListaRecordatorios plan={plan} />
+              </>
+            ) : null}
+          </Card>
+
+          {/* ── Aviso de la siguiente clase (Fase 27) ─────────────────────── */}
+          <Card title="Aviso de la siguiente clase">
+            <p className="text-tinta2">
+              Recibe un aviso unos minutos antes de que empiece cada clase, con la materia y el
+              aula. Como los recordatorios, la notificación llega a tu teléfono desde la app;
+              aquí eliges cuándo.
+            </p>
+
+            <label className="flex items-center gap-nc-sm text-tinta">
+              <input
+                type="checkbox"
+                checked={planClases?.settings.enabled ?? false}
+                disabled={busy || !planClases}
+                onChange={(event) =>
+                  void guardarAjustesClase({ enabled: event.target.checked })
+                }
+                className="h-4 w-4 accent-sky-500"
+              />
+              Avisarme antes de cada clase
+            </label>
+
+            {planClases?.settings.enabled ? (
+              <>
+                <div className="space-y-nc-2xs">
+                  <span className="block text-sm font-medium text-tinta2">
+                    Con cuánta antelación
+                  </span>
+                  <div className="flex flex-wrap gap-nc-xs">
+                    {CLASS_ALERT_LEAD_MINUTES.map((minutos) => (
+                      <button
+                        key={minutos}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void guardarAjustesClase({ leadMinutes: minutos })}
+                        aria-pressed={planClases.settings.leadMinutes === minutos}
+                        className={`rounded-lg border px-nc-sm py-nc-xs text-sm transition ${
+                          planClases.settings.leadMinutes === minutos
+                            ? 'border-filete2 bg-acento/10 text-foco'
+                            : 'border-filete text-tinta2 hover:border-filete2'
+                        }`}
+                      >
+                        {CLASS_ALERT_LEAD_LABELS[minutos]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <ListaAvisosDeClase plan={planClases} />
               </>
             ) : null}
           </Card>
@@ -443,6 +545,72 @@ function DetalleDia({ dia }: { dia: CalendarDay }) {
  * La web no programa notificaciones del sistema: las muestra para que el usuario vea qué va a
  * recibir y cuándo, y para que lo que ya debería haber avisado no pase desapercibido.
  */
+/**
+ * Los avisos de clase de la semana, agrupados por día (Fase 27).
+ *
+ * Se agrupan por día porque así se lee como un horario, que es como el estudiante tiene el
+ * suyo en la cabeza. Una lista plana de veinticinco filas ordenadas por hora sería correcta y
+ * no diría nada.
+ */
+function ListaAvisosDeClase({ plan }: { plan: ClassAlertPlan }) {
+  if (plan.alerts.length === 0) {
+    return (
+      <p className="text-tinta3">
+        No tienes clases en el horario de este periodo, así que no hay nada que avisar.
+      </p>
+    );
+  }
+
+  // Se recorre `WEEKDAYS` en lugar de las claves de un mapa: así los días salen siempre en el
+  // orden de la semana, y un día sin clases simplemente no aparece.
+  const porDia = WEEKDAYS.map((dia) => ({
+    dia,
+    avisos: plan.alerts.filter((aviso) => aviso.weekday === dia),
+  })).filter((grupo) => grupo.avisos.length > 0);
+
+  return (
+    <div className="space-y-nc-sm">
+      <h3 className="text-sm font-medium text-tinta2">
+        Avisos cada semana ({plan.alerts.length})
+      </h3>
+
+      {porDia.map((grupo) => (
+        <div key={grupo.dia} className="space-y-nc-2xs">
+          <span className="block text-sm font-medium text-tinta3">
+            {WEEKDAY_LABELS[grupo.dia]}
+          </span>
+          <ul className="space-y-nc-xs">
+            {grupo.avisos.map((aviso) => (
+              <li
+                key={aviso.blockId}
+                className="flex flex-wrap items-center justify-between gap-nc-xs rounded-lg border border-filete p-nc-sm"
+              >
+                <span className="text-tinta">
+                  {aviso.subjectName}
+                  {aviso.room ? (
+                    <span className="text-tinta3"> · {aviso.room}</span>
+                  ) : null}
+                </span>
+                <span className="text-sm text-tinta3">
+                  {aviso.crossesMidnight ? (
+                    /* Restar la antelación cruzó la medianoche: el aviso caería el día
+                       anterior, así que la app no lo programa y aquí se dice por qué. */
+                    <span className="text-aviso">
+                      Empieza demasiado pronto para avisarte con esa antelación
+                    </span>
+                  ) : (
+                    `Aviso a las ${aviso.alertAt} · empieza a las ${aviso.startTime}`
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ListaRecordatorios({ plan }: { plan: ReminderPlan | undefined }) {
   if (!plan) return null;
 

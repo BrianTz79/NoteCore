@@ -41,8 +41,24 @@ import {
  * Es un documento que se consulta una vez, no una sección que se navega a diario. Ponerlo en
  * el menú principal lo haría competir con el horario y la agenda; ponerlo en Ajustes lo deja
  * donde alguien lo busca cuando se pregunta qué se está guardando de él.
+ *
+ * ## Por qué el destino de «atrás» es un parámetro (Fase 26)
+ *
+ * Desde la Fase 26 esta misma pantalla se abre también **sin sesión**, desde entrar y desde
+ * registro: quien decide si crea una cuenta necesita poder leer qué se va a guardar de él
+ * **antes** de crearla, no después. Es la misma pantalla y el mismo texto —no una copia—, así
+ * que lo único que cambia es a dónde vuelve. Por eso el rótulo del botón viaja como propiedad
+ * en lugar de estar escrito dentro: una pantalla que dijera «Ajustes» a quien llegó desde el
+ * formulario de entrada estaría mintiendo sobre dónde va a dejarlo.
  */
-export function PrivacidadScreen({ onVolver }: { onVolver: () => void }) {
+export function PrivacidadScreen({
+  onVolver,
+  backLabel = 'Ajustes',
+}: {
+  onVolver: () => void;
+  /** Rótulo del botón de volver: nombra el sitio del que se vino. */
+  backLabel?: string;
+}) {
   useBotonAtras([{ cuando: true, hacer: onVolver }]);
 
   return (
@@ -51,7 +67,7 @@ export function PrivacidadScreen({ onVolver }: { onVolver: () => void }) {
         title="Privacidad"
         subtitle={`Actualizada el ${PRIVACIDAD_ACTUALIZADA}`}
         onBack={onVolver}
-        backLabel="Ajustes"
+        backLabel={backLabel}
       />
 
       <Card>

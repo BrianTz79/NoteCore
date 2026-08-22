@@ -7,20 +7,23 @@ import {
   describeUpcoming,
   nextClass,
   remainingToday,
+  siguienteTip,
   toScheduleEntries,
   unreadSummary,
   type AgendaList,
   type AttendanceSummary,
   type Subject,
+  type TipContext,
+  type TipDestino,
   type UnreadSummary,
   type UpcomingClass,
 } from '@notecore/shared';
-import { agendaApi, attendanceApi, messagingApi, scheduleApi } from '@/lib/api';
+import { agendaApi, attendanceApi, messagingApi, scheduleApi, tipsApi } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { loadWithCache, useSyncActions } from '@/lib/sync-context';
 import { RequireSession } from '@/components/require-session';
 import { SECCIONES } from '@/lib/navigation';
-import { Button, EmptyState, NavLink, Rule, Tag } from '@/components/ui';
+import { Button, Card, EmptyState, NavLink, Rule, Tag } from '@/components/ui';
 import { SyncIndicator } from '@/components/sync-indicator';
 
 /**
@@ -57,6 +60,32 @@ function Inicio() {
   const { user, logout } = useAuth();
   const sync = useSyncActions();
   const [resumen, setResumen] = useState<Resumen | null>(null);
+  /** Contexto y descartes de los consejos del inicio (Fase 29). */
+  const [contextoTips, setContextoTips] = useState<TipContext | null>(null);
+  const [descartados, setDescartados] = useState<readonly string[]>([]);
+
+  /**
+   * Los consejos ya cerrados, en el almacenamiento del navegador.
+   *
+   * Local y no en el servidor por lo mismo que en la app: haber cerrado un consejo es una
+   * preferencia de **este** navegador, no un dato de la cuenta. No merece una tabla ni un
+   * viaje de red, y perderlo no tiene consecuencia —lo peor es volver a ver un consejo—.
+   *
+   * En un efecto y no en el `useState` inicial porque `localStorage` no existe durante el
+   * renderizado del servidor de Next, y leerlo allí rompería la hidratación.
+   */
+  useEffect(() => {
+    if (!user) return;
+    setDescartados(leerTipsDescartados(user.id));
+  }, [user]);
+
+  /** Cierra un consejo: no vuelve a salir en este navegador. */
+  function descartarTip(id: string) {
+    if (!user) return;
+    const siguiente = [...descartados, id];
+    setDescartados(siguiente);
+    guardarTipsDescartados(user.id, siguiente);
+  }
 
   /**
    * Todo lo del inicio, en paralelo.
@@ -73,11 +102,14 @@ function Inicio() {
     let vigente = true;
 
     async function cargar() {
-      const [horario, faltas, agenda, mensajes] = await Promise.allSettled([
+      const [horario, faltas, agenda, mensajes, contexto] = await Promise.allSettled([
         loadWithCache(sync, CACHE_KEYS.schedule, () => scheduleApi.subjects()),
         attendanceApi.summary(),
         agendaApi.list(),
         messagingApi.unread(),
+        // Contexto de los consejos (Fase 29). Si falla, los consejos no salen y el resto de
+        // la pantalla se pinta igual: es lo primero que sobra cuando algo va mal.
+        tipsApi.context(),
       ]);
 
       if (!vigente) return;
@@ -95,6 +127,8 @@ function Inicio() {
         agenda: agenda.status === 'fulfilled' ? agenda.value : null,
         sinLeer: mensajes.status === 'fulfilled' ? mensajes.value : null,
       });
+
+      setContextoTips(contexto.status === 'fulfilled' ? contexto.value : null);
     }
 
     void cargar();
@@ -127,6 +161,17 @@ function Inicio() {
         <SyncIndicator />
         <ProximaClase resumen={resumen} />
         <Avisos resumen={resumen} />
+
+        {/*
+          Consejo del inicio (Fase 29). Debajo de la próxima clase y los avisos, nunca encima:
+          quien abre NoteCore viene a ver su horario, no a que le enseñen la aplicación.
+        */}
+        <ConsejoDelInicio
+          contexto={contextoTips}
+          descartados={descartados}
+          onDescartar={descartarTip}
+        />
+
         <Navegacion />
       </div>
     </main>
@@ -324,6 +369,106 @@ function Avisos({ resumen }: { resumen: Resumen | null }) {
  * forma de moverse — la lista viene de `@/lib/navigation`, compartida con la barra, para que
  * las dos no puedan divergir.
  */
+/* ==========================================================================
+ * Consejos del inicio (Fase 29)
+ * ======================================================================== */
+
+/** Dónde recuerda este navegador qué consejos cerró el usuario. */
+function claveDescartados(userId: string): string {
+  return `notecore:${userId}:tips-descartados`;
+}
+
+function leerTipsDescartados(userId: string): readonly string[] {
+  try {
+    const crudo = window.localStorage.getItem(claveDescartados(userId));
+    if (!crudo) return [];
+    const leido: unknown = JSON.parse(crudo);
+    // Se comprueba la forma en lugar de confiar: un valor corrupto —o escrito a mano desde
+    // la consola— no puede tumbar la pantalla que más se abre.
+    return Array.isArray(leido) ? leido.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    // `localStorage` lanza en modo privado de algunos navegadores. Sin descartes guardados
+    // los consejos vuelven a salir, que es molesto y no es grave.
+    return [];
+  }
+}
+
+function guardarTipsDescartados(userId: string, ids: readonly string[]): void {
+  try {
+    window.localStorage.setItem(claveDescartados(userId), JSON.stringify(ids));
+  } catch {
+    // Igual que arriba: no merece interrumpir al usuario con un error.
+  }
+}
+
+/**
+ * A qué ruta lleva cada destino de consejo.
+ *
+ * El consejo viaja con el destino como nombre de sección porque vive en `shared`, que no sabe
+ * de rutas de Next ni de la navegación de la app. Cada cliente lo traduce a lo suyo: aquí a
+ * una URL, en la app a un cambio de sección.
+ */
+const RUTA_DE_DESTINO: Readonly<Record<TipDestino, string>> = {
+  horario: '/horario',
+  faltas: '/faltas',
+  agenda: '/agenda',
+  calendario: '/calendario',
+  compartir: '/compartir',
+  semestres: '/semestres',
+  social: '/social',
+  /**
+   * La web no tiene pantalla de «Ajustes» como la app: sus dos contenidos —la política y el
+   * borrado de cuenta— son páginas propias. El único consejo que apunta aquí es el de
+   * privacidad, así que lleva directo a la política, que es exactamente lo que ofrece leer.
+   */
+  ajustes: '/privacidad',
+};
+
+/**
+ * El consejo que toca ahora, o nada.
+ *
+ * **Uno solo**, que es la decisión de la fase: seis tarjetas de consejo convertirían el inicio
+ * en un folleto. Cuál toca lo decide `siguienteTip` en `shared`, con las mismas reglas que
+ * evalúa la app, para que las dos digan lo mismo sobre la misma cuenta.
+ */
+function ConsejoDelInicio({
+  contexto,
+  descartados,
+  onDescartar,
+}: {
+  contexto: TipContext | null;
+  descartados: readonly string[];
+  onDescartar: (id: string) => void;
+}) {
+  // Sin contexto no se adivina: mejor ningún consejo que uno que no venga a cuento.
+  if (!contexto) return null;
+
+  const tip = siguienteTip(contexto, descartados);
+  if (!tip) return null;
+
+  return (
+    <Card title={tip.titulo}>
+      <p className="text-tinta2">{tip.cuerpo}</p>
+
+      <div className="flex flex-wrap items-center gap-nc-xs">
+        {tip.destino && tip.accion ? (
+          <Link
+            href={RUTA_DE_DESTINO[tip.destino]}
+            className="rounded-lg border border-filete2 bg-acento/10 px-nc-sm py-nc-xs text-sm text-foco transition hover:border-acento"
+          >
+            {tip.accion}
+          </Link>
+        ) : null}
+
+        {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio. */}
+        <Button variant="secondary" size="sm" onClick={() => onDescartar(tip.id)}>
+          Ya lo sé
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function Navegacion() {
   return (
     <nav aria-label="Secciones" className="space-y-nc-2xs lg:hidden">

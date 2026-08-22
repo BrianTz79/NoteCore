@@ -7,10 +7,13 @@ import {
   CACHE_KEYS,
   dueDateLine,
   formatCalendarDateShort,
+  SNOOZE_LABELS,
+  SNOOZE_MINUTES,
   toFormErrors,
   type AgendaItem,
   type AgendaList,
   type Instant,
+  type SnoozeMinutes,
   type Subject,
 } from '@notecore/shared';
 import { agendaApi, scheduleApi } from '@/lib/api';
@@ -80,6 +83,26 @@ function Agenda() {
   }, [load]);
 
   /** Completa o reabre una actividad (FR-020). El registro se conserva en ambos sentidos. */
+  /**
+   * Aplaza el recordatorio de una actividad (Fase 28).
+   *
+   * La web no emite la notificación —eso es de la app—, pero sí puede mover cuándo suena, y
+   * por eso la acción existe en los dos clientes (Principio I). El instante lo calcula el
+   * servidor sobre su propio reloj: aquí solo viajan los minutos.
+   */
+  async function aplazarAviso(item: AgendaItem, minutos: SnoozeMinutes) {
+    setBusy(true);
+    try {
+      await agendaApi.snooze(item.id, { minutes: minutos });
+      await load();
+      setNotice(`Te recordamos "${item.title}" ${SNOOZE_LABELS[minutos].toLowerCase()}.`);
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function alternarCompletada(item: AgendaItem) {
     setBusy(true);
     try {
@@ -198,6 +221,7 @@ function Agenda() {
                     onToggle={() => void alternarCompletada(item)}
                     onEdit={() => setPanel({ kind: 'editar', item })}
                     onDelete={() => void eliminar(item)}
+                    onAplazar={(minutos) => void aplazarAviso(item, minutos)}
                   />
                 ))}
               </ul>
@@ -217,6 +241,7 @@ function Agenda() {
                     onToggle={() => void alternarCompletada(item)}
                     onEdit={() => setPanel({ kind: 'editar', item })}
                     onDelete={() => void eliminar(item)}
+                    onAplazar={(minutos) => void aplazarAviso(item, minutos)}
                   />
                 ))}
               </ul>
@@ -229,18 +254,34 @@ function Agenda() {
 }
 
 /** Una actividad de la lista, con sus acciones. */
+/**
+ * La hora local de un instante, para enseñar hasta cuándo está aplazado un aviso.
+ *
+ * Con componentes locales y no `toISOString()`, por lo mismo que en el resto del proyecto: esa
+ * conversión pasa por UTC y enseñaría el aplazamiento movido de hora.
+ */
+function horaDeInstante(instante: Instant): string {
+  const fecha = new Date(instante);
+  const hora = String(fecha.getHours()).padStart(2, '0');
+  const minuto = String(fecha.getMinutes()).padStart(2, '0');
+  return `${hora}:${minuto}`;
+}
+
 function ItemRow({
   item,
   busy,
   onToggle,
   onEdit,
   onDelete,
+  onAplazar,
 }: {
   item: AgendaItem;
   busy: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  /** Aplaza el recordatorio de esta actividad (Fase 28). */
+  onAplazar: (minutos: SnoozeMinutes) => void;
 }) {
   const color = AGENDA_URGENCY_COLORS[item.urgency];
 
@@ -296,6 +337,41 @@ function ItemRow({
           {!item.completed && item.dueDate ? (
             <p className="text-sm font-medium" style={{ color }}>
               {dueDateLine(item.urgency, item.daysUntilDue)}
+            </p>
+          ) : null}
+
+          {/*
+            Aplazamiento vigente (Fase 28). Se enseña también aquí, y no solo en la app, porque
+            quien lo creó lo hizo desde una notificación del teléfono: sin verlo en la web no
+            tendría forma de entender por qué su aviso no ha sonado. Es la paridad del
+            Principio I aplicada a un estado que nació en el otro cliente.
+          */}
+          {!item.completed && item.reminderSnoozedUntil ? (
+            <p className="text-sm italic text-tinta3">
+              Aviso aplazado hasta las {horaDeInstante(item.reminderSnoozedUntil)}
+            </p>
+          ) : null}
+
+          {/*
+            Aplazar desde la web (Fase 28). Las cuatro opciones, que es lo que la notificación
+            no puede ofrecer —allí solo caben dos botones—. Solo para lo pendiente y con fecha:
+            sin fecha no hay aviso que aplazar y el servidor rechaza aplazar lo completado.
+          */}
+          {!item.completed && item.dueDate ? (
+            <p className="flex flex-wrap items-center gap-x-nc-xs gap-y-nc-2xs text-sm text-tinta3">
+              <span>Recordar más tarde:</span>
+              {SNOOZE_MINUTES.map((minutos) => (
+                <button
+                  key={minutos}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onAplazar(minutos)}
+                  aria-label={`Aplazar el aviso de ${item.title}: ${SNOOZE_LABELS[minutos]}`}
+                  className="rounded-md px-nc-2xs text-acento transition hover:text-foco disabled:opacity-50"
+                >
+                  {SNOOZE_LABELS[minutos]}
+                </button>
+              ))}
             </p>
           ) : null}
         </div>

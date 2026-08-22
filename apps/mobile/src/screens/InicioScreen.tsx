@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   CACHE_KEYS,
@@ -6,15 +6,19 @@ import {
   nextClass,
   pendingSummary,
   remainingToday,
+  siguienteTip,
   toScheduleEntries,
   unreadSummary,
   type AgendaList,
   type AttendanceSummary,
   type Subject,
+  type TipContext,
+  type TipDestino,
   type UnreadSummary,
   type UpcomingClass,
 } from '@notecore/shared';
-import { agendaApi, attendanceApi, messagingApi, scheduleApi } from '../lib/api';
+import { agendaApi, attendanceApi, messagingApi, scheduleApi, tipsApi } from '../lib/api';
+import { offlineStorage } from '../lib/offline-storage';
 import { actualizarWidget } from '../lib/widget';
 import { useAuth } from '../lib/auth-context';
 import { loadWithCache, useSync, useSyncActions } from '../lib/sync-context';
@@ -75,6 +79,84 @@ export function InicioScreen({
   const { user } = useAuth();
   const sync = useSyncActions();
   const [resumen, setResumen] = useState<Resumen | null>(null);
+  /** Contexto y descartes de los consejos del inicio (Fase 29). */
+  const [contextoTips, setContextoTips] = useState<TipContext | null>(null);
+  const [descartados, setDescartados] = useState<readonly string[]>([]);
+
+  /**
+   * Los consejos ya cerrados, leídos del almacenamiento del dispositivo.
+   *
+   * Local y no en el servidor a propósito: haber cerrado un consejo es una preferencia de
+   * **este** teléfono, no un dato de la cuenta. Guardarlo en la base de datos costaría una
+   * tabla y un viaje de red para recordar algo que a nadie más le importa, y que se puede
+   * perder sin consecuencia —lo peor que pasa es volver a ver un consejo—.
+   */
+  useEffect(() => {
+    if (!user) return;
+
+    let vigente = true;
+    void (async () => {
+      const guardado = await leerTipsDescartados(user.id);
+      if (vigente) setDescartados(guardado);
+    })();
+
+    return () => {
+      vigente = false;
+    };
+  }, [user]);
+
+  /**
+   * Lleva a donde el consejo apunta.
+   *
+   * El destino viaja como nombre de sección —`'horario'`, `'faltas'`…— y no como función,
+   * porque el consejo vive en `shared`, que no sabe nada de la navegación de esta app ni de
+   * las rutas de la web. Cada cliente traduce ese nombre a lo suyo, y aquí es este `switch`.
+   */
+  const irADestinoDeTip = useCallback(
+    (destino: TipDestino) => {
+      switch (destino) {
+        case 'horario':
+          return onIrAHorario();
+        case 'faltas':
+          return onIrAFaltas();
+        case 'agenda':
+          return onIrAAgenda();
+        case 'calendario':
+          return onIrACalendario();
+        case 'compartir':
+          return onIrACompartir();
+        case 'semestres':
+          return onIrASemestres();
+        case 'social':
+          return onIrASocial();
+        case 'ajustes':
+          return onIrAAjustes();
+      }
+    },
+    [
+      onIrAHorario,
+      onIrAFaltas,
+      onIrAAgenda,
+      onIrACalendario,
+      onIrACompartir,
+      onIrASemestres,
+      onIrASocial,
+      onIrAAjustes,
+    ],
+  );
+
+  /** Cierra un consejo: no vuelve a salir en este dispositivo. */
+  const descartarTip = useCallback(
+    (id: string) => {
+      if (!user) return;
+      setDescartados((actuales) => {
+        const siguiente = [...actuales, id];
+        void guardarTipsDescartados(user.id, siguiente);
+        return siguiente;
+      });
+    },
+    [user],
+  );
 
   /**
    * Todo lo del inicio, en paralelo.
@@ -88,11 +170,15 @@ export function InicioScreen({
     let vigente = true;
 
     async function cargar() {
-      const [horario, faltas, agenda, mensajes] = await Promise.allSettled([
+      const [horario, faltas, agenda, mensajes, contextoTips] = await Promise.allSettled([
         loadWithCache(sync, CACHE_KEYS.schedule, () => scheduleApi.subjects()),
         attendanceApi.summary(),
         agendaApi.list(),
         messagingApi.unread(),
+        // Contexto de los consejos (Fase 29). Va en el mismo `allSettled`: si falla, los
+        // consejos no aparecen y el resto de la pantalla se pinta igual. Un consejo es lo
+        // primero que sobra cuando algo va mal.
+        tipsApi.context(),
       ]);
 
       if (!vigente) return;
@@ -113,6 +199,8 @@ export function InicioScreen({
         agenda: listaDeAgenda,
         sinLeer: mensajes.status === 'fulfilled' ? mensajes.value : null,
       });
+
+      setContextoTips(contextoTips.status === 'fulfilled' ? contextoTips.value : null);
 
       /*
        * Los cuatro widgets se reconstruyen desde aquí (Fase 16).
@@ -157,6 +245,18 @@ export function InicioScreen({
 
       <ProximaClase resumen={resumen} onIrAHorario={onIrAHorario} />
 
+      {/*
+        Consejo del inicio (Fase 29). Debajo de la próxima clase y de los avisos, nunca encima:
+        quien abre la app viene a ver a qué hora es su clase, no a que le enseñen la app. El
+        consejo espera su turno abajo.
+      */}
+      <ConsejoDelInicio
+        contexto={contextoTips}
+        descartados={descartados}
+        onDescartar={descartarTip}
+        onIr={irADestinoDeTip}
+      />
+
       <Avisos
         resumen={resumen}
         onIrAFaltas={onIrAFaltas}
@@ -178,6 +278,91 @@ export function InicioScreen({
         ]}
       />
     </ScrollView>
+  );
+}
+
+/* ==========================================================================
+ * Consejos del inicio (Fase 29)
+ * ======================================================================== */
+
+/** Dónde se recuerda, en este dispositivo, qué consejos cerró el usuario. */
+function claveDescartados(userId: string): string {
+  return `notecore:${userId}:tips-descartados`;
+}
+
+async function leerTipsDescartados(userId: string): Promise<readonly string[]> {
+  try {
+    const crudo = await offlineStorage.getItem(claveDescartados(userId));
+    if (!crudo) return [];
+    const leido: unknown = JSON.parse(crudo);
+    // Se comprueba la forma en lugar de confiar: un archivo corrupto no puede tumbar el
+    // inicio, que es la pantalla que más se abre.
+    return Array.isArray(leido) ? leido.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+async function guardarTipsDescartados(
+  userId: string,
+  ids: readonly string[],
+): Promise<void> {
+  try {
+    await offlineStorage.setItem(claveDescartados(userId), JSON.stringify(ids));
+  } catch {
+    // Si no se puede guardar, el consejo volverá a salir la próxima vez. Es molesto y no
+    // es grave: no merece interrumpir al usuario con un error.
+  }
+}
+
+/**
+ * El consejo que toca ahora, o nada.
+ *
+ * **Uno solo**, que es la decisión de la fase: seis tarjetas de consejo convertirían el inicio
+ * en un folleto. Cuál toca lo decide `siguienteTip` en `shared`, con las mismas reglas que
+ * evalúa la web, para que las dos digan lo mismo sobre la misma cuenta.
+ */
+function ConsejoDelInicio({
+  contexto,
+  descartados,
+  onDescartar,
+  onIr,
+}: {
+  contexto: TipContext | null;
+  descartados: readonly string[];
+  onDescartar: (id: string) => void;
+  onIr: (destino: TipDestino) => void;
+}) {
+  // Sin contexto no se adivina: mejor ningún consejo que uno que no venga a cuento.
+  if (!contexto) return null;
+
+  const tip = siguienteTip(contexto, descartados);
+  if (!tip) return null;
+
+  return (
+    <Card title={tip.titulo}>
+      <Text style={base.cuerpo}>{tip.cuerpo}</Text>
+
+      <View style={styles.tipAcciones}>
+        {tip.destino && tip.accion ? (
+          <Button
+            title={tip.accion}
+            size="sm"
+            compacto
+            onPress={() => onIr(tip.destino as TipDestino)}
+          />
+        ) : null}
+
+        {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio. */}
+        <Button
+          title="Ya lo sé"
+          variant="secondary"
+          size="sm"
+          compacto
+          onPress={() => onDescartar(tip.id)}
+        />
+      </View>
+    </Card>
   );
 }
 
@@ -457,6 +642,8 @@ function Sincronizacion() {
 }
 
 const styles = StyleSheet.create({
+  /** Los dos botones del consejo, en fila: el que lleva y el que lo cierra. */
+  tipAcciones: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   content: {
     paddingHorizontal: SPACE.md,
     paddingTop: SPACE.md,

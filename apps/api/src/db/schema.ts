@@ -457,6 +457,27 @@ export const agendaItems = pgTable(
     completed: boolean('completed').notNull().default(false),
     /** Cuándo se completó. `null` mientras siga pendiente. */
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    /**
+     * Hasta cuándo se aplazó el recordatorio de esta actividad (Fase 28).
+     *
+     * ## Por qué es un instante y no se deriva de nada
+     *
+     * Todo lo demás del aviso se **calcula**: `remindOn` es `dueDate` menos la anticipación,
+     * y `remindAt` sale de los ajustes del usuario. Un aplazamiento no se puede calcular
+     * porque nace de un acto —«ahora no, recuérdamelo luego»— que no está en ningún otro
+     * dato. Por eso es la única columna del aviso que se guarda.
+     *
+     * Es `timestamp` y no `date`, a diferencia de `dueDate`: aplazar cuatro horas necesita
+     * hora, y aquí sí es un instante real —el momento en que se pulsó, más el margen— y no
+     * un día de calendario. Esto no reabre el problema de husos que cerró la Fase 4, porque
+     * la fecha de entrega sigue siendo `date`: lo que se mueve es cuándo suena el aviso, no
+     * cuándo vence la entrega.
+     *
+     * `null` es lo normal: significa «sin aplazar», y es el estado del que nunca se tocó el
+     * botón. Se limpia al completar y al cambiar la fecha, porque en los dos casos el
+     * aplazamiento dejaría de referirse a nada.
+     */
+    reminderSnoozedUntil: timestamp('reminder_snoozed_until', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -522,6 +543,23 @@ export const userSettings = pgTable('user_settings', {
    * recurrente, no un instante.
    */
   reminderTimeOfDay: time('reminder_time_of_day').notNull().default('20:00'),
+  /**
+   * Si el usuario quiere que se le avise antes de cada clase (Fase 27).
+   *
+   * Arranca apagado, igual que los recordatorios de entrega y con más motivo: un horario
+   * completo son unas veinticinco clases a la semana, así que encenderlo por defecto sería
+   * veinticinco notificaciones semanales que nadie pidió. Ese volumen es justo lo que lleva a
+   * desactivar los avisos de la app entera, incluidos los que sí se querían.
+   */
+  classAlertsEnabled: boolean('class_alerts_enabled').notNull().default(false),
+  /**
+   * Minutos de antelación del aviso de clase. Uno de `CLASS_ALERT_LEAD_MINUTES`.
+   *
+   * Minutos y no días, a diferencia de `reminderLeadDays`: son dos avisos con escalas
+   * distintas —una entrega se prepara con días, a una clase se llega con minutos— y por eso
+   * son dos ajustes y no uno compartido.
+   */
+  classAlertLeadMinutes: integer('class_alert_lead_minutes').notNull().default(5),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

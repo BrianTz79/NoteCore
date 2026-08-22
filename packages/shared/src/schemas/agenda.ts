@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { entityIdSchema, requiredString } from './common.js';
 import { AGENDA_KINDS } from '../types/agenda.js';
+import { SNOOZE_MINUTES } from '../types/calendar.js';
 import { calendarDateSchema } from './attendance.js';
 
 /**
@@ -155,3 +156,25 @@ export const agendaQuerySchema = z.object({
 
 export type AgendaQueryParsed = z.infer<typeof agendaQuerySchema>;
 export type AgendaQuery = z.input<typeof agendaQuerySchema>;
+
+/**
+ * Aplazar el recordatorio de una actividad (Fase 28).
+ *
+ * Solo viajan los **minutos**, no el instante resultante. Es deliberado: si el cliente mandara
+ * «recuérdamelo a las 21:30» estaría imponiendo el reloj del dispositivo, que puede ir en otro
+ * huso o simplemente mal, y el aviso saldría a una hora que nadie eligió. Mandando la duración,
+ * el instante lo calcula el servidor sobre su propio reloj (Principio II).
+ */
+export const snoozeReminderSchema = z.object({
+  minutes: z.union(
+    SNOOZE_MINUTES.map((minutes) => z.literal(minutes)) as [
+      z.ZodLiteral<30>,
+      z.ZodLiteral<60>,
+      ...z.ZodLiteral<(typeof SNOOZE_MINUTES)[number]>[],
+    ],
+    { error: 'Ese aplazamiento no está disponible' },
+  ),
+});
+
+export type SnoozeReminderParsed = z.infer<typeof snoozeReminderSchema>;
+export type SnoozeReminderInput = z.input<typeof snoozeReminderSchema>;

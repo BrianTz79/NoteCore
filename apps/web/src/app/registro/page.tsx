@@ -124,6 +124,18 @@ export default function RegistroPage() {
           Inicia sesión
         </Link>
       </p>
+
+      {/*
+        Privacidad (Fase 26). Aquí se enuncia como parte del acto de crear la cuenta, y no solo
+        como un enlace suelto: este es el formulario donde alguien entrega sus datos por primera
+        vez, y el único momento en que leer qué se guarda de él todavía cambia su decisión.
+      */}
+      <p className="text-center text-xs text-tinta3">
+        Al crear tu cuenta aceptas la{' '}
+        <Link href="/privacidad" className="font-medium text-tinta2 hover:text-tinta">
+          política de privacidad
+        </Link>
+      </p>
     </main>
   );
 }

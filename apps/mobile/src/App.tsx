@@ -20,6 +20,7 @@ import { SocialScreen } from './screens/SocialScreen';
 import { MensajesScreen } from './screens/MensajesScreen';
 import { AjustesScreen } from './screens/AjustesScreen';
 import { PrivacidadScreen } from './screens/PrivacidadScreen';
+import { atenderAccionesDeNotificacion } from './lib/notifications';
 import { BorrarCuentaScreen } from './screens/BorrarCuentaScreen';
 import { colors } from './components/ui';
 
@@ -139,10 +140,71 @@ function useWidgetAlDia(hayUsuario: boolean) {
   }, [hayUsuario, sync]);
 }
 
+/**
+ * Atiende los botones «Cumplida» y «Recordar más tarde» de la notificación (Fase 28).
+ *
+ * ## Por qué vive aquí arriba
+ *
+ * Porque los dos botones están declarados para **no abrir la app**, que es todo su sentido:
+ * resolver la entrega desde la pantalla de bloqueo. La respuesta puede llegar con la app
+ * cerrada o en segundo plano, así que el escucha tiene que existir mientras haya sesión y no
+ * mientras haya una pantalla concreta montada.
+ *
+ * ## Por qué pasa por `write` y no llama a la API
+ *
+ * Porque el aviso salta a la hora que salta, y esa hora cae a menudo donde no hay señal.
+ * `write` —de la Fase 9— manda si hay red y encola si no, con el identificador definitivo de
+ * la actividad. Sin eso, «Cumplida» fallaría en silencio y la tarea seguiría pendiente al día
+ * siguiente, que es exactamente la avería que el botón viene a evitar.
+ */
+function useAccionesDeNotificacion(hayUsuario: boolean) {
+  const sync = useSyncActions();
+
+  useEffect(() => {
+    if (!hayUsuario) return;
+
+    return atenderAccionesDeNotificacion({
+      onCumplida: async (itemId) => {
+        await sync.write({
+          operation: 'agenda_editar',
+          entityId: itemId,
+          payload: { completed: true },
+          label: 'Actividad completada',
+          send: async () => {
+            await agendaApi.update(itemId, { completed: true });
+          },
+        });
+      },
+      onAplazar: async (itemId, minutos) => {
+        /**
+         * Aplazar **no** se encola, y esa es la diferencia con completar.
+         *
+         * El aplazamiento se calcula sobre el reloj del servidor en el momento de recibirlo.
+         * Subirlo horas después, cuando vuelva la red, lo movería a un instante que ya no
+         * es «dentro de una hora» sino «dentro de una hora contada desde que hubo señal»:
+         * el aviso saldría a una hora que nadie eligió. Sin red, el recordatorio
+         * simplemente sigue como estaba, que es un resultado honesto.
+         */
+        await agendaApi.snooze(itemId, { minutes: minutos });
+      },
+    });
+  }, [hayUsuario, sync]);
+}
+
 function Root() {
   const { user, loading } = useAuth();
   useWidgetAlDia(user !== null);
-  const [pantalla, setPantalla] = useState<'entrar' | 'registro'>('entrar');
+  useAccionesDeNotificacion(user !== null);
+  /**
+   * Cuál de las pantallas sin sesión se ve.
+   *
+   * Desde la Fase 26 son tres y no dos: la política de privacidad también se alcanza sin haber
+   * entrado. `privacidad-desde` recuerda de cuál de las dos se vino, porque atrás tiene que
+   * devolver al formulario que se estaba llenando —volver siempre a entrar le borraría a quien
+   * estaba registrándose los cuatro campos que ya había escrito—.
+   */
+  const [pantalla, setPantalla] = useState<'entrar' | 'registro' | 'privacidad'>('entrar');
+  const [privacidadDesde, setPrivacidadDesde] = useState<'entrar' | 'registro'>('entrar');
   const [seccion, setSeccion] = useState<
     | 'inicio'
     | 'horario'
@@ -235,6 +297,10 @@ function Root() {
    * componente.
    */
   useBotonAtras([
+    {
+      cuando: user === null && pantalla === 'privacidad',
+      hacer: () => setPantalla(privacidadDesde),
+    },
     { cuando: user === null && pantalla === 'registro', hacer: () => setPantalla('entrar') },
   ]);
   // Nótese que esta escalera **no** lleva un paso final `cuando: true`, a diferencia de las
@@ -340,10 +406,34 @@ function Root() {
     );
   }
 
+  /**
+   * Privacidad sin sesión (Fase 26). Es la **misma** pantalla que cuelga de Ajustes, no una
+   * copia: solo cambia a dónde vuelve y cómo se rotula ese botón.
+   */
+  if (pantalla === 'privacidad') {
+    return (
+      <PrivacidadScreen
+        onVolver={() => setPantalla(privacidadDesde)}
+        backLabel={privacidadDesde === 'registro' ? 'Crear cuenta' : 'Entrar'}
+      />
+    );
+  }
+
+  function irAPrivacidad(desde: 'entrar' | 'registro') {
+    setPrivacidadDesde(desde);
+    setPantalla('privacidad');
+  }
+
   return pantalla === 'entrar' ? (
-    <EntrarScreen onIrARegistro={() => setPantalla('registro')} />
+    <EntrarScreen
+      onIrARegistro={() => setPantalla('registro')}
+      onIrAPrivacidad={() => irAPrivacidad('entrar')}
+    />
   ) : (
-    <RegistroScreen onIrAEntrar={() => setPantalla('entrar')} />
+    <RegistroScreen
+      onIrAEntrar={() => setPantalla('entrar')}
+      onIrAPrivacidad={() => irAPrivacidad('registro')}
+    />
   );
 }
 

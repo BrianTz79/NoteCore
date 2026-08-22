@@ -5,11 +5,16 @@
  * rutas y sus tipos de respuesta.
  */
 
-import type { UpdateReminderSettingsInput } from '../schemas/calendar.js';
+import type {
+  UpdateClassAlertSettingsInput,
+  UpdateReminderSettingsInput,
+} from '../schemas/calendar.js';
 import type { CalendarDate } from '../types/attendance.js';
 import type {
   CalendarDay,
   CalendarRange,
+  ClassAlertPlan,
+  ClassAlertSettings,
   ReminderPlan,
   ReminderSettings,
 } from '../types/calendar.js';
@@ -20,6 +25,9 @@ export const CALENDAR_ROUTES = {
   day: '/calendar/day',
   reminderSettings: '/calendar/reminders/settings',
   reminderPlan: '/calendar/reminders/plan',
+  /** Aviso de la siguiente clase (Fase 27). */
+  classAlertSettings: '/calendar/class-alerts/settings',
+  classAlertPlan: '/calendar/class-alerts/plan',
 } as const;
 
 export function createCalendarApi(client: ApiClient) {
@@ -65,6 +73,29 @@ export function createCalendarApi(client: ApiClient) {
      */
     reminderPlan(): Promise<ReminderPlan> {
       return client.get<ReminderPlan>(CALENDAR_ROUTES.reminderPlan);
+    },
+
+    /** Ajustes del aviso de la siguiente clase (Fase 27). */
+    classAlertSettings(): Promise<ClassAlertSettings> {
+      return client.get<ClassAlertSettings>(CALENDAR_ROUTES.classAlertSettings);
+    },
+
+    /** Enciende el aviso de clase, o cambia su antelación (Fase 27). */
+    updateClassAlertSettings(
+      input: UpdateClassAlertSettingsInput,
+    ): Promise<ClassAlertSettings> {
+      return client.patch<ClassAlertSettings>(CALENDAR_ROUTES.classAlertSettings, input);
+    },
+
+    /**
+     * Los avisos de clase vigentes, con su hora ya resuelta (Fase 27).
+     *
+     * Igual que el plan de recordatorios, se devuelven todos en cada consulta: la app cancela
+     * lo que tenía y programa esta lista entera. Una clase borrada del horario, o cuyo
+     * semestre se archivó, deja de venir y su aviso desaparece con ella.
+     */
+    classAlertPlan(): Promise<ClassAlertPlan> {
+      return client.get<ClassAlertPlan>(CALENDAR_ROUTES.classAlertPlan);
     },
   };
 }

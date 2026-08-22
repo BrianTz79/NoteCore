@@ -12,7 +12,21 @@ import { registerSchema, toFormErrors, type FormErrors } from '@notecore/shared'
 import { useAuth } from '../lib/auth-context';
 import { Button, Field, FormError, SPACE, TEXT, base, colors } from '../components/ui';
 
-export function RegistroScreen({ onIrAEntrar }: { onIrAEntrar: () => void }) {
+/**
+ * Pantalla de registro.
+ *
+ * El enlace a la política de privacidad (Fase 26) pesa más aquí que en la de entrada: este es
+ * el formulario donde alguien **entrega** sus datos por primera vez, y es el único momento en
+ * que decidir si acepta lo que se guarda de él todavía cambia algo. Hasta la Fase 26 la
+ * política solo se alcanzaba desde Ajustes, o sea, cuando la cuenta ya existía.
+ */
+export function RegistroScreen({
+  onIrAEntrar,
+  onIrAPrivacidad,
+}: {
+  onIrAEntrar: () => void;
+  onIrAPrivacidad: () => void;
+}) {
   const { register } = useAuth();
 
   const [values, setValues] = useState({
@@ -111,6 +125,13 @@ export function RegistroScreen({ onIrAEntrar }: { onIrAEntrar: () => void }) {
             ¿Ya tienes cuenta? <Text style={styles.linkStrong}>Inicia sesión</Text>
           </Text>
         </Pressable>
+
+        <Pressable onPress={onIrAPrivacidad} hitSlop={12}>
+          <Text style={styles.linkTenue}>
+            Al crear tu cuenta aceptas la{' '}
+            <Text style={styles.linkTenueStrong}>política de privacidad</Text>
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -125,4 +146,6 @@ const styles = StyleSheet.create({
   form: { gap: 16 },
   link: { color: colors.textoSuave, fontSize: TEXT.md, textAlign: 'center' },
   linkStrong: { color: colors.acentoClaro, fontWeight: '600' },
+  linkTenue: { color: colors.textoSuave, fontSize: TEXT.sm, textAlign: 'center' },
+  linkTenueStrong: { color: colors.acentoClaro, fontWeight: '600' },
 });

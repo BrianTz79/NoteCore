@@ -3,6 +3,8 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-nat
 import {
   AGENDA_KIND_LABELS,
   AGENDA_URGENCY_COLORS,
+  CLASS_ALERT_LEAD_MINUTES,
+  CLASS_ALERT_LEAD_LABELS,
   REMINDER_LEAD_DAYS,
   REMINDER_LEAD_LABELS,
   daysBetween,
@@ -19,11 +21,13 @@ import {
   todayCalendarDate,
   type CalendarDay,
   type CalendarRange,
+  type ClassAlertLeadMinutes,
+  type ClassAlertPlan,
   type ReminderLeadDays,
   type ReminderPlan,
 } from '@notecore/shared';
 import { calendarApi } from '../lib/api';
-import { reprogramarRecordatorios } from '../lib/notifications';
+import { reprogramarAvisosDeClase, reprogramarRecordatorios } from '../lib/notifications';
 import { useBotonAtras } from '../lib/boton-atras';
 import { Button, Card, FormError, RADIUS, SPACE, ScreenHeader, TEXT, base, c, colors } from '../components/ui';
 
@@ -47,6 +51,9 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
   const [diaAbierto, setDiaAbierto] = useState<CalendarDay>();
   const [plan, setPlan] = useState<ReminderPlan>();
   const [programadas, setProgramadas] = useState<number>();
+  /** Aviso de la siguiente clase (Fase 27). Su propio plan y su propio contador. */
+  const [planClases, setPlanClases] = useState<ClassAlertPlan>();
+  const [clasesProgramadas, setClasesProgramadas] = useState<number>();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
@@ -99,6 +106,24 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
     }
   }, []);
 
+  /**
+   * Trae el plan de avisos de clase y lo traslada al sistema (Fase 27).
+   *
+   * Va en su propia función y su propio efecto, separado del de entregas: son dos familias de
+   * notificaciones con ciclos distintos, y cada una cancela y reprograma solo la suya. Fundir
+   * las dos haría que cambiar la hora del aviso de entregas reprogramara también las
+   * veinticinco notificaciones semanales del horario, sin motivo.
+   */
+  const cargarPlanClases = useCallback(async () => {
+    try {
+      const nuevo = await calendarApi.classAlertPlan();
+      setPlanClases(nuevo);
+      setClasesProgramadas(await reprogramarAvisosDeClase(nuevo));
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    }
+  }, []);
+
   // La rejilla se recarga al cambiar de mes; el plan de recordatorios no depende del mes, así
   // que va en su propio efecto. Juntos, pasar de mes reprogramaría todas las notificaciones
   // del teléfono sin que nada hubiera cambiado.
@@ -113,11 +138,32 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
     void cargarPlan();
   }, [cargarPlan]);
 
+  useEffect(() => {
+    void cargarPlanClases();
+  }, [cargarPlanClases]);
+
   /** Abre el detalle de un día (FR-024). */
   async function abrirDia(fecha: string) {
     setBusy(true);
     try {
       setDiaAbierto(await calendarApi.day(fecha));
+      setError(undefined);
+    } catch (caught) {
+      setError(toFormErrors(caught).general);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** Cambia los ajustes del aviso de clase y reprograma (Fase 27). */
+  async function guardarAjustesClase(input: {
+    enabled?: boolean;
+    leadMinutes?: ClassAlertLeadMinutes;
+  }) {
+    setBusy(true);
+    try {
+      await calendarApi.updateClassAlertSettings(input);
+      await cargarPlanClases();
       setError(undefined);
     } catch (caught) {
       setError(toFormErrors(caught).general);
@@ -270,6 +316,74 @@ export function CalendarioScreen({ onVolver }: { onVolver: () => void }) {
                 ) : null}
 
                 <ListaRecordatorios plan={plan} />
+              </>
+            ) : null}
+          </Card>
+
+          {/* ── Aviso de la siguiente clase (Fase 27) ─────────────────────── */}
+          <Card title="Aviso de la siguiente clase">
+            <Text style={styles.body}>
+              Recibe un aviso unos minutos antes de que empiece cada clase, con la materia y el
+              aula.
+            </Text>
+
+            <View style={styles.filaAjuste}>
+              <Text style={styles.body}>Avisarme antes de cada clase</Text>
+              <Switch
+                value={planClases?.settings.enabled ?? false}
+                disabled={busy || !planClases}
+                onValueChange={(enabled) => void guardarAjustesClase({ enabled })}
+                trackColor={{ false: colors.borde, true: colors.acento }}
+                thumbColor={colors.textoFuerte}
+              />
+            </View>
+
+            {planClases?.settings.enabled ? (
+              <>
+                <Text style={styles.etiqueta}>Con cuánta antelación</Text>
+                <View style={styles.opciones}>
+                  {CLASS_ALERT_LEAD_MINUTES.map((minutos) => (
+                    <Pressable
+                      key={minutos}
+                      onPress={() => void guardarAjustesClase({ leadMinutes: minutos })}
+                      disabled={busy}
+                      accessibilityRole="radio"
+                      accessibilityState={{
+                        selected: planClases.settings.leadMinutes === minutos,
+                      }}
+                      style={[
+                        styles.opcion,
+                        planClases.settings.leadMinutes === minutos
+                          ? styles.opcionActiva
+                          : null,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.opcionTexto,
+                          planClases.settings.leadMinutes === minutos
+                            ? styles.opcionTextoActivo
+                            : null,
+                        ]}
+                      >
+                        {CLASS_ALERT_LEAD_LABELS[minutos]}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {clasesProgramadas !== undefined ? (
+                  <Text style={styles.ok}>
+                    {clasesProgramadas === 0
+                      ? 'No hay clases en tu horario que avisar.'
+                      : `${clasesProgramadas} ${clasesProgramadas === 1 ? 'clase avisada' : 'clases avisadas'} cada semana.`}
+                  </Text>
+                ) : null}
+
+                <Text style={styles.muted}>
+                  El aviso se repite cada semana mientras el semestre siga abierto. Al cerrarlo,
+                  se calla solo.
+                </Text>
               </>
             ) : null}
           </Card>

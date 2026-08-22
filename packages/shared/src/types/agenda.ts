@@ -66,6 +66,14 @@ export interface AgendaItem {
   /** Cuándo se completó. `null` mientras siga pendiente. */
   readonly completedAt: Instant | null;
   /**
+   * Hasta cuándo se aplazó su recordatorio (Fase 28). `null` si no se aplazó.
+   *
+   * Es el único dato del aviso que se guarda en lugar de calcularse: nace de que alguien
+   * pulsó «Recordar más tarde» en la notificación, y eso no se deduce de la fecha de entrega
+   * ni de los ajustes.
+   */
+  readonly reminderSnoozedUntil: Instant | null;
+  /**
    * Urgencia calculada por el servidor sobre `dueDate` y la fecha de hoy.
    *
    * Las completadas siempre valen `sin_fecha`: una tarea entregada no urge aunque su fecha

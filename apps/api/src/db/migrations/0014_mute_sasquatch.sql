@@ -1,0 +1,2 @@
+ALTER TABLE "user_settings" ADD COLUMN "class_alerts_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "user_settings" ADD COLUMN "class_alert_lead_minutes" integer DEFAULT 5 NOT NULL;

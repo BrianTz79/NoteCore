@@ -4,7 +4,7 @@
  * Principio VIII: definidos UNA vez aquí y consumidos por `api`, `web` y `mobile`.
  */
 
-import type { EntityId } from './common.js';
+import type { EntityId, Weekday } from './common.js';
 import type { Instant } from './auth.js';
 import type { CalendarDate } from './attendance.js';
 import type { ClockTime } from './schedule.js';
@@ -173,3 +173,124 @@ export interface ReminderPlan {
   /** Hoy según el servidor, contra el que se resolvió `overdue`. */
   readonly today: CalendarDate;
 }
+
+/**
+ * Minutos de antelación admitidos para el aviso de la siguiente clase (Fase 27).
+ *
+ * Conjunto cerrado por lo mismo que `REMINDER_LEAD_DAYS`: son las antelaciones que sirven de
+ * verdad para levantarse e ir al aula, y así elegir es un toque en lugar de escribir un
+ * número. El techo son 30 minutos porque más allá el aviso deja de ser «voy saliendo» y se
+ * convierte en ruido a media clase anterior.
+ */
+export const CLASS_ALERT_LEAD_MINUTES = [5, 10, 15, 30] as const;
+export type ClassAlertLeadMinutes = (typeof CLASS_ALERT_LEAD_MINUTES)[number];
+
+/** Cómo se lee cada antelación, igual en web y en app (Principio VIII). */
+export const CLASS_ALERT_LEAD_LABELS: Readonly<Record<ClassAlertLeadMinutes, string>> = {
+  5: '5 minutos antes',
+  10: '10 minutos antes',
+  15: '15 minutos antes',
+  30: '30 minutos antes',
+};
+
+/**
+ * Ajustes del aviso de la siguiente clase (Fase 27).
+ *
+ * ## Por qué arranca apagado
+ *
+ * Por la misma razón que los recordatorios de la Fase 5, y con más motivo: un horario normal
+ * son cinco o seis clases al día, así que encenderlo por defecto significaría veinticinco
+ * notificaciones a la semana que nadie pidió. Ese es exactamente el volumen que hace que
+ * alguien desactive los avisos de una app **para siempre**, incluidos los que sí quería. Se
+ * ofrece visible en ajustes y lo enciende quien lo quiera.
+ */
+export interface ClassAlertSettings {
+  /** Si el usuario quiere que se le avise antes de cada clase. */
+  readonly enabled: boolean;
+  /** Con cuántos minutos de antelación avisar. */
+  readonly leadMinutes: ClassAlertLeadMinutes;
+  readonly updatedAt: Instant;
+}
+
+/**
+ * Un aviso de clase ya resuelto: qué clase, y a qué hora avisar (Fase 27).
+ *
+ * ## Por qué es semanal y no una fecha
+ *
+ * Un `ScheduledReminder` de la Fase 5 apunta a un instante único —una entrega vence una vez—.
+ * Una clase, en cambio, **se repite todas las semanas** mientras el semestre siga abierto. Por
+ * eso esto lleva día de la semana y hora de reloj en lugar de fecha: es el mismo tipo de dato
+ * que `ScheduleBlock`, y por la misma razón que allí (un instante arrastraría huso y se
+ * desplazaría con el horario de verano).
+ *
+ * La consecuencia práctica es que el cliente lo programa con un disparador **semanal** del
+ * sistema, que se repite solo, en vez de reprogramar algo cada vez que pasa.
+ */
+export interface ClassAlert {
+  readonly blockId: EntityId;
+  readonly subjectId: EntityId;
+  readonly subjectName: string;
+  readonly weekday: Weekday;
+  /** Hora a la que empieza la clase. Es lo que dice el aviso, no cuándo se emite. */
+  readonly startTime: ClockTime;
+  readonly endTime: ClockTime;
+  readonly room: string | null;
+  /**
+   * Hora a la que se emite el aviso: `startTime` menos la antelación.
+   *
+   * Lo calcula el servidor, como `remindOn` en la Fase 5 y por el mismo motivo: si cada
+   * cliente restara los minutos por su cuenta, app y web discreparían sobre cuándo toca
+   * avisar y el fallo no se vería hasta que la notificación llegara tarde.
+   */
+  readonly alertAt: ClockTime;
+  /**
+   * `true` si restar la antelación cruzó la medianoche hacia el día anterior.
+   *
+   * Solo puede pasar con una clase que empiece antes de las 00:30, que no es un horario real
+   * pero sí un dato que alguien puede teclear. El cliente no programa estos: avisar el
+   * domingo a las 23:50 de la clase del lunes es correcto en aritmética y absurdo en la
+   * práctica, y el día de la semana del aviso ya no sería el de la clase.
+   */
+  readonly crossesMidnight: boolean;
+}
+
+/**
+ * Lo que el cliente necesita para programar los avisos de clase (Fase 27).
+ *
+ * Se devuelven **todos** los vigentes en cada consulta, igual que `ReminderPlan`: el cliente
+ * cancela lo que tenía y programa esta lista entera. Una clase que se borró del horario, o
+ * cuyo semestre se archivó, simplemente ya no viene, y su aviso desaparece con ella.
+ */
+export interface ClassAlertPlan {
+  readonly settings: ClassAlertSettings;
+  /** Avisos vigentes, ordenados por día de la semana y hora. */
+  readonly alerts: readonly ClassAlert[];
+}
+
+/**
+ * Cuánto se puede aplazar un recordatorio desde la propia notificación (Fase 28).
+ *
+ * Conjunto cerrado y corto, como todo lo demás: el aplazamiento se elige con el teléfono en
+ * la mano y la notificación desplegada, donde no cabe un selector. Cuatro horas es el techo
+ * porque más allá lo que se quiere no es aplazar sino cambiar la fecha de entrega, que es
+ * otra acción y vive en la agenda.
+ */
+export const SNOOZE_MINUTES = [30, 60, 180, 240] as const;
+export type SnoozeMinutes = (typeof SNOOZE_MINUTES)[number];
+
+/** Cómo se lee cada aplazamiento, igual en web y en app (Principio VIII). */
+export const SNOOZE_LABELS: Readonly<Record<SnoozeMinutes, string>> = {
+  30: 'En 30 minutos',
+  60: 'En 1 hora',
+  180: 'En 3 horas',
+  240: 'En 4 horas',
+};
+
+/**
+ * El aplazamiento que ofrece el botón de la notificación (Fase 28).
+ *
+ * Uno solo, no cuatro: una notificación de Android admite dos o tres botones antes de que el
+ * sistema los esconda tras «expandir», y gastar tres en aplazamientos dejaría fuera el de
+ * «Cumplida», que es el que más se usa. La lista completa sigue disponible dentro de la app.
+ */
+export const DEFAULT_SNOOZE_MINUTES: SnoozeMinutes = 60;
