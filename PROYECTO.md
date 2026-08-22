@@ -36,10 +36,10 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 | **Fases completadas** | 12 de 12 del plan original (Fase 0 a Fase 11) |
 | **Fase actual** | Ninguna en curso. Cerradas y verificadas: las 12 del plan original, las 7 nuevas (12 a 18), **las siete del camino a Play Store (19 a 25)** y **las cuatro de uso (26 a 29)**. Ver la [sección 14](#14-fases-26-a-29--avisos-acciones-y-descubrimiento-2026-08-21) |
 | **En producción** | **Sí**, desde el 2026-08-20 — web en https://notecore.ourocore.net y API en https://notecore-api.ourocore.net, tras el túnel de Cloudflare. APK firmado con clave propia. **Las fases 19, 20 y 25 se desplegaron el 2026-08-21**: `/privacidad`, `/borrar-cuenta` y `/panel` ya responden. Ver la [sección 7](#7-despliegue-en-producción-2026-08-20) |
-| **Bloqueos** | Ninguno para el producto. **Pendiente de desplegar**: las fases 21, 22 y **26 a 29** están cerradas y verificadas pero **no están en producción**. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
+| **Bloqueos** | Ninguno. Todas las fases están **desplegadas** desde el 2026-08-21, y el `.aab` de la **versión 0.3.0** (`versionCode 6`) está compilado y probado, listo para subir a Play Store. La clave de firma **ya tiene respaldo local verificado** en `~/respaldos-notecore/`, pero **sigue faltando una copia fuera de esta máquina** |
 | **Repositorio** | https://github.com/BrianTz79/NoteCore |
 | **Contacto público** | `ourocore.contacto@gmail.com` — el del proyecto, **nunca el personal**. Va en la política de privacidad, en la ficha de Play Store y en Data Safety. Ver la [sección 13](#13-el-correo-de-contacto-público-2026-08-21) |
-| **Datos en producción** | **Una sola cuenta real** (`@mizllet`). Las 313 de prueba acumuladas desde la Fase 1 se retiraron el 2026-08-21 para que el panel no mintiera. Ver la [sección 12](#12-limpieza-de-datos-de-prueba-2026-08-21) |
+| **Datos en producción** | **Ocho cuentas reales** al 2026-08-22: `@mizllet` y siete más con correo propio, creadas entre el 21 y el 22 de agosto — **ya hay gente usándolo**. Quedan además **17 de prueba** (`@ejemplo.mx`) de la verificación de las fases 26-29, pendientes de borrar. Ver la [sección 12](#12-limpieza-de-datos-de-prueba-2026-08-21) |
 
 **Avance del plan original**: `████████████` 100% · **Fases nuevas (12-18)**: `███████` 7 de 7 ·
 **Fases 19-25**: `███████` 7 de 7 · **Fases de uso (26-29)**: `████` 4 de 4
@@ -196,10 +196,11 @@ Este proyecto avanza **una fase por conversación**. Para continuar:
 
 ### Próximo paso
 
-**Lo pendiente es un despliegue, no una fase.** Las fases 21, 22 y 26 a 29 están cerradas y
-verificadas en app y web, pero **no están en producción**. Antes de subirlas hay que incrementar
-el `versionCode` y recompilar el APK apuntando a la API real —el que se verificó apunta a la de
-pruebas—. El detalle está en la [sección 14](#14-fases-26-a-29--avisos-acciones-y-descubrimiento-2026-08-21).
+**Todo está desplegado y el `.aab` está listo.** La web y la API de producción llevan las fases 21,
+22 y 26 a 29 desde el 2026-08-21, verificadas contra los dominios públicos. El App Bundle de la
+**versión 0.3.0** (`versionCode 6`) está compilado, firmado y probado instalándolo desde el propio
+`.aab`: **solo falta subirlo a la consola de Play Store**. El detalle está en la
+[sección 14](#14-fases-26-a-29--avisos-acciones-y-descubrimiento-2026-08-21).
 
 **El plan está completo y el producto está desplegado.** Las doce fases —de la 0 a la 11— están
 cerradas y verificadas en app y web. El **2026-08-20** se puso en producción: web y API en HTTPS
@@ -3805,10 +3806,43 @@ capturarlo sino **encender el aviso de clase** —la regla eligió según el est
 «Encenderlo» llevó al calendario. En navegador real: a una cuenta vacía se le sugiere capturar el
 horario, al cerrarlo aparece el siguiente, y **el descarte persiste tras recargar**.
 
-**API**: 27/27, incluida la cadena completa de estados —sin horario → capturar horario; con
-horario → encender aviso de clase; encendido → desaparece ese consejo; con pendientes →
-recordatorios; recordatorios encendidos → botones de la notificación— y que **el mismo contexto da
-siempre el mismo consejo**, que es lo que hace que web y app coincidan.
+**API**: 27/27, incluida la cadena completa de estados y que **el mismo contexto da siempre el
+mismo consejo**, que es lo que hace que web y app coincidan.
+
+#### Revisión del 2026-08-21: de asistente de primeros pasos a pantalla de carga
+
+El primer diseño enseñaba **un** consejo y solo mostraba lo que aún no habías hecho. Se cambió el
+modelo entero a petición: **consejos tipo pantalla de carga de videojuego**, que rotan al azar y
+**se repiten aunque ya conozcas la función**.
+
+**Por qué el cambio es correcto**: un tutorial que solo enseña lo que no has hecho deja de
+hablarte justo cuando llevas meses usando la app, que es cuando más funciones has olvidado. Una
+opción que usaste una vez en septiembre no la recuerdas en noviembre.
+
+| Qué cambió | De | A |
+|---|---|---|
+| Catálogo | 12 consejos | **37**, cubriendo horario, faltas, agenda, avisos, compartir, periodos, social, la app y privacidad |
+| Cuántos se ven | 1 | **3 a la vez**, en una sección «¿Sabías que…?» |
+| Condición | «si no lo ha hecho» | **casi todos aplican siempre**; la condición solo evita lo que sería falso o incomprensible —no se habla de widgets a quien no tiene materias, ni de justificar faltas a quien no tiene ninguna— |
+| Selección | prioridad fija | **barajado determinista por semilla**, repartiendo **un consejo por tema** |
+
+**Dos decisiones que no se ven pero sostienen el resto**:
+
+- La baraja es **determinista a partir de una semilla**, no `Math.random()`. Con azar puro cada
+  repintado de React reordenaría los consejos **mientras el usuario los está leyendo**. La semilla
+  se fija al montar la pantalla y sale del reloj en tramos de cinco minutos: quieta dentro de una
+  visita, distinta entre visitas.
+- Se reparte **un consejo por tema** antes de rellenar. Sin eso, tres al azar de un catálogo con
+  cinco consejos de avisos darían casi siempre tres de avisos, y parecería que la app solo
+  notifica.
+
+**El único consejo que sigue callándose cuando ya está hecho** es «empieza por tu horario»:
+decírselo a quien lleva medio semestre con el suyo capturado sería absurdo, no un recordatorio.
+
+**Verificado en el APK derivado del `.aab`, contra producción**: la sección muestra tres consejos
+de **temas distintos** (agenda, avisos, faltas); ir al horario y volver **no los reordena**;
+cerrar uno lo quita y entra otro; y el descarte **persiste tras reiniciar la app**. En la web de
+producción: 11/11, incluida la comprobación de que hay exactamente **tres** a la vez.
 
 ---
 
@@ -3820,10 +3854,36 @@ cuatro no añadieron ninguno: `aapt2 dump badging` sobre el APK compilado devuel
 `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` de siempre. Los avisos de clase y los botones de la
 notificación se apoyan en `POST_NOTIFICATIONS`, que ya estaba.
 
-### Pendiente de estas fases
+### Desplegado el 2026-08-21
 
-- **Redesplegar**: la web y la API con estas cuatro fases **no están en producción**. Se suman a
-  las fases 21 y 22, que también seguían sin desplegar.
-- **`versionCode`**: el APK verificado se compiló con `versionCode 5` sin subirlo. Antes de
-  publicar una versión hay que incrementarlo.
-- El APK verificado apunta a la **API de pruebas** (`10.0.2.2:3055`): no sirve para distribuir.
+**Todo lo anterior está en producción.** Se reconstruyeron las imágenes `notecore-api` y
+`notecore-web` y se recrearon los contenedores. Las dos migraciones (`0014`, `0015`) ya estaban
+aplicadas: la base de datos de desarrollo **es** la de producción, alcanzada por `localhost:5432`.
+
+Antes de desplegar se hizo un **respaldo de la base** en `~/respaldos-notecore/`, verificado —15
+tablas y 14 bloques de datos—.
+
+**Verificación contra producción**: 11/11 por API (`https://notecore-api.ourocore.net`) y 11/11 en
+navegador real contra `https://notecore.ourocore.net`.
+
+### El `.aab` de la versión 0.3.0
+
+| | |
+|---|---|
+| `versionCode` | **6** (era 5) |
+| `versionName` | **0.3.0** (era 0.2.0) |
+| Permisos | **5**, sin `REQUEST_INSTALL_PACKAGES` |
+| API incrustada | `https://notecore-api.ourocore.net` |
+| Ruta | `apps/mobile/android/app/build/outputs/bundle/release/app-release.aab` |
+
+Compilado con `scripts/compilar-aab-tienda.sh`, que es lo que garantiza el prebuild con el
+actualizador apagado y el `clean` de Gradle. **Probado como lo servirá Google**: se derivó el APK
+universal con `bundletool`, se instaló en el emulador y se usó contra producción real.
+
+### Lo que quedó pendiente
+
+- **17 cuentas de prueba mías** (`@ejemplo.mx`) siguen en la base de datos e inflan el contador
+  del panel. El borrado quedó bloqueado por seguridad y necesita hacerse a mano.
+- **Hay usuarios reales nuevos**: además de `@mizllet`, siete cuentas con correo de Gmail creadas
+  el 2026-08-21 y el 2026-08-22. El apartado «una sola cuenta real» del reporte resumen ya no es
+  cierto.

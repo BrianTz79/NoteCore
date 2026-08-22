@@ -6,7 +6,8 @@ import {
   nextClass,
   pendingSummary,
   remainingToday,
-  siguienteTip,
+  semillaDeLaVisita,
+  tipsDeLaVisita,
   toScheduleEntries,
   unreadSummary,
   type AgendaList,
@@ -82,6 +83,14 @@ export function InicioScreen({
   /** Contexto y descartes de los consejos del inicio (Fase 29). */
   const [contextoTips, setContextoTips] = useState<TipContext | null>(null);
   const [descartados, setDescartados] = useState<readonly string[]>([]);
+  /**
+   * Semilla de la rotación, fijada **una vez** al montar la pantalla.
+   *
+   * Sin ella —barajando con el reloj en cada render— los consejos cambiarían solos mientras el
+   * usuario los está leyendo, porque React repinta al llegar cada respuesta de la API. Fijarla
+   * aquí los deja quietos dentro de la visita y los rota entre una y otra.
+   */
+  const [semillaTips] = useState(() => semillaDeLaVisita());
 
   /**
    * Los consejos ya cerrados, leídos del almacenamiento del dispositivo.
@@ -129,6 +138,8 @@ export function InicioScreen({
           return onIrASemestres();
         case 'social':
           return onIrASocial();
+        case 'mensajes':
+          return onIrAMensajes();
         case 'ajustes':
           return onIrAAjustes();
       }
@@ -141,6 +152,7 @@ export function InicioScreen({
       onIrACompartir,
       onIrASemestres,
       onIrASocial,
+      onIrAMensajes,
       onIrAAjustes,
     ],
   );
@@ -250,9 +262,10 @@ export function InicioScreen({
         quien abre la app viene a ver a qué hora es su clase, no a que le enseñen la app. El
         consejo espera su turno abajo.
       */}
-      <ConsejoDelInicio
+      <ConsejosDelInicio
         contexto={contextoTips}
         descartados={descartados}
+        semilla={semillaTips}
         onDescartar={descartarTip}
         onIr={irADestinoDeTip}
       />
@@ -316,52 +329,63 @@ async function guardarTipsDescartados(
 }
 
 /**
- * El consejo que toca ahora, o nada.
+ * Los consejos de esta visita.
  *
- * **Uno solo**, que es la decisión de la fase: seis tarjetas de consejo convertirían el inicio
- * en un folleto. Cuál toca lo decide `siguienteTip` en `shared`, con las mismas reglas que
- * evalúa la web, para que las dos digan lo mismo sobre la misma cuenta.
+ * **Tres a la vez y rotando**, como los de la pantalla de carga de un juego: se repiten aunque
+ * ya conozcas la función, porque algo que usaste una vez en septiembre se olvida en noviembre.
+ * Cuáles tocan lo decide `tipsDeLaVisita` en `shared`, con las mismas reglas que evalúa la web
+ * y sobre el mismo contexto, para que las dos digan lo mismo de la misma cuenta.
  */
-function ConsejoDelInicio({
+function ConsejosDelInicio({
   contexto,
   descartados,
+  semilla,
   onDescartar,
   onIr,
 }: {
   contexto: TipContext | null;
   descartados: readonly string[];
+  semilla: number;
   onDescartar: (id: string) => void;
   onIr: (destino: TipDestino) => void;
 }) {
   // Sin contexto no se adivina: mejor ningún consejo que uno que no venga a cuento.
   if (!contexto) return null;
 
-  const tip = siguienteTip(contexto, descartados);
-  if (!tip) return null;
+  const tips = tipsDeLaVisita(contexto, descartados, semilla);
+  if (tips.length === 0) return null;
 
   return (
-    <Card title={tip.titulo}>
-      <Text style={base.cuerpo}>{tip.cuerpo}</Text>
+    <Card title="¿Sabías que…?">
+      {/* La cabecera se pone una vez y no por consejo: son tres tarjetas dentro de una sola
+          sección, no tres secciones compitiendo con el horario por la atención. */}
+      {tips.map((tip, indice) => (
+        <View key={tip.id} style={indice > 0 ? styles.tipSeparado : undefined}>
+          <Text style={styles.tipTitulo}>{tip.titulo}</Text>
+          <Text style={base.cuerpo}>{tip.cuerpo}</Text>
 
-      <View style={styles.tipAcciones}>
-        {tip.destino && tip.accion ? (
-          <Button
-            title={tip.accion}
-            size="sm"
-            compacto
-            onPress={() => onIr(tip.destino as TipDestino)}
-          />
-        ) : null}
+          <View style={styles.tipAcciones}>
+            {tip.destino && tip.accion ? (
+              <Button
+                title={tip.accion}
+                size="sm"
+                compacto
+                onPress={() => onIr(tip.destino as TipDestino)}
+              />
+            ) : null}
 
-        {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio. */}
-        <Button
-          title="Ya lo sé"
-          variant="secondary"
-          size="sm"
-          compacto
-          onPress={() => onDescartar(tip.id)}
-        />
-      </View>
+            {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio.
+                Cerrar **este** no calla los demás; solo deja de aparecer el cerrado. */}
+            <Button
+              title="Ya lo sé"
+              variant="secondary"
+              size="sm"
+              compacto
+              onPress={() => onDescartar(tip.id)}
+            />
+          </View>
+        </View>
+      ))}
     </Card>
   );
 }
@@ -643,7 +667,10 @@ function Sincronizacion() {
 
 const styles = StyleSheet.create({
   /** Los dos botones del consejo, en fila: el que lleva y el que lo cierra. */
-  tipAcciones: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+  tipAcciones: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 8 },
+  /** Separa un consejo del anterior con una línea: son tres cosas distintas en una tarjeta. */
+  tipSeparado: { marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: c.filete },
+  tipTitulo: { ...base.cuerpo, fontWeight: '600', color: c.tinta, marginBottom: 4 },
   content: {
     paddingHorizontal: SPACE.md,
     paddingTop: SPACE.md,

@@ -7,7 +7,8 @@ import {
   describeUpcoming,
   nextClass,
   remainingToday,
-  siguienteTip,
+  semillaDeLaVisita,
+  tipsDeLaVisita,
   toScheduleEntries,
   unreadSummary,
   type AgendaList,
@@ -63,6 +64,14 @@ function Inicio() {
   /** Contexto y descartes de los consejos del inicio (Fase 29). */
   const [contextoTips, setContextoTips] = useState<TipContext | null>(null);
   const [descartados, setDescartados] = useState<readonly string[]>([]);
+  /**
+   * Semilla de la rotación, fijada **una vez** al montar la pantalla.
+   *
+   * Sin ella —barajando con el reloj en cada render— los consejos cambiarían solos mientras se
+   * están leyendo, porque React repinta al llegar cada respuesta de la API. Fijarla los deja
+   * quietos dentro de la visita y los rota entre una y otra.
+   */
+  const [semillaTips] = useState(() => semillaDeLaVisita());
 
   /**
    * Los consejos ya cerrados, en el almacenamiento del navegador.
@@ -166,9 +175,10 @@ function Inicio() {
           Consejo del inicio (Fase 29). Debajo de la próxima clase y los avisos, nunca encima:
           quien abre NoteCore viene a ver su horario, no a que le enseñen la aplicación.
         */}
-        <ConsejoDelInicio
+        <ConsejosDelInicio
           contexto={contextoTips}
           descartados={descartados}
+          semilla={semillaTips}
           onDescartar={descartarTip}
         />
 
@@ -416,54 +426,68 @@ const RUTA_DE_DESTINO: Readonly<Record<TipDestino, string>> = {
   compartir: '/compartir',
   semestres: '/semestres',
   social: '/social',
+  mensajes: '/mensajes',
   /**
    * La web no tiene pantalla de «Ajustes» como la app: sus dos contenidos —la política y el
-   * borrado de cuenta— son páginas propias. El único consejo que apunta aquí es el de
-   * privacidad, así que lleva directo a la política, que es exactamente lo que ofrece leer.
+   * borrado de cuenta— son páginas propias. Los consejos que apuntan aquí hablan de privacidad
+   * y de borrar la cuenta, y la política enlaza a la segunda, así que lleva a la política.
    */
   ajustes: '/privacidad',
 };
 
 /**
- * El consejo que toca ahora, o nada.
+ * Los consejos de esta visita.
  *
- * **Uno solo**, que es la decisión de la fase: seis tarjetas de consejo convertirían el inicio
- * en un folleto. Cuál toca lo decide `siguienteTip` en `shared`, con las mismas reglas que
- * evalúa la app, para que las dos digan lo mismo sobre la misma cuenta.
+ * **Tres a la vez y rotando**, como los de la pantalla de carga de un juego: se repiten aunque
+ * ya conozcas la función, porque algo que usaste una vez en septiembre se olvida en noviembre.
+ * Cuáles tocan lo decide `tipsDeLaVisita` en `shared`, con las mismas reglas que evalúa la app y
+ * sobre el mismo contexto, para que las dos digan lo mismo de la misma cuenta.
  */
-function ConsejoDelInicio({
+function ConsejosDelInicio({
   contexto,
   descartados,
+  semilla,
   onDescartar,
 }: {
   contexto: TipContext | null;
   descartados: readonly string[];
+  semilla: number;
   onDescartar: (id: string) => void;
 }) {
   // Sin contexto no se adivina: mejor ningún consejo que uno que no venga a cuento.
   if (!contexto) return null;
 
-  const tip = siguienteTip(contexto, descartados);
-  if (!tip) return null;
+  const tips = tipsDeLaVisita(contexto, descartados, semilla);
+  if (tips.length === 0) return null;
 
   return (
-    <Card title={tip.titulo}>
-      <p className="text-tinta2">{tip.cuerpo}</p>
+    <Card title="¿Sabías que…?">
+      {/* La cabecera va una vez y no por consejo: son tres tarjetas dentro de una sección, no
+          tres secciones compitiendo con el horario por la atención. */}
+      <div className="divide-y divide-filete">
+        {tips.map((tip, indice) => (
+          <div key={tip.id} className={indice > 0 ? 'space-y-nc-xs pt-nc-md' : 'space-y-nc-xs'}>
+            <p className="font-medium text-tinta">{tip.titulo}</p>
+            <p className="text-tinta2">{tip.cuerpo}</p>
 
-      <div className="flex flex-wrap items-center gap-nc-xs">
-        {tip.destino && tip.accion ? (
-          <Link
-            href={RUTA_DE_DESTINO[tip.destino]}
-            className="rounded-lg border border-filete2 bg-acento/10 px-nc-sm py-nc-xs text-sm text-foco transition hover:border-acento"
-          >
-            {tip.accion}
-          </Link>
-        ) : null}
+            <div className="flex flex-wrap items-center gap-nc-xs pb-nc-md">
+              {tip.destino && tip.accion ? (
+                <Link
+                  href={RUTA_DE_DESTINO[tip.destino]}
+                  className="rounded-lg border border-filete2 bg-acento/10 px-nc-sm py-nc-xs text-sm text-foco transition hover:border-acento"
+                >
+                  {tip.accion}
+                </Link>
+              ) : null}
 
-        {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio. */}
-        <Button variant="secondary" size="sm" onClick={() => onDescartar(tip.id)}>
-          Ya lo sé
-        </Button>
+              {/* Cerrar siempre está: un consejo del que no se puede uno librar es un anuncio.
+                  Cerrar **este** no calla los demás. */}
+              <Button variant="secondary" size="sm" onClick={() => onDescartar(tip.id)}>
+                Ya lo sé
+              </Button>
+            </div>
+          </div>
+        ))}
       </div>
     </Card>
   );
